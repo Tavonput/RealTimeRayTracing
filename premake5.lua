@@ -58,6 +58,8 @@ project "RayTrace"
 		cppdialect "C++20"
 		systemversion "latest"
 
+		debugdir ( "Bin/" .. outputdir .. "/%{prj.name}" )
+
 		-- Warning C4996 is on unsafe or depricated code.
 		-- spdlog throws a bunch of these warnings and it clogs up the build output.
 		-- For now, this warning will be disabled.
