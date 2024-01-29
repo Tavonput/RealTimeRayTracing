@@ -9,8 +9,8 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Context
 	m_context.init(createInfo.windowHeight, createInfo.windowWidth, m_logger);
 
-	// Swapchain
-	SwapchainCreateInfo swapchainCreateInfo;
+	// Swapchain initialization
+	SwapchainCreateInfo swapchainCreateInfo{};
 	swapchainCreateInfo.device         = &m_context.getDevice();
 	swapchainCreateInfo.window         = &m_context.getWindow();
 	swapchainCreateInfo.surface        = &m_context.getSurface();
@@ -22,6 +22,17 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Render pass
 	m_renderPassManager.init(m_context.getDevice(), m_logger);
 	createRenderPass();
+
+	// Update the swapchain framebuffers with the render pass
+	m_swapchain.setupFramebuffers(m_renderPassManager.getPass(0));
+
+	// Command manager
+	CommandManagerCreateInfo commandManagerCreateInfo{};
+	commandManagerCreateInfo.device              = &m_context.getDevice();
+	commandManagerCreateInfo.logger              = m_logger;
+	commandManagerCreateInfo.graphicsBufferCount = createInfo.framesInFlight;
+
+	m_commandManager.init(commandManagerCreateInfo);
 }
 
 void Application::run()
@@ -63,10 +74,9 @@ void Application::createRenderPass()
 
 void Application::cleanup()
 {
+	m_commandManager.cleanup();
 	m_renderPassManager.cleanup();
-
 	m_swapchain.cleanup();
-
 	m_context.cleanup();
 
 	LOG_INFO("Application has been successfully cleaned up");
