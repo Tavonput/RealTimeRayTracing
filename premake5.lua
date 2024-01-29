@@ -58,6 +58,11 @@ project "RayTrace"
 		cppdialect "C++20"
 		systemversion "latest"
 
+		-- Warning C4996 is on unsafe or depricated code.
+		-- spdlog throws a bunch of these warnings and it clogs up the build output.
+		-- For now, this warning will be disabled.
+		disablewarnings "4996"
+
 	-- Debug
 	filter "configurations:Debug"
 		defines "RT_DEBUG"
