@@ -38,6 +38,7 @@ public:
 	const VkPhysicalDevice& getPhysical() const;
 	const VkDevice& getLogical() const;
 	const QueueFamilyIndices& getIndicies() const;
+	const VkQueue& getGraphicsQueue() const;
 
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,
@@ -47,6 +48,8 @@ public:
 	VkSampleCountFlagBits getMaxUsableSampleCount();
 
 	static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+
+	static uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, const VkPhysicalDevice& physicalDevice);
 
 	void cleanup();
 

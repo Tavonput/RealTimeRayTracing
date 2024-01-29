@@ -24,6 +24,11 @@ const QueueFamilyIndices& Device::getIndicies() const
 	return m_indices;
 }
 
+const VkQueue& Device::getGraphicsQueue() const
+{
+	return m_graphicsQueue;
+}
+
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	for (VkFormat format : candidates)
@@ -85,6 +90,18 @@ SwapChainSupportDetails Device::querySwapChainSupport(const VkPhysicalDevice& de
 	}
 
 	return details;
+}
+
+uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, const VkPhysicalDevice& physicalDevice)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+		if ((typeFilter & (i << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
+
+	throw std::runtime_error("Failed to find suitable memory type!");
 }
 
 void Device::cleanup()

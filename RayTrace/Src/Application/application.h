@@ -7,6 +7,8 @@
 #include "Core/render_pass.h"
 #include "Core/command_manager.h"
 #include "Core/pipeline.h"
+#include "Core/vertex.h"
+#include "Core/buffer.h"
 
 struct ApplicationCreateInfo
 {
@@ -34,7 +36,10 @@ private:
 	CommandManager      m_commandManager;
 	Pipeline            m_pipeline;
 
+	Buffer m_vertexBuffer;
+
 	void createRenderPass();
+	void createVertexBuffer();
 
 	void cleanup();
 };

@@ -24,7 +24,7 @@ public:
 
 	void endSingleTimeCommands(
 		VkCommandBuffer commandBuffer,
-		VkQueue& queue);
+		const VkQueue& queue);
 
 	void cleanup();
 

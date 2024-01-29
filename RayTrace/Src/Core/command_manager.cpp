@@ -33,7 +33,7 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue& queue)
+void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue)
 {
     // End command buffer
     vkEndCommandBuffer(commandBuffer);

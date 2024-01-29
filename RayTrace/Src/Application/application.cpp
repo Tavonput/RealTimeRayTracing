@@ -36,6 +36,9 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	// Pipeline
 	m_pipeline.init(m_context.getDevice(), m_logger, m_renderPassManager.getPass(0));
+
+	// Create vertex buffer
+	createVertexBuffer();
 }
 
 void Application::run()
@@ -75,8 +78,27 @@ void Application::createRenderPass()
 	m_renderPassManager.addPass(renderPass);
 }
 
+void Application::createVertexBuffer()
+{
+	std::vector<Vertex> vertices = {
+		// Position            Color
+		{{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+		{{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}}
+	};
+
+	m_vertexBuffer = Buffer(
+		BufferType::VERTEX,
+		vertices.data(),
+		sizeof(Vertex) * vertices.size(),
+		m_context.getDevice(),
+		m_commandManager,
+		m_logger);
+}
+
 void Application::cleanup()
 {
+	m_vertexBuffer.cleanup();
 	m_commandManager.cleanup();
 	m_renderPassManager.cleanup();
 	m_pipeline.cleanup();
