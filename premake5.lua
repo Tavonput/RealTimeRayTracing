@@ -27,7 +27,9 @@ project "RayTrace"
 	files
 	{
 		"%{prj.name}/Src/**.h",
-		"%{prj.name}/Src/**.cpp"
+		"%{prj.name}/Src/**.cpp",
+		"%{prj.name}/Src/**.vert",
+		"%{prj.name}/Src/**.frag",
 	}
 
 	-- Include directories
@@ -58,6 +60,7 @@ project "RayTrace"
 		cppdialect "C++20"
 		systemversion "latest"
 
+		-- Set the debugging working directory the same as the executable
 		debugdir ( "Bin/" .. outputdir .. "/%{prj.name}" )
 
 		-- Warning C4996 is on unsafe or depricated code.

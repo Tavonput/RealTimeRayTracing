@@ -6,6 +6,7 @@
 #include "Core/swapchain.h"
 #include "Core/render_pass.h"
 #include "Core/command_manager.h"
+#include "Core/pipeline.h"
 
 struct ApplicationCreateInfo
 {
@@ -31,6 +32,7 @@ private:
 	Swapchain           m_swapchain;
 	RenderPass::Manager m_renderPassManager;
 	CommandManager      m_commandManager;
+	Pipeline            m_pipeline;
 
 	void createRenderPass();
 

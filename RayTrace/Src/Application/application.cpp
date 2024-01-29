@@ -33,6 +33,9 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	commandManagerCreateInfo.graphicsBufferCount = createInfo.framesInFlight;
 
 	m_commandManager.init(commandManagerCreateInfo);
+
+	// Pipeline
+	m_pipeline.init(m_context.getDevice(), m_logger, m_renderPassManager.getPass(0));
 }
 
 void Application::run()
@@ -76,6 +79,7 @@ void Application::cleanup()
 {
 	m_commandManager.cleanup();
 	m_renderPassManager.cleanup();
+	m_pipeline.cleanup();
 	m_swapchain.cleanup();
 	m_context.cleanup();
 
