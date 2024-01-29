@@ -30,7 +30,7 @@ void Window::init(uint32_t width, uint32_t height, Logger logger)
 	LOG_INFO("GLFW initialization successful");
 }
 
-GLFWwindow* Window::getWindow() const
+GLFWwindow* Window::getWindowGLFW() const
 {
 	return m_window;
 }

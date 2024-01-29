@@ -29,6 +29,9 @@ public:
 	void setupFramebuffers(const VkRenderPass& renderPass);
 	void recreateSwapchain(const Window& window, const VkSurfaceKHR& surface, const VkRenderPass& renderPass);
 
+	VkFormat getFormat();
+	VkExtent2D getExtent();
+
 	void cleanup();
 
 private:

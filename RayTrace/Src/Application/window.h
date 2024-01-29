@@ -11,7 +11,7 @@ public:
 
 	void init(uint32_t width, uint32_t height, Logger logger);
 
-	GLFWwindow* getWindow() const;
+	GLFWwindow* getWindowGLFW() const;
 	void getSize(int* width, int* height) const;
 
 	void cleanup();

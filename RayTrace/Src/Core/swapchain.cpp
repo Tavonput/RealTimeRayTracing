@@ -61,6 +61,16 @@ void Swapchain::recreateSwapchain(const Window& window, const VkSurfaceKHR& surf
 	setupFramebuffers(renderPass);
 }
 
+VkFormat Swapchain::getFormat()
+{
+	return m_format;
+}
+
+VkExtent2D Swapchain::getExtent()
+{
+	return m_extent;
+}
+
 void Swapchain::cleanup()
 {
 	LOG_INFO("Destroying swapchain");

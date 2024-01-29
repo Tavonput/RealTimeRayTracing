@@ -18,15 +18,53 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	swapchainCreateInfo.logger         = m_logger;
 
 	m_swapchain.init(swapchainCreateInfo);
+
+	// Render pass
+	m_renderPassManager.init(m_context.getDevice(), m_logger);
+	createRenderPass();
 }
 
 void Application::run()
 {
+	LOG_INFO("Starting main render loop");
+
+	// Run until the window is closed
+	while (!glfwWindowShouldClose(m_context.getWindow().getWindowGLFW()))
+	{
+		glfwPollEvents();
+	}
+
+	LOG_INFO("Main render loop ended");
+
 	cleanup();
+}
+
+void Application::createRenderPass()
+{
+	LOG_INFO("Creating render pass");
+
+	// Create render pass builder
+	auto builder = RenderPass::Builder();
+	builder.init(m_context.getDevice(), m_logger);
+
+	// Add color attachment
+	builder.addColorAttachment(
+		m_swapchain.getFormat(),
+		VK_SAMPLE_COUNT_1_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		{ {0.0f, 0.0f, 0.0f, 1.0f} });
+
+	// Build
+	auto renderPass = builder.build();
+
+	// Store pass in manager
+	m_renderPassManager.addPass(renderPass);
 }
 
 void Application::cleanup()
 {
+	m_renderPassManager.cleanup();
+
 	m_swapchain.cleanup();
 
 	m_context.cleanup();

@@ -127,7 +127,7 @@ void Context::initDebugMessenger()
 
 void Context::initSurface()
 {
-	if (glfwCreateWindowSurface(m_instance, m_window.getWindow(), nullptr, &m_surface))
+	if (glfwCreateWindowSurface(m_instance, m_window.getWindowGLFW(), nullptr, &m_surface))
 	{
 		LOG_CRITICAL("Failed to create window surface");
 		throw;

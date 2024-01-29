@@ -4,6 +4,7 @@
 #include "context.h"
 
 #include "Core/swapchain.h"
+#include "Core/render_pass.h"
 
 struct ApplicationCreateInfo
 {
@@ -26,7 +27,10 @@ private:
 	Context m_context;
 
 	// Rendering
-	Swapchain m_swapchain;
+	Swapchain           m_swapchain;
+	RenderPass::Manager m_renderPassManager;
+
+	void createRenderPass();
 
 	void cleanup();
 };
