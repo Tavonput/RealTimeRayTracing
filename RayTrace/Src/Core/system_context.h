@@ -6,25 +6,24 @@
 #include <memory>
 #include <iostream>
 
-#include "logging.h"
-#include "window.h"
-#include "Core/device.h"
+#include "Application/logging.h"
+#include "Application/window.h"
 
-class Context
+#include "device.h"
+
+class SystemContext
 {
 public:
-	void init(uint32_t windowWidth, uint32_t windowHeight, Logger logger);
+	void init(Window& window, Logger logger);
 
 	const Device& getDevice() const;
 	const VkSurfaceKHR& getSurface() const;
-	Window& getWindow();
 
 	void cleanup();
 
 private:
 	Device       m_device;
 
-	Window       m_window;
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
 	VkInstance               m_instance       = VK_NULL_HANDLE;
@@ -36,7 +35,7 @@ private:
 
 	void initInstance();
 	void initDebugMessenger();
-	void initSurface();
+	void initSurface(Window& window);
 
 	VkResult createDebugUtilsMessengerEXT(
 		VkInstance instance,

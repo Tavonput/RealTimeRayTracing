@@ -1,8 +1,8 @@
 #pragma once
 
 #include "logging.h"
-#include "context.h"
 
+#include "Core/system_context.h"
 #include "Core/swapchain.h"
 #include "Core/render_pass.h"
 #include "Core/command_manager.h"
@@ -28,8 +28,8 @@ public:
 
 private:
 	Logger  m_logger;
-
-	Context m_context;
+	Window  m_window;
+	SystemContext m_context;
 
 	// Rendering
 	Swapchain           m_swapchain;

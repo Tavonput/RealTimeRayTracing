@@ -9,13 +9,16 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	m_logger.init(spdlog::level::trace);
 	LOG_INFO("Logging initialization successful");
 
+	// Window
+	m_window.init(createInfo.windowWidth, createInfo.windowHeight, m_logger);
+
 	// Context
-	m_context.init(createInfo.windowHeight, createInfo.windowWidth, m_logger);
+	m_context.init(m_window, m_logger);
 
 	// Swapchain initialization
 	SwapchainCreateInfo swapchainCreateInfo{};
 	swapchainCreateInfo.device         = &m_context.getDevice();
-	swapchainCreateInfo.window         = &m_context.getWindow();
+	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
 	swapchainCreateInfo.logger         = m_logger;
@@ -49,7 +52,7 @@ void Application::run()
 	LOG_INFO("Starting main render loop");
 
 	// Run until the window is closed
-	while (!glfwWindowShouldClose(m_context.getWindow().getWindowGLFW()))
+	while (!glfwWindowShouldClose(m_window.getWindowGLFW()))
 	{
 		glfwPollEvents();
 
@@ -133,6 +136,7 @@ void Application::cleanup()
 	m_pipeline.cleanup();
 	m_swapchain.cleanup();
 	m_context.cleanup();
+	m_window.cleanup();
 
 	LOG_INFO("Application has been successfully cleaned up");
 }

@@ -1,4 +1,4 @@
-#include "context.h"
+#include "system_context.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -6,15 +6,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
+	// Debug messenger validation layer callback
 	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 	return VK_FALSE;
 }
 
-void Context::init(uint32_t windowWidth, uint32_t windowHeight, Logger logger)
+void SystemContext::init(Window& window, Logger logger)
 {
 	m_logger = logger;
-
-	m_window.init(windowHeight, windowWidth, logger);
 
 	initInstance();
 
@@ -22,27 +21,22 @@ void Context::init(uint32_t windowWidth, uint32_t windowHeight, Logger logger)
 	initDebugMessenger();
 #endif
 
-	initSurface();
+	initSurface(window);
 
 	m_device.init(m_instance, m_surface, m_instanceLayers, m_logger);
 }
 
-const Device& Context::getDevice() const
+const Device& SystemContext::getDevice() const
 {
 	return m_device;
 }
 
-Window& Context::getWindow()
-{
-	return m_window;
-}
-
-const VkSurfaceKHR& Context::getSurface() const
+const VkSurfaceKHR& SystemContext::getSurface() const
 {
 	return m_surface;
 }
 
-void Context::cleanup()
+void SystemContext::cleanup()
 {
 	LOG_INFO("Destroying context");
 
@@ -55,11 +49,9 @@ void Context::cleanup()
 	m_device.cleanup();
 
 	vkDestroyInstance(m_instance, nullptr);
-
-	m_window.cleanup();
 }
 
-void Context::initInstance()
+void SystemContext::initInstance()
 {
 	LOG_INFO("Initializing Vulkan instance");
 
@@ -108,7 +100,7 @@ void Context::initInstance()
 	LOG_INFO("Vulkan instance initialization successful");
 }
 
-void Context::initDebugMessenger()
+void SystemContext::initDebugMessenger()
 {
 	LOG_INFO("Initializing debug messenger");
 
@@ -125,16 +117,16 @@ void Context::initDebugMessenger()
 	LOG_INFO("Debug messenger initialization successful");
 }
 
-void Context::initSurface()
+void SystemContext::initSurface(Window& window)
 {
-	if (glfwCreateWindowSurface(m_instance, m_window.getWindowGLFW(), nullptr, &m_surface))
+	if (glfwCreateWindowSurface(m_instance, window.getWindowGLFW(), nullptr, &m_surface))
 	{
 		LOG_CRITICAL("Failed to create window surface");
 		throw;
 	}
 }
 
-VkResult Context::createDebugUtilsMessengerEXT(
+VkResult SystemContext::createDebugUtilsMessengerEXT(
 	VkInstance instance, 
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
 	const VkAllocationCallbacks* pAllocator, 
@@ -147,7 +139,7 @@ VkResult Context::createDebugUtilsMessengerEXT(
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void Context::destroyDebugUtilsMessengerEXT(
+void SystemContext::destroyDebugUtilsMessengerEXT(
 	VkInstance instance, 
 	VkDebugUtilsMessengerEXT debugMessenger, 
 	const VkAllocationCallbacks* pAllocator)
@@ -157,7 +149,7 @@ void Context::destroyDebugUtilsMessengerEXT(
 		func(instance, debugMessenger, pAllocator);
 }
 
-void Context::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void SystemContext::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
 	createInfo = {};
 	createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -170,7 +162,7 @@ void Context::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEX
 	createInfo.pfnUserCallback = debugCallback;
 }
 
-std::vector<const char*> Context::getRequiredExtensions()
+std::vector<const char*> SystemContext::getRequiredExtensions()
 {
 	// Get GLFW instance extensions
 	uint32_t glfwExtensionCount = 0;
@@ -186,7 +178,7 @@ std::vector<const char*> Context::getRequiredExtensions()
 	return extensions;
 }
 
-void Context::checkLayerSupport()
+void SystemContext::checkLayerSupport()
 {
 	// Enumerate all supported layers
 	uint32_t layerCount;
