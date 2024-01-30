@@ -14,7 +14,7 @@
 struct ApplicationCreateInfo
 {
 	uint32_t windowHeight = 800;
-	uint32_t windowWidth  = 800;
+	uint32_t windowWidth  = 600;
 
 	uint32_t framesInFlight = 1;
 };

@@ -21,11 +21,13 @@ public:
 		BufferType type,
 		const void* data,
 		const VkDeviceSize dataSize,
+		const uint32_t dataCount,
 		const Device& device,
 		CommandManager& commandPool,
 		Logger logger);
 
 	const VkBuffer& getBuffer() const;
+	const uint32_t getCount() const;
 
 	void cleanup();
 
@@ -51,4 +53,7 @@ private:
 
 	VkBuffer       m_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_memory = VK_NULL_HANDLE;
+
+	VkDeviceSize m_size  = 0;
+	uint32_t     m_count = 0;
 };

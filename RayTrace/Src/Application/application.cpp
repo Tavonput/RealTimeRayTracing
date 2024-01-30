@@ -12,7 +12,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Window
 	m_window.init(createInfo.windowWidth, createInfo.windowHeight, m_logger);
 
-	// Context
+	// System Context
 	m_context.init(m_window, m_logger);
 
 	// Swapchain initialization
@@ -71,7 +71,7 @@ void Application::run()
 			Renderer::BeginRenderPass(rCtx, 0);
 
 			Renderer::BindPipeline(rCtx);
-			Renderer::Draw(rCtx, m_vertexBuffer);
+			Renderer::DrawVertex(rCtx, m_vertexBuffer);
 
 			Renderer::EndRenderPass(rCtx);
 
@@ -100,11 +100,11 @@ void Application::createRenderPass()
 
 	// Add color attachment
 	builder.addColorAttachment(
-		m_swapchain.getFormat(),
-		VK_SAMPLE_COUNT_1_BIT,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {0.0f, 0.0f, 0.0f, 1.0f} },
-		true);
+		m_swapchain.getFormat(),      // Format
+		VK_SAMPLE_COUNT_1_BIT,        // Samples per pixel
+		VK_IMAGE_LAYOUT_UNDEFINED,    // Initial layout
+		{ {0.0f, 0.0f, 0.0f, 1.0f} }, // Clear color
+		true);                        // Use for presentation
 
 	// Build pass and get clear values
 	auto renderPass  = builder.buildPass();
@@ -126,12 +126,13 @@ void Application::createVertexBuffer()
 
 	// Create the vertex buffer
 	m_vertexBuffer = Buffer(
-		BufferType::VERTEX,
-		vertices.data(),
-		sizeof(Vertex) * vertices.size(),
-		m_context.getDevice(),
-		m_commandManager,
-		m_logger);
+		BufferType::VERTEX,                     // Type
+		vertices.data(),                        // Data
+		sizeof(Vertex) * vertices.size(),       // Total bytes
+		static_cast<uint32_t>(vertices.size()), // Number of vertices
+		m_context.getDevice(),                  // Device
+		m_commandManager,                       // Command manager
+		m_logger);                              // Logger
 }
 
 void Application::cleanup()

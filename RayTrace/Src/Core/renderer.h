@@ -53,5 +53,5 @@ public:
 
 	static void BindPipeline(RenderingContext& ctx);
 
-	static void Draw(RenderingContext& ctx, Buffer& vertexBuffer);
+	static void DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer);
 };

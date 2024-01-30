@@ -4,12 +4,16 @@ Buffer::Buffer(
     BufferType type, 
     const void* data, 
     const VkDeviceSize dataSize,
+    const uint32_t dataCount,
     const Device& device, 
     CommandManager& commandPool, 
     Logger logger)
 {
     m_device = &device;
     m_logger = logger;
+
+    m_size  = dataSize;
+    m_count = dataCount;
 
     LOG_INFO("Creating buffer");
 
@@ -51,6 +55,11 @@ Buffer::Buffer(
 const VkBuffer& Buffer::getBuffer() const
 {
     return m_buffer;
+}
+
+const uint32_t Buffer::getCount() const
+{
+    return m_count;
 }
 
 void Buffer::cleanup()

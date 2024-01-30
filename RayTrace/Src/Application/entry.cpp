@@ -8,7 +8,7 @@ int main()
 	// Application settings
 	ApplicationCreateInfo settings{};
 	settings.windowWidth    = 800;
-	settings.windowHeight   = 800;
+	settings.windowHeight   = 600;
 	settings.framesInFlight = 2;
 
 	// Initialize application

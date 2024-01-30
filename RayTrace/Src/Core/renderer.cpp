@@ -66,11 +66,11 @@ void Renderer::BindPipeline(RenderingContext& ctx)
 }
 
 
-void Renderer::Draw(RenderingContext& ctx, Buffer& vertexBuffer)
+void Renderer::DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer)
 {
 	VkBuffer vertexBuffers[] = { vertexBuffer.getBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(ctx.commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdDraw(ctx.commandBuffer, 3, 1, 0, 0);
+	vkCmdDraw(ctx.commandBuffer, vertexBuffer.getCount(), 1, 0, 0);
 }
