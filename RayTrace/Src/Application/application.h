@@ -27,20 +27,21 @@ public:
 	void run();
 
 private:
+	// System fields
 	Logger  m_logger;
 	Window  m_window;
 	SystemContext m_context;
 
-	// Rendering
+	// Rendering fields
 	Swapchain           m_swapchain;
 	RenderPass::Manager m_renderPassManager;
 	CommandManager      m_commandManager;
 	Pipeline            m_pipeline;
 
-	Buffer m_vertexBuffer;
-
-	uint32_t m_currentFrame   = 0;
 	uint32_t m_framesInFlight = 1;
+
+	// Scene data fields
+	Buffer m_vertexBuffer;
 
 	void createRenderPass();
 	void createVertexBuffer();

@@ -67,30 +67,35 @@ void Swapchain::recreateSwapchain()
 	setupFramebuffers(*m_renderPass);
 }
 
-int Swapchain::acquireImage(uint32_t& frameIndex)
+uint32_t Swapchain::acquireImage(uint32_t& frameIndex)
 {
-	// Wait for an available image
-	vkWaitForFences(m_device->getLogical(), 1, &m_inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
-
-	// Get an image
-	VkResult result;
-	uint32_t imageIndex;
-	result = vkAcquireNextImageKHR(m_device->getLogical(), m_swapchain, UINT64_MAX, m_imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	// Try to get an image. Return when an image is acquired
+	while (true)
 	{
-		recreateSwapchain();
-		return -1;
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		LOG_ERROR("Failed to acquire swap chain image");
+		// Wait for an available image
+		vkWaitForFences(m_device->getLogical(), 1, &m_inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+
+		// Get an image
+		VkResult result;
+		uint32_t imageIndex;
+		result = vkAcquireNextImageKHR(m_device->getLogical(), m_swapchain, UINT64_MAX, m_imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			recreateSwapchain();
+			continue;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			LOG_ERROR("Failed to acquire swap chain image");
+		}
+
+		// Unsignal fence
+		vkResetFences(m_device->getLogical(), 1, &m_inFlightFences[frameIndex]);
+
+		return imageIndex;
 	}
 
-	// Reset fence
-	vkResetFences(m_device->getLogical(), 1, &m_inFlightFences[frameIndex]);
-
-	return imageIndex;
 }
 
 void Swapchain::submitGraphics(VkCommandBuffer commandBuffer, uint32_t& frameIndex)

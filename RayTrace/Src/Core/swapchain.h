@@ -30,7 +30,7 @@ public:
 	void setupFramebuffers(const VkRenderPass& renderPass);
 	void recreateSwapchain();
 
-	int acquireImage(uint32_t& frameIndex);
+	uint32_t acquireImage(uint32_t& frameIndex);
 	void submitGraphics(VkCommandBuffer commandBuffer, uint32_t& frameIndex);
 	void present(uint32_t frameIndex, uint32_t& imageIndex);
 

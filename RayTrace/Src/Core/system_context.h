@@ -14,15 +14,18 @@
 class SystemContext
 {
 public:
+	// Initializer
 	void init(Window& window, Logger logger);
 
+	// Getters
 	const Device& getDevice() const;
 	const VkSurfaceKHR& getSurface() const;
 
+	// Cleanup
 	void cleanup();
 
 private:
-	Device       m_device;
+	Device m_device;
 
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 
@@ -49,8 +52,6 @@ private:
 		const VkAllocationCallbacks* pAllocator);
 
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
 	std::vector<const char*> getRequiredExtensions();
-
 	void checkLayerSupport();
 };

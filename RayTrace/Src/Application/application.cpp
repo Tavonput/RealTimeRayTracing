@@ -49,33 +49,37 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 void Application::run()
 {
+	// Setup rendering context
+	RenderingContext rCtx(
+		m_swapchain,
+		m_commandManager,
+		m_renderPassManager,
+		m_pipeline,
+		m_framesInFlight);
+
 	LOG_INFO("Starting main render loop");
 
 	// Run until the window is closed
 	while (!glfwWindowShouldClose(m_window.getWindowGLFW()))
 	{
+		// Process input events
 		glfwPollEvents();
 
+		{
+			Renderer::BeginFrame(rCtx);
 
-		uint32_t frameIndex;
+			Renderer::BeginRenderPass(rCtx, 0);
 
-		Renderer::beginFrame(m_swapchain, m_commandManager, m_currentFrame, &frameIndex);
+			Renderer::BindPipeline(rCtx);
+			Renderer::Draw(rCtx, m_vertexBuffer);
 
-		Renderer::beginRenderPass(m_renderPassManager, m_commandManager, m_swapchain, m_currentFrame, 0, frameIndex);
+			Renderer::EndRenderPass(rCtx);
 
-		m_pipeline.bind(m_commandManager.getCommandBuffer(m_currentFrame));
+			Renderer::Submit(rCtx);
 
-		Renderer::draw(m_commandManager, m_vertexBuffer, m_currentFrame);
+			Renderer::EndFrame(rCtx);
+		}
 
-		Renderer::endRenderPass(m_commandManager, m_currentFrame);
-
-		Renderer::submit(m_swapchain, m_commandManager, m_currentFrame);
-
-		Renderer::endFrame(m_swapchain, m_currentFrame, frameIndex);
-
-
-		// Update current frame counter
-		m_currentFrame = (m_currentFrame + 1) % m_framesInFlight;
 	}
 
 	LOG_INFO("Main render loop ended");
@@ -112,6 +116,7 @@ void Application::createRenderPass()
 
 void Application::createVertexBuffer()
 {
+	// Define a triangle
 	std::vector<Vertex> vertices = {
 		// Position            Color
 		{{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -119,6 +124,7 @@ void Application::createVertexBuffer()
 		{{-0.5f, 0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}}
 	};
 
+	// Create the vertex buffer
 	m_vertexBuffer = Buffer(
 		BufferType::VERTEX,
 		vertices.data(),
