@@ -16,8 +16,8 @@ public:
 	void init(uint32_t windowWidth, uint32_t windowHeight, Logger logger);
 
 	const Device& getDevice() const;
-	const Window& getWindow() const;
 	const VkSurfaceKHR& getSurface() const;
+	Window& getWindow();
 
 	void cleanup();
 

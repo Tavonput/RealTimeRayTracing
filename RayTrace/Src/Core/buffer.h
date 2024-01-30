@@ -25,6 +25,8 @@ public:
 		CommandManager& commandPool,
 		Logger logger);
 
+	const VkBuffer& getBuffer() const;
+
 	void cleanup();
 
 	static void createBuffer(

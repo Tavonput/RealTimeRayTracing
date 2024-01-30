@@ -48,6 +48,11 @@ Buffer::Buffer(
     vkFreeMemory(m_device->getLogical(), stagingMemory, nullptr);
 }
 
+const VkBuffer& Buffer::getBuffer() const
+{
+    return m_buffer;
+}
+
 void Buffer::cleanup()
 {
     LOG_INFO("Destroying buffer");

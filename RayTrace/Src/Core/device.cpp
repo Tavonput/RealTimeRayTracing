@@ -29,6 +29,11 @@ const VkQueue& Device::getGraphicsQueue() const
 	return m_graphicsQueue;
 }
 
+const VkQueue& Device::getPresentQueue() const
+{
+	return m_presentQueue;
+}
+
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	for (VkFormat format : candidates)

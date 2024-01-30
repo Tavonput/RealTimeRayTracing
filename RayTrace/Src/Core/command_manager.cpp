@@ -11,6 +11,11 @@ void CommandManager::init(CommandManagerCreateInfo& createInfo)
     createGraphicsBuffers(createInfo.graphicsBufferCount);
 }
 
+VkCommandBuffer CommandManager::getCommandBuffer(uint32_t index)
+{
+    return m_buffers[index];
+}
+
 VkCommandBuffer CommandManager::beginSingleTimeCommands()
 {
     // Allocate a single use command buffer

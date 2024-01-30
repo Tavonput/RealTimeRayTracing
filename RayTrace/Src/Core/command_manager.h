@@ -20,6 +20,8 @@ class CommandManager
 public:
 	void init(CommandManagerCreateInfo& createInfo);
 
+	VkCommandBuffer getCommandBuffer(uint32_t index);
+
 	VkCommandBuffer beginSingleTimeCommands();
 
 	void endSingleTimeCommands(

@@ -2,6 +2,9 @@
 
 void Application::init(ApplicationCreateInfo& createInfo)
 {
+	// Store frames in flight value
+	m_framesInFlight = createInfo.framesInFlight;
+
 	// Logger
 	m_logger.init(spdlog::level::trace);
 	LOG_INFO("Logging initialization successful");
@@ -14,7 +17,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	swapchainCreateInfo.device         = &m_context.getDevice();
 	swapchainCreateInfo.window         = &m_context.getWindow();
 	swapchainCreateInfo.surface        = &m_context.getSurface();
-	swapchainCreateInfo.framesInFlight = createInfo.framesInFlight;
+	swapchainCreateInfo.framesInFlight = m_framesInFlight;
 	swapchainCreateInfo.logger         = m_logger;
 
 	m_swapchain.init(swapchainCreateInfo);
@@ -30,7 +33,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	CommandManagerCreateInfo commandManagerCreateInfo{};
 	commandManagerCreateInfo.device              = &m_context.getDevice();
 	commandManagerCreateInfo.logger              = m_logger;
-	commandManagerCreateInfo.graphicsBufferCount = createInfo.framesInFlight;
+	commandManagerCreateInfo.graphicsBufferCount = m_framesInFlight;
 
 	m_commandManager.init(commandManagerCreateInfo);
 
@@ -49,9 +52,33 @@ void Application::run()
 	while (!glfwWindowShouldClose(m_context.getWindow().getWindowGLFW()))
 	{
 		glfwPollEvents();
+
+
+		uint32_t frameIndex;
+
+		Renderer::beginFrame(m_swapchain, m_commandManager, m_currentFrame, &frameIndex);
+
+		Renderer::beginRenderPass(m_renderPassManager, m_commandManager, m_swapchain, m_currentFrame, 0, frameIndex);
+
+		m_pipeline.bind(m_commandManager.getCommandBuffer(m_currentFrame));
+
+		Renderer::draw(m_commandManager, m_vertexBuffer, m_currentFrame);
+
+		Renderer::endRenderPass(m_commandManager, m_currentFrame);
+
+		Renderer::submit(m_swapchain, m_commandManager, m_currentFrame);
+
+		Renderer::endFrame(m_swapchain, m_currentFrame, frameIndex);
+
+
+		// Update current frame counter
+		m_currentFrame = (m_currentFrame + 1) % m_framesInFlight;
 	}
 
 	LOG_INFO("Main render loop ended");
+
+	// Wait for the gpu to finish
+	vkDeviceWaitIdle(m_context.getDevice().getLogical());
 
 	cleanup();
 }
@@ -69,13 +96,15 @@ void Application::createRenderPass()
 		m_swapchain.getFormat(),
 		VK_SAMPLE_COUNT_1_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {0.0f, 0.0f, 0.0f, 1.0f} });
+		{ {0.0f, 0.0f, 0.0f, 1.0f} },
+		true);
 
-	// Build
-	auto renderPass = builder.build();
+	// Build pass and get clear values
+	auto renderPass  = builder.buildPass();
+	auto clearValues = builder.getClearValues();
 
 	// Store pass in manager
-	m_renderPassManager.addPass(renderPass);
+	m_renderPassManager.addPass(renderPass, clearValues);
 }
 
 void Application::createVertexBuffer()

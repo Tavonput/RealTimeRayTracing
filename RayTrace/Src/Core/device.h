@@ -39,6 +39,7 @@ public:
 	const VkDevice& getLogical() const;
 	const QueueFamilyIndices& getIndicies() const;
 	const VkQueue& getGraphicsQueue() const;
+	const VkQueue& getPresentQueue() const;
 
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,

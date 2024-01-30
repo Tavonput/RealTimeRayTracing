@@ -32,7 +32,7 @@ const Device& Context::getDevice() const
 	return m_device;
 }
 
-const Window& Context::getWindow() const
+Window& Context::getWindow()
 {
 	return m_window;
 }

@@ -14,7 +14,8 @@ namespace RenderPass {
 	public:
 		void init(const Device& device, Logger logger);
 
-		VkRenderPass build();
+		VkRenderPass buildPass();
+		std::vector<VkClearValue> getClearValues();
 		void reset();
 
 		void addColorAttachment(
@@ -36,7 +37,7 @@ namespace RenderPass {
 			VkClearValue clearValue);
 
 	private:
-		const Device* m_device;
+		const Device* m_device = nullptr;
 
 		Logger m_logger;
 
@@ -64,7 +65,9 @@ namespace RenderPass {
 	public:
 		void init(const Device& device, Logger logger);
 
-		void addPass(VkRenderPass renderPass);
+		void addPass(VkRenderPass renderPass, std::vector<VkClearValue> clearValues);
+
+		void beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer);
 
 		VkRenderPass& getPass(uint32_t index);
 
@@ -75,7 +78,8 @@ namespace RenderPass {
 
 		Logger m_logger;
 
-		std::vector<VkRenderPass> m_passes;
+		std::vector<VkRenderPass>              m_passes;
+		std::vector<std::vector<VkClearValue>> m_clearValues; // 2D array
 	};
 
 } // namespace

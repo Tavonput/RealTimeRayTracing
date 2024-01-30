@@ -40,6 +40,11 @@ void Window::getSize(int* width, int* height) const
 	glfwGetFramebufferSize(m_window, width, height);
 }
 
+void Window::resetFramebufferResize()
+{
+	framebufferResized = false;
+}
+
 void Window::cleanup()
 {
 	LOG_INFO("Destroying window and GLFW");

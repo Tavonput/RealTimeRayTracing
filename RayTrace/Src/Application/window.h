@@ -14,6 +14,8 @@ public:
 	GLFWwindow* getWindowGLFW() const;
 	void getSize(int* width, int* height) const;
 
+	void resetFramebufferResize();
+
 	void cleanup();
 
 private:

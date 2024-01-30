@@ -9,13 +9,14 @@
 #include "Core/pipeline.h"
 #include "Core/vertex.h"
 #include "Core/buffer.h"
+#include "Core/renderer.h"
 
 struct ApplicationCreateInfo
 {
 	uint32_t windowHeight = 800;
 	uint32_t windowWidth  = 800;
 
-	uint32_t framesInFlight = 2;
+	uint32_t framesInFlight = 1;
 };
 
 class Application
@@ -37,6 +38,9 @@ private:
 	Pipeline            m_pipeline;
 
 	Buffer m_vertexBuffer;
+
+	uint32_t m_currentFrame   = 0;
+	uint32_t m_framesInFlight = 1;
 
 	void createRenderPass();
 	void createVertexBuffer();

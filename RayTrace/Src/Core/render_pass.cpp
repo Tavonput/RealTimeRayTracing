@@ -11,7 +11,7 @@ void RenderPass::Builder::init(const Device& device, Logger logger)
 	m_logger = logger;
 }
 
-VkRenderPass RenderPass::Builder::build()
+VkRenderPass RenderPass::Builder::buildPass()
 {
 	// Subpass description
 	VkSubpassDescription subpass{};
@@ -45,8 +45,8 @@ VkRenderPass RenderPass::Builder::build()
 	renderPassInfo.pAttachments    = m_attachments.data();
 	renderPassInfo.subpassCount    = 1;
 	renderPassInfo.pSubpasses      = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies   = &dependency;
+	//renderPassInfo.dependencyCount = 1;
+	//renderPassInfo.pDependencies   = &dependency;
 
 	VkRenderPass renderPass;
 	if (vkCreateRenderPass(m_device->getLogical(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
@@ -58,6 +58,11 @@ VkRenderPass RenderPass::Builder::build()
 	LOG_INFO("Render pass build successful");
 
 	return renderPass;
+}
+
+std::vector<VkClearValue> RenderPass::Builder::getClearValues()
+{
+	return m_clearValues;
 }
 
 void RenderPass::Builder::reset()
@@ -190,9 +195,24 @@ void RenderPass::Manager::init(const Device& device, Logger logger)
 	m_logger = logger;
 }
 
-void RenderPass::Manager::addPass(VkRenderPass renderPass)
+void RenderPass::Manager::addPass(VkRenderPass renderPass, std::vector<VkClearValue> clearValues)
 {
 	m_passes.push_back(renderPass);
+	m_clearValues.push_back(clearValues);
+}
+
+void RenderPass::Manager::beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer)
+{
+	VkRenderPassBeginInfo beginInfo{};
+	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	beginInfo.renderPass        = m_passes[index];
+	beginInfo.framebuffer       = framebuffer;
+	beginInfo.renderArea.offset = { 0, 0 };
+	beginInfo.renderArea.extent = extent;
+	beginInfo.clearValueCount   = static_cast<uint32_t>(m_clearValues[index].size());
+	beginInfo.pClearValues      = m_clearValues[index].data();
+
+	vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 VkRenderPass& RenderPass::Manager::getPass(uint32_t index)
