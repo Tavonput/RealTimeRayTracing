@@ -1,17 +1,23 @@
 #include "pipeline.h"
 
-void Pipeline::init(const Device& device, Logger logger, VkRenderPass& renderPass)
+// -----------------------------------------------------
+// -----------------------------------------------------
+// Builder
+// -----------------------------------------------------
+// -----------------------------------------------------
+
+Pipeline::Builder::Builder(const Device& device, Logger logger)
 {
 	m_device = &device;
 	m_logger = logger;
+}
 
-	LOG_INFO("Creating pipeline");
+Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass)
+{
+	LOG_INFO("Building pipeline");
 
 	// Shaders
-	RasterShaderSet shaders(
-		"../../Shaders/shader_vert.spv",
-		"../../Shaders/shader_frag.spv",
-		device, logger);
+	RasterShaderSet shaders(vertexShaderPath, fragmentShaderPath, *m_device, m_logger);
 
 	// Vertex buffer
 	auto bindingDescription = Vertex::getBindingDescription();
@@ -49,10 +55,10 @@ void Pipeline::init(const Device& device, Logger logger, VkRenderPass& renderPas
 
 	// Multisampling
 	VkPipelineMultisampleStateCreateInfo multisampling{};
-	multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable   = VK_FALSE;
-	multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
-	
+	multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampling.sampleShadingEnable  = VK_FALSE;
+	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
 	// Depth stencil
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -100,7 +106,8 @@ void Pipeline::init(const Device& device, Logger logger, VkRenderPass& renderPas
 	pipelineLayoutInfo.pSetLayouts            = nullptr;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-	if (vkCreatePipelineLayout(m_device->getLogical(), &pipelineLayoutInfo, nullptr, &m_layout) != VK_SUCCESS)
+	VkPipelineLayout layout;
+	if (vkCreatePipelineLayout(m_device->getLogical(), &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
 	{
 		LOG_CRITICAL("Failed to create pipeline layout");
 		throw;
@@ -119,28 +126,54 @@ void Pipeline::init(const Device& device, Logger logger, VkRenderPass& renderPas
 	pipelineInfo.pDepthStencilState  = &depthStencil;
 	pipelineInfo.pColorBlendState    = &colorBlending;
 	pipelineInfo.pDynamicState       = &dynamicState;
-	pipelineInfo.layout              = m_layout;
+	pipelineInfo.layout              = layout;
 	pipelineInfo.renderPass          = renderPass;
 	pipelineInfo.subpass             = 0;
 	pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(m_device->getLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline) != VK_SUCCESS)
-		throw std::runtime_error("failed to create graphics pipeline!");
+	VkPipeline pipeline;
+	if (vkCreateGraphicsPipelines(m_device->getLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+	{
+		LOG_CRITICAL("Failed to create pipeline");
+		throw;
+	}
 
 	shaders.cleanup();
 
-	LOG_INFO("Pipeline creation successful");
+	LOG_INFO("Pipeling build successful");
+
+	return Pipeline(pipeline, layout);
 }
 
-void Pipeline::bind(VkCommandBuffer commandBuffer)
+// -----------------------------------------------------
+// -----------------------------------------------------
+// Manager
+// -----------------------------------------------------
+// -----------------------------------------------------
+
+void Pipeline::Manager::init(const Device& device, Logger logger)
 {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+	m_device = &device;
+	m_logger = logger;
 }
 
-void Pipeline::cleanup()
+void Pipeline::Manager::addPipeline(Pipeline pipeline)
 {
-	LOG_INFO("Destroying pipeline");
+	m_pipelines.push_back(pipeline);
+}
 
-	vkDestroyPipeline(m_device->getLogical(), m_pipeline, nullptr);
-	vkDestroyPipelineLayout(m_device->getLogical(), m_layout, nullptr);
+void Pipeline::Manager::bindPipeline(uint32_t index, VkCommandBuffer commandBuffer)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[index].pipeline);
+}
+
+void Pipeline::Manager::cleanup()
+{
+	LOG_INFO("Destroying pipelines");
+
+	for (auto& pipeline : m_pipelines)
+	{
+		vkDestroyPipeline(m_device->getLogical(), pipeline.pipeline, nullptr);
+		vkDestroyPipelineLayout(m_device->getLogical(), pipeline.layout, nullptr);
+	}
 }

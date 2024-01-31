@@ -60,11 +60,10 @@ void Renderer::EndRenderPass(RenderingContext& ctx)
 	vkCmdEndRenderPass(ctx.commandBuffer);
 }
 
-void Renderer::BindPipeline(RenderingContext& ctx)
+void Renderer::BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex)
 {
-	ctx.pipeline.bind(ctx.commandBuffer);
+	ctx.pipelineManager.bindPipeline(pipelineIndex, ctx.commandBuffer);
 }
-
 
 void Renderer::DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer)
 {

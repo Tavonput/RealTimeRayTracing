@@ -7,7 +7,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	void* pUserData)
 {
 	// Debug messenger validation layer callback
-	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+	std::cerr << "[ VK VALIDATION ]: " << pCallbackData->pMessage << std::endl;
 	return VK_FALSE;
 }
 
@@ -38,16 +38,15 @@ const VkSurfaceKHR& SystemContext::getSurface() const
 
 void SystemContext::cleanup()
 {
-	LOG_INFO("Destroying context");
+	m_device.cleanup();
+
+	LOG_INFO("Destroying system context");
 
 #ifdef RT_DEBUG
 	destroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 #endif
 
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-
-	m_device.cleanup();
-
 	vkDestroyInstance(m_instance, nullptr);
 }
 
@@ -208,4 +207,3 @@ void SystemContext::checkLayerSupport()
 
 	return;
 }
-

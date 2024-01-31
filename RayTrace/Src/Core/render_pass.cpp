@@ -1,17 +1,19 @@
 #include "render_pass.h"
+#include "pipeline.h"
 
 // -----------------------------------------------------
 // -----------------------------------------------------
 // Builder
 // -----------------------------------------------------
 // -----------------------------------------------------
-void RenderPass::Builder::init(const Device& device, Logger logger)
+
+RenderPass::Builder::Builder(const Device& device, Logger logger)
 {
 	m_device = &device;
 	m_logger = logger;
 }
 
-VkRenderPass RenderPass::Builder::buildPass()
+RenderPass RenderPass::Builder::buildPass()
 {
 	// Subpass description
 	VkSubpassDescription subpass{};
@@ -45,8 +47,8 @@ VkRenderPass RenderPass::Builder::buildPass()
 	renderPassInfo.pAttachments    = m_attachments.data();
 	renderPassInfo.subpassCount    = 1;
 	renderPassInfo.pSubpasses      = &subpass;
-	//renderPassInfo.dependencyCount = 1;
-	//renderPassInfo.pDependencies   = &dependency;
+	// renderPassInfo.dependencyCount = 1;
+	// renderPassInfo.pDependencies   = &dependency;
 
 	VkRenderPass renderPass;
 	if (vkCreateRenderPass(m_device->getLogical(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
@@ -57,7 +59,7 @@ VkRenderPass RenderPass::Builder::buildPass()
 
 	LOG_INFO("Render pass build successful");
 
-	return renderPass;
+	return RenderPass(renderPass, m_clearValues);
 }
 
 std::vector<VkClearValue> RenderPass::Builder::getClearValues()
@@ -195,29 +197,28 @@ void RenderPass::Manager::init(const Device& device, Logger logger)
 	m_logger = logger;
 }
 
-void RenderPass::Manager::addPass(VkRenderPass renderPass, std::vector<VkClearValue> clearValues)
+void RenderPass::Manager::addPass(RenderPass renderPass)
 {
 	m_passes.push_back(renderPass);
-	m_clearValues.push_back(clearValues);
 }
 
 void RenderPass::Manager::beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer)
 {
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.renderPass        = m_passes[index];
+	beginInfo.renderPass        = m_passes[index].renderPass;
 	beginInfo.framebuffer       = framebuffer;
 	beginInfo.renderArea.offset = { 0, 0 };
 	beginInfo.renderArea.extent = extent;
-	beginInfo.clearValueCount   = static_cast<uint32_t>(m_clearValues[index].size());
-	beginInfo.pClearValues      = m_clearValues[index].data();
+	beginInfo.clearValueCount   = static_cast<uint32_t>(m_passes[index].clearValues.size());
+	beginInfo.pClearValues      = m_passes[index].clearValues.data();
 
 	vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 VkRenderPass& RenderPass::Manager::getPass(uint32_t index)
 {
-	return m_passes[index];
+	return m_passes[index].renderPass;
 }
 
 void RenderPass::Manager::cleanup()
@@ -225,5 +226,5 @@ void RenderPass::Manager::cleanup()
 	LOG_INFO("Destroying render passes");
 
 	for (auto& pass : m_passes)
-		vkDestroyRenderPass(m_device->getLogical(), pass, nullptr);
+		vkDestroyRenderPass(m_device->getLogical(), pass.renderPass, nullptr);
 }

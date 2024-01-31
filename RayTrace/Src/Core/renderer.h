@@ -15,7 +15,7 @@ struct RenderingContext
 	Swapchain&           swapchain;
 	CommandManager&      commandManager;
 	RenderPass::Manager& renderPassManager;
-	Pipeline&            pipeline;
+	Pipeline::Manager&   pipelineManager;
 
 	uint32_t framesInFlight = 1;
 
@@ -27,17 +27,17 @@ struct RenderingContext
 
 	// Constructor
 	RenderingContext(
-		Swapchain& _swapchain, 
-		CommandManager& _commandManager, 
+		Swapchain&           _swapchain, 
+		CommandManager&      _commandManager, 
 		RenderPass::Manager& _renderPassManager, 
-		Pipeline& _pipeline, 
-		uint32_t _framesInFlight
+		Pipeline::Manager&   _pipelineManager, 
+		uint32_t             _framesInFlight
 	)
-		: swapchain(_swapchain), 
-		  commandManager(_commandManager), 
+		: swapchain        (_swapchain), 
+		  commandManager   (_commandManager), 
 		  renderPassManager(_renderPassManager), 
-		  pipeline(_pipeline), 
-		  framesInFlight(_framesInFlight)
+		  pipelineManager  (_pipelineManager), 
+		  framesInFlight   (_framesInFlight)
 	{}
 };
 
@@ -51,7 +51,7 @@ public:
 	static void BeginRenderPass(RenderingContext& ctx, uint32_t passIndex);
 	static void EndRenderPass(RenderingContext& ctx);
 
-	static void BindPipeline(RenderingContext& ctx);
+	static void BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex);
 
 	static void DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer);
 };

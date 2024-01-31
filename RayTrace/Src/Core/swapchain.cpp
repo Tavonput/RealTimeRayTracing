@@ -303,10 +303,14 @@ void Swapchain::setupSyncObjects(uint32_t framesInFlight)
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
+	LOG_TRACE("Looking for image format VK_FORMAT_B8G8R8A8_SRGB with VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
+
 	// Find a format for RGBA8 and SRGB Nonlinear
 	for (const auto& availableFormat : availableFormats)
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return availableFormat;
+
+	LOG_TRACE("Image format not found. Use backup format");
 
 	// Return the first format as a backup
 	return availableFormats[0];
@@ -314,10 +318,14 @@ VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 
 VkPresentModeKHR Swapchain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
+	LOG_TRACE("Looking for present mode VK_PRESENT_MODE_MAILBOX_KHR");
+
 	// Find mailbox present mode
 	for (const auto& availablePresentMode : availablePresentModes)
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
 			return availablePresentMode;
+
+	LOG_TRACE("Present mode not found. Using backup VK_PRESENT_MODE_FIFO_KHR");
 
 	// Return FIFO as a backup
 	return VK_PRESENT_MODE_FIFO_KHR;

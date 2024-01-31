@@ -28,15 +28,15 @@ public:
 
 private:
 	// System fields
-	Logger  m_logger;
-	Window  m_window;
+	Logger        m_logger;
+	Window        m_window;
 	SystemContext m_context;
 
 	// Rendering fields
 	Swapchain           m_swapchain;
 	RenderPass::Manager m_renderPassManager;
+	Pipeline::Manager   m_pipelineManager;
 	CommandManager      m_commandManager;
-	Pipeline            m_pipeline;
 
 	uint32_t m_framesInFlight = 1;
 
@@ -44,6 +44,7 @@ private:
 	Buffer m_vertexBuffer;
 
 	void createRenderPass();
+	void createPipeline();
 	void createVertexBuffer();
 
 	void cleanup();

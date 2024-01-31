@@ -7,14 +7,17 @@
 #include "Application/logging.h"
 #include "device.h"
 
-namespace RenderPass {
+class RenderPass
+{
+public:
 
+	// Builder Class
 	class Builder
 	{
 	public:
-		void init(const Device& device, Logger logger);
+		Builder(const Device& device, Logger logger);
 
-		VkRenderPass buildPass();
+		RenderPass buildPass();
 		std::vector<VkClearValue> getClearValues();
 		void reset();
 
@@ -60,13 +63,13 @@ namespace RenderPass {
 		std::vector<VkClearValue>            m_clearValues;
 	};
 
+	// Manager Class
 	class Manager
 	{
 	public:
 		void init(const Device& device, Logger logger);
 
-		void addPass(VkRenderPass renderPass, std::vector<VkClearValue> clearValues);
-
+		void addPass(RenderPass renderPass);
 		void beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer);
 
 		VkRenderPass& getPass(uint32_t index);
@@ -75,12 +78,15 @@ namespace RenderPass {
 
 	private:
 		const Device* m_device;
+		Logger        m_logger;
 
-		Logger m_logger;
-
-		std::vector<VkRenderPass>              m_passes;
-		std::vector<std::vector<VkClearValue>> m_clearValues; // 2D array
+		std::vector<RenderPass> m_passes;
 	};
 
-} // namespace
+	// Render Pass Class
+	VkRenderPass              renderPass;
+	std::vector<VkClearValue> clearValues;
 
+	RenderPass(VkRenderPass _renderPass, std::vector<VkClearValue> _clearValues)
+		: renderPass(_renderPass), clearValues(_clearValues) {}
+};

@@ -25,7 +25,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	m_swapchain.init(swapchainCreateInfo);
 
-	// Render pass
+	// Render pass manager
 	m_renderPassManager.init(m_context.getDevice(), m_logger);
 	createRenderPass();
 
@@ -40,8 +40,9 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	m_commandManager.init(commandManagerCreateInfo);
 
-	// Pipeline
-	m_pipeline.init(m_context.getDevice(), m_logger, m_renderPassManager.getPass(0));
+	// Pipeline manager
+	m_pipelineManager.init(m_context.getDevice(), m_logger);
+	createPipeline();
 
 	// Create vertex buffer
 	createVertexBuffer();
@@ -54,7 +55,7 @@ void Application::run()
 		m_swapchain,
 		m_commandManager,
 		m_renderPassManager,
-		m_pipeline,
+		m_pipelineManager,
 		m_framesInFlight);
 
 	LOG_INFO("Starting main render loop");
@@ -70,7 +71,7 @@ void Application::run()
 
 			Renderer::BeginRenderPass(rCtx, 0);
 
-			Renderer::BindPipeline(rCtx);
+			Renderer::BindPipeline(rCtx, 0);
 			Renderer::DrawVertex(rCtx, m_vertexBuffer);
 
 			Renderer::EndRenderPass(rCtx);
@@ -95,8 +96,7 @@ void Application::createRenderPass()
 	LOG_INFO("Creating render pass");
 
 	// Create render pass builder
-	auto builder = RenderPass::Builder();
-	builder.init(m_context.getDevice(), m_logger);
+	auto builder = RenderPass::Builder(m_context.getDevice(), m_logger);
 
 	// Add color attachment
 	builder.addColorAttachment(
@@ -106,12 +106,27 @@ void Application::createRenderPass()
 		{ {0.0f, 0.0f, 0.0f, 1.0f} }, // Clear color
 		true);                        // Use for presentation
 
-	// Build pass and get clear values
-	auto renderPass  = builder.buildPass();
-	auto clearValues = builder.getClearValues();
+	// Build pass
+	RenderPass renderPass = builder.buildPass();
 
 	// Store pass in manager
-	m_renderPassManager.addPass(renderPass, clearValues);
+	m_renderPassManager.addPass(renderPass);
+}
+
+void Application::createPipeline()
+{
+	LOG_INFO("Creating pipeline");
+
+	// Create a pipeline builder
+	auto builder = Pipeline::Builder(m_context.getDevice(), m_logger);
+
+	// Build a graphics pipeline
+	Pipeline pipeline = builder.buildPipeline(
+		"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv", // Shaders
+		m_renderPassManager.getPass(0));                                  // Render pass
+
+	// Store pipeline in manager
+	m_pipelineManager.addPipeline(pipeline);
 }
 
 void Application::createVertexBuffer()
@@ -137,11 +152,18 @@ void Application::createVertexBuffer()
 
 void Application::cleanup()
 {
+	// Scene data
 	m_vertexBuffer.cleanup();
+
+	// Managers
 	m_commandManager.cleanup();
 	m_renderPassManager.cleanup();
-	m_pipeline.cleanup();
+	m_pipelineManager.cleanup();
+
+	// Swapchain
 	m_swapchain.cleanup();
+
+	// System stuff
 	m_context.cleanup();
 	m_window.cleanup();
 
