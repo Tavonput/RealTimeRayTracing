@@ -11,19 +11,24 @@ void Swapchain::init(SwapchainCreateInfo& createInfo)
 	setupSwapchain();
 	setupImageViews();
 	setupSyncObjects(createInfo.framesInFlight);
+
+	setupMSAA();
+	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount);
 }
 
 void Swapchain::setupFramebuffers(const VkRenderPass& renderPass)
 {
 	m_renderPass = &renderPass;
-	m_framebuffers.resize(m_imageViews.size());
+	m_framebuffers.resize(m_images.size());
 
 	// Create a framebuffer for each image view
-	for (size_t i = 0; i < m_imageViews.size(); i++)
+	for (size_t i = 0; i < m_images.size(); i++)
 	{
 		// Attachments
-		std::array<VkImageView, 1> attachments = {
-			m_imageViews[i],
+		std::array<VkImageView, 3> attachments = {
+			m_MSAAImage.view,
+			m_depthBuffer.image.view,
+			m_images[i].view,
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -65,6 +70,10 @@ void Swapchain::recreateSwapchain()
 	// Create new swapchain
 	setupSwapchain();
 	setupImageViews();
+
+	setupMSAA();
+	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount);
+
 	setupFramebuffers(*m_renderPass);
 }
 
@@ -161,6 +170,11 @@ VkFormat Swapchain::getFormat()
 	return m_format;
 }
 
+VkFormat Swapchain::getDepthFormat()
+{
+	return m_depthBuffer.format;
+}
+
 VkExtent2D Swapchain::getExtent()
 {
 	return m_extent;
@@ -171,6 +185,11 @@ VkFramebuffer Swapchain::getFramebuffer(uint32_t index)
 	return m_framebuffers[index];
 }
 
+VkSampleCountFlagBits Swapchain::getMSAASampleCount()
+{
+	return m_MSAASampleCount;
+}
+
 void Swapchain::cleanup()
 {
 	APP_LOG_INFO("Destroying swapchain");
@@ -179,12 +198,18 @@ void Swapchain::cleanup()
 	for (auto framebuffer : m_framebuffers)
 		vkDestroyFramebuffer(m_device->getLogical(), framebuffer, nullptr);
 
-	// Image Views
-	for (auto imageView : m_imageViews)
-		vkDestroyImageView(m_device->getLogical(), imageView, nullptr);
+	// Manually cleanup image views
+	for (auto& image : m_images)
+		vkDestroyImageView(m_device->getLogical(), image.view, nullptr);
 
 	// Swapchain
 	vkDestroySwapchainKHR(m_device->getLogical(), m_swapchain, nullptr);
+
+	// Depth buffer
+	m_depthBuffer.cleanup();
+
+	// MSAA
+	m_MSAAImage.cleanup(m_device->getLogical());
 
 	// Don't destroy syncronization object during recreation
 	if (m_recreate)
@@ -197,7 +222,6 @@ void Swapchain::cleanup()
 		vkDestroySemaphore(m_device->getLogical(), m_renderFinishedSemaphores[i], nullptr);
 		vkDestroyFence(m_device->getLogical(), m_inFlightFences[i], nullptr);
 	}
-
 }
 
 void Swapchain::setupSwapchain()
@@ -252,7 +276,12 @@ void Swapchain::setupSwapchain()
 	// Save the images, format, and extent
 	vkGetSwapchainImagesKHR(m_device->getLogical(), m_swapchain, &imageCount, nullptr);
 	m_images.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_device->getLogical(), m_swapchain, &imageCount, m_images.data());
+
+	std::vector<VkImage> swapchainVkImages(imageCount);
+	vkGetSwapchainImagesKHR(m_device->getLogical(), m_swapchain, &imageCount, swapchainVkImages.data());
+
+	for (uint8_t i = 0; i < m_images.size(); i++)
+		m_images[i].image = swapchainVkImages[i];
 
 	m_format = surfaceFormat.format;
 	m_extent = scExtent;
@@ -262,18 +291,16 @@ void Swapchain::setupSwapchain()
 
 void Swapchain::setupImageViews()
 {
-	m_imageViews.resize(m_images.size());
+	Image::ImageViewSetupInfo createInfo{};
+	createInfo.format      = m_format;
+	createInfo.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	createInfo.layerCount  = 1;
+	createInfo.mipLevels   = 1;
+	createInfo.device      = m_device;
 
 	// Create images views for each image
 	for (size_t i = 0; i < m_images.size(); i++)
-	{
-		Image::setupImageView(
-			m_imageViews[i], m_images[i],
-			m_format,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-			1, 1,
-			m_device->getLogical());
-	}
+		Image::SetupImageView(m_images[i], createInfo);
 }
 
 void Swapchain::setupSyncObjects(uint32_t framesInFlight)
@@ -300,6 +327,37 @@ void Swapchain::setupSyncObjects(uint32_t framesInFlight)
 			throw;
 		}
 	}
+}
+
+void Swapchain::setupMSAA()
+{
+	// Find max sample count
+	m_MSAASampleCount = m_device->getMaxUsableSampleCount();
+
+	// Create image
+	Image::CreateInfo imgCreateInfo{};
+	imgCreateInfo.width      = m_extent.width;
+	imgCreateInfo.height     = m_extent.height;
+	imgCreateInfo.mipLevels  = 1;
+	imgCreateInfo.layerCount = 1;
+	imgCreateInfo.numSamples = m_MSAASampleCount;
+	imgCreateInfo.format     = m_format;
+	imgCreateInfo.tiling     = VK_IMAGE_TILING_OPTIMAL;
+	imgCreateInfo.usage      = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	imgCreateInfo.device     = m_device;
+
+	m_MSAAImage = Image::CreateImage(imgCreateInfo);
+
+	// Setup image view
+	Image::ImageViewSetupInfo viewSetupInfo{};
+	viewSetupInfo.format      = m_format;
+	viewSetupInfo.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewSetupInfo.mipLevels   = 1;
+	viewSetupInfo.layerCount  = 1;
+	viewSetupInfo.device      = m_device;
+
+	Image::SetupImageView(m_MSAAImage, viewSetupInfo);
 }
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

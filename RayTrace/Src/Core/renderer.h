@@ -50,6 +50,9 @@ public:
 	static void EndRenderPass(RenderingContext& ctx);
 
 	static void BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex);
+	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
+	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
 
 	static void DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer);
+	static void DrawIndexed(RenderingContext& ctx, Buffer& indexBuffer);
 };

@@ -41,10 +41,11 @@ private:
 
 	// Scene data fields
 	Buffer m_vertexBuffer;
+	Buffer m_indexBuffer;
 
 	void createRenderPass();
 	void createPipeline();
-	void createVertexBuffer();
+	void createSceneData();
 
 	void cleanup();
 };

@@ -43,8 +43,8 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	m_pipelineManager.init(m_context.getDevice());
 	createPipeline();
 
-	// Create vertex buffer
-	createVertexBuffer();
+	// Create scene data
+	createSceneData();
 }
 
 void Application::run()
@@ -74,7 +74,9 @@ void Application::run()
 			Renderer::BeginRenderPass(rCtx, 0);
 
 			Renderer::BindPipeline(rCtx, 0);
-			Renderer::DrawVertex(rCtx, m_vertexBuffer);
+			Renderer::BindVertexBuffer(rCtx, m_vertexBuffer);
+			Renderer::BindIndexBuffer(rCtx, m_indexBuffer);
+			Renderer::DrawIndexed(rCtx, m_indexBuffer);
 
 			Renderer::EndRenderPass(rCtx);
 
@@ -103,13 +105,25 @@ void Application::createRenderPass()
 	// Create render pass builder
 	auto builder = RenderPass::Builder(m_context.getDevice());
 
-	// Add color attachment
+	// Add multi-sampled color attachment for MSAA
 	builder.addColorAttachment(
-		m_swapchain.getFormat(),      // Format
-		VK_SAMPLE_COUNT_1_BIT,        // Samples per pixel
-		VK_IMAGE_LAYOUT_UNDEFINED,    // Initial layout
-		{ {0.0f, 0.0f, 0.0f, 1.0f} }, // Clear color
-		true);                        // Use for presentation
+		m_swapchain.getFormat(),
+		m_swapchain.getMSAASampleCount(),
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		{ {1.0f, 1.0f, 1.0f, 1.0f} });
+
+	// Add depth attachment for depth buffer
+	builder.addDepthAttachment(
+		m_swapchain.getDepthFormat(),
+		m_swapchain.getMSAASampleCount(),
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		{ 1.0f, 0 });
+
+	// Add resolve attachment for presentation
+	builder.addResolveAttachment(
+		m_swapchain.getFormat(),
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		{ {1.0f, 1.0f, 1.0f, 1.0f} });
 
 	// Build pass
 	RenderPass renderPass = builder.buildPass();
@@ -127,37 +141,58 @@ void Application::createPipeline()
 
 	// Build a graphics pipeline
 	Pipeline pipeline = builder.buildPipeline(
-		"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv", // Shaders
-		m_renderPassManager.getPass(0));                                  // Render pass
+		"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
+		m_renderPassManager.getPass(0),
+		m_swapchain.getMSAASampleCount());
 
 	// Store pipeline in manager
 	m_pipelineManager.addPipeline(pipeline);
 }
 
-void Application::createVertexBuffer()
+void Application::createSceneData()
 {
-	// Define a triangle
+	// Define two rectangles
 	std::vector<Vertex> vertices = {
-		// Position            Color
-		{{ 0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}}
+		// Position             Color
+		{{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}}, 
+		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 0.0f}},
+
+		{{-0.4f, -0.6f,  0.0f}, {1.0f, 0.0f, 0.0f}},
+		{{ 0.6f, -0.6f,  0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{ 0.6f,  0.4f,  0.0f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.4f,  0.4f,  0.0f}, {0.0f, 0.0f, 0.0f}}
+	};
+
+	std::vector<uint32_t> indices = {
+		0, 1, 2, 2, 3, 0,
+		4, 5, 6, 6, 7, 4
 	};
 
 	// Create the vertex buffer
-	m_vertexBuffer = Buffer(
-		BufferType::VERTEX,                     // Type
-		vertices.data(),                        // Data
-		sizeof(Vertex) * vertices.size(),       // Total bytes
-		static_cast<uint32_t>(vertices.size()), // Number of vertices
-		m_context.getDevice(),                  // Device
-		m_commandManager);                      // Command manager
+	Buffer::CreateInfo createInfo{};
+	createInfo.data           = vertices.data();
+	createInfo.dataSize       = sizeof(Vertex) * vertices.size();
+	createInfo.dataCount      = static_cast<uint32_t>(vertices.size());
+	createInfo.device         = &m_context.getDevice();
+	createInfo.commandManager = &m_commandManager;
+
+	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
+
+	// Create the index buffer
+	createInfo.data      = indices.data();
+	createInfo.dataSize  = sizeof(Vertex) * indices.size();
+	createInfo.dataCount = static_cast<uint32_t>(indices.size());
+
+	m_indexBuffer = Buffer::CreateIndexBuffer(createInfo);
 }
 
 void Application::cleanup()
 {
 	// Scene data
 	m_vertexBuffer.cleanup();
+	m_indexBuffer.cleanup();
 
 	// Managers
 	m_commandManager.cleanup();

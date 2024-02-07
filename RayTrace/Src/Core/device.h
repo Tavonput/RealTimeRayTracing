@@ -39,9 +39,9 @@ public:
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,
 		VkImageTiling tiling,
-		VkFormatFeatureFlags features);
+		VkFormatFeatureFlags features) const;
 
-	VkSampleCountFlagBits getMaxUsableSampleCount();
+	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
 	static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
 

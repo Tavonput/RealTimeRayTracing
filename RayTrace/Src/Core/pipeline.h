@@ -15,7 +15,7 @@ public:
 	public:
 		Builder(const Device& device);
 
-		Pipeline buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass);
+		Pipeline buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass, VkSampleCountFlagBits sampleCount);
 
 	private:
 		const Device* m_device;

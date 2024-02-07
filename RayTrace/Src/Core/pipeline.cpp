@@ -13,7 +13,7 @@ Pipeline::Builder::Builder(const Device& device)
 	m_device = &device;
 }
 
-Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass)
+Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass, VkSampleCountFlagBits sampleCount)
 {
 	APP_LOG_INFO("Building pipeline");
 
@@ -57,13 +57,14 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 	// Multisampling
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable  = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.sampleShadingEnable  = VK_TRUE;
+	multisampling.minSampleShading     = 0.2f;
+	multisampling.rasterizationSamples = sampleCount;
 
 	// Depth stencil
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencil.depthTestEnable       = VK_FALSE;
+	depthStencil.depthTestEnable       = VK_TRUE;
 	depthStencil.depthWriteEnable      = VK_TRUE;
 	depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;

@@ -40,7 +40,7 @@ const void Device::waitForGPU() const
 	vkDeviceWaitIdle(m_logical);
 }
 
-VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
 {
 	for (VkFormat format : candidates)
 	{
@@ -58,7 +58,7 @@ VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, Vk
 	throw;
 }
 
-VkSampleCountFlagBits Device::getMaxUsableSampleCount()
+VkSampleCountFlagBits Device::getMaxUsableSampleCount() const
 {
 	// Find max samples for MSAA
 	VkPhysicalDeviceProperties physicalDeviceProperties;
