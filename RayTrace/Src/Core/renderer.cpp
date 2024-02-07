@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "renderer.h"
 
 void Renderer::BeginFrame(RenderingContext& ctx)

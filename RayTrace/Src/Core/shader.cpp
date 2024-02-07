@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "shader.h"
 
 RasterShaderSet::RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device, Logger logger)

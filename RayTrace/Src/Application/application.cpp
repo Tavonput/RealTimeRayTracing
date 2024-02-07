@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "application.h"
 
 void Application::init(ApplicationCreateInfo& createInfo)

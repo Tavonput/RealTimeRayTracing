@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "command_manager.h"
 
 void CommandManager::init(CommandManagerCreateInfo& createInfo)

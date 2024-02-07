@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <vector>
-
 #include "Application/logging.h"
 #include "device.h"
 
