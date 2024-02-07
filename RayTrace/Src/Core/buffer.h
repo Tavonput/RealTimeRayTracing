@@ -4,24 +4,22 @@
 #include "device.h"
 #include "command_manager.h"
 
-enum class BufferType
-{
-	VERTEX = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-	INDEX  = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-};
-
 class Buffer
 {
 public:
+	struct CreateInfo
+	{
+		const void*        data           = nullptr;
+		VkDeviceSize dataSize       = 0;
+		uint32_t     dataCount      = 0;
+		const Device*      device         = nullptr;
+		CommandManager*    commandManager = nullptr;
+	};
+
 	Buffer() {}
 
-	Buffer(
-		BufferType type,
-		const void* data,
-		const VkDeviceSize dataSize,
-		const uint32_t dataCount,
-		const Device& device,
-		CommandManager& commandPool);
+	static Buffer CreateVertexBuffer(CreateInfo& info);
+	static Buffer CreateIndexBuffer(CreateInfo& info);
 
 	const VkBuffer& getBuffer() const;
 	const uint32_t getCount() const;
@@ -51,4 +49,12 @@ private:
 
 	VkDeviceSize m_size  = 0;
 	uint32_t     m_count = 0;
+
+	Buffer(
+		VkBufferUsageFlagBits type,
+		const void* data,
+		const VkDeviceSize dataSize,
+		const uint32_t dataCount,
+		const Device& device,
+		CommandManager& commandManager);
 };
