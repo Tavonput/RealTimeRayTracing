@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include "Application/logging.h"
 #include "device.h"
 #include "shader.h"

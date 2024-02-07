@@ -36,6 +36,7 @@ project "RayTrace"
 	includedirs
 	{
 		"%{prj.name}/Src",
+		"%{prj.name}/Src/Utils",
 		"Vendor/VulkanSDK/*/Include",
 		"Vendor/GLFW/include",
 		"Vendor/GLM",
@@ -54,6 +55,10 @@ project "RayTrace"
 		"glfw3",
 		"vulkan-1"
 	}
+
+	-- PCH
+	pchheader "pch.h"
+	pchsource "%{prj.name}/Src/Utils/pch.cpp"
 
 	-- Windows
 	filter "system:windows"

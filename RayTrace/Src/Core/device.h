@@ -1,11 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <optional>
-#include <set>
-#include <vector>
-
 #include "Application/logging.h"
 
 struct QueueFamilyIndices

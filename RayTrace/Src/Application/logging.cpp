@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "logging.h"
 
 void Logger::init(spdlog::level::level_enum logLevel)

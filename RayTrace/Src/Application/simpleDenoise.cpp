@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "NRDSettings.h"
 #include "NRD.h"
 #include "NRDDescs.h"

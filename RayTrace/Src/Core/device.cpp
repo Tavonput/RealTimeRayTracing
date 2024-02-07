@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "device.h"
 
 void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers, Logger logger)
