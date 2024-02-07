@@ -8,24 +8,29 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-	// Debug messenger validation layer callback
-	std::cerr << "[ VK VALIDATION ]: " << pCallbackData->pMessage << std::endl;
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT || messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+		VAL_LOG_TRACE("{}", pCallbackData->pMessage);
+
+	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		VAL_LOG_WARN("{}", pCallbackData->pMessage);
+
+	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		VAL_LOG_ERROR("{}", pCallbackData->pMessage);
+
 	return VK_FALSE;
 }
 
-void SystemContext::init(Window& window, Logger logger)
+void SystemContext::init(Window& window)
 {
-	m_logger = logger;
-
 	initInstance();
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	initDebugMessenger();
 #endif
 
 	initSurface(window);
 
-	m_device.init(m_instance, m_surface, m_instanceLayers, m_logger);
+	m_device.init(m_instance, m_surface, m_instanceLayers);
 }
 
 const Device& SystemContext::getDevice() const
@@ -42,9 +47,9 @@ void SystemContext::cleanup()
 {
 	m_device.cleanup();
 
-	LOG_INFO("Destroying system context");
+	APP_LOG_INFO("Destroying system context");
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	destroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 #endif
 
@@ -54,9 +59,9 @@ void SystemContext::cleanup()
 
 void SystemContext::initInstance()
 {
-	LOG_INFO("Initializing Vulkan instance");
+	APP_LOG_INFO("Initializing Vulkan instance");
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	m_instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
 
@@ -85,7 +90,7 @@ void SystemContext::initInstance()
 
 	// Debug messenger
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	populateDebugMessengerCreateInfo(debugCreateInfo);
 	createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
@@ -94,16 +99,16 @@ void SystemContext::initInstance()
 
 	if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create Vulkan instance");
+		APP_LOG_CRITICAL("Failed to create Vulkan instance");
 		throw;
 	}
 
-	LOG_INFO("Vulkan instance initialization successful");
+	APP_LOG_INFO("Vulkan instance initialization successful");
 }
 
 void SystemContext::initDebugMessenger()
 {
-	LOG_INFO("Initializing debug messenger");
+	APP_LOG_INFO("Initializing debug messenger");
 
 	// Create debug messenger
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -111,18 +116,18 @@ void SystemContext::initDebugMessenger()
 
 	if (createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create debug messenger");
+		APP_LOG_CRITICAL("Failed to create debug messenger");
 		throw;
 	}
 
-	LOG_INFO("Debug messenger initialization successful");
+	APP_LOG_INFO("Debug messenger initialization successful");
 }
 
 void SystemContext::initSurface(Window& window)
 {
 	if (glfwCreateWindowSurface(m_instance, window.getWindowGLFW(), nullptr, &m_surface))
 	{
-		LOG_CRITICAL("Failed to create window surface");
+		APP_LOG_CRITICAL("Failed to create window surface");
 		throw;
 	}
 }
@@ -155,6 +160,7 @@ void SystemContext::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreate
 	createInfo = {};
 	createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	createInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -172,7 +178,7 @@ std::vector<const char*> SystemContext::getRequiredExtensions()
 
 	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
@@ -202,7 +208,7 @@ void SystemContext::checkLayerSupport()
 		}
 		if (!layerFound)
 		{
-			LOG_CRITICAL("{} not supported", layerName);
+			APP_LOG_CRITICAL("{} not supported", layerName);
 			throw;
 		}
 	}

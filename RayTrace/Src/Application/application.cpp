@@ -7,15 +7,14 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Store frames in flight value
 	m_framesInFlight = createInfo.framesInFlight;
 
-	// Logger
-	m_logger.init(spdlog::level::trace);
-	LOG_INFO("Logging initialization successful");
+	// Initialize logger to info level
+	Logger::init(LogLevel::INFO);
 
 	// Window
-	m_window.init(createInfo.windowWidth, createInfo.windowHeight, m_logger);
+	m_window.init(createInfo.windowWidth, createInfo.windowHeight);
 
 	// System Context
-	m_context.init(m_window, m_logger);
+	m_context.init(m_window);
 
 	// Swapchain initialization
 	SwapchainCreateInfo swapchainCreateInfo{};
@@ -23,12 +22,11 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
-	swapchainCreateInfo.logger         = m_logger;
 
 	m_swapchain.init(swapchainCreateInfo);
 
 	// Render pass manager
-	m_renderPassManager.init(m_context.getDevice(), m_logger);
+	m_renderPassManager.init(m_context.getDevice());
 	createRenderPass();
 
 	// Update the swapchain framebuffers with the render pass
@@ -37,13 +35,12 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Command manager
 	CommandManagerCreateInfo commandManagerCreateInfo{};
 	commandManagerCreateInfo.device              = &m_context.getDevice();
-	commandManagerCreateInfo.logger              = m_logger;
 	commandManagerCreateInfo.graphicsBufferCount = m_framesInFlight;
 
 	m_commandManager.init(commandManagerCreateInfo);
 
 	// Pipeline manager
-	m_pipelineManager.init(m_context.getDevice(), m_logger);
+	m_pipelineManager.init(m_context.getDevice());
 	createPipeline();
 
 	// Create vertex buffer
@@ -60,10 +57,13 @@ void Application::run()
 		m_pipelineManager,
 		m_framesInFlight);
 
-	LOG_INFO("Starting main render loop");
+	APP_LOG_INFO("Starting main render loop");
+
+	// Change logger to trace level
+	Logger::changeLogLevel(LogLevel::TRACE);
 
 	// Run until the window is closed
-	while (!glfwWindowShouldClose(m_window.getWindowGLFW()))
+	while (!m_window.isWindowClosed())
 	{
 		// Process input events
 		glfwPollEvents();
@@ -85,20 +85,23 @@ void Application::run()
 
 	}
 
-	LOG_INFO("Main render loop ended");
+	// Change logger to info level
+	Logger::changeLogLevel(LogLevel::INFO);
+
+	APP_LOG_INFO("Main render loop ended");
 
 	// Wait for the gpu to finish
-	vkDeviceWaitIdle(m_context.getDevice().getLogical());
+	m_context.getDevice().waitForGPU();
 
 	cleanup();
 }
 
 void Application::createRenderPass()
 {
-	LOG_INFO("Creating render pass");
+	APP_LOG_INFO("Creating render pass");
 
 	// Create render pass builder
-	auto builder = RenderPass::Builder(m_context.getDevice(), m_logger);
+	auto builder = RenderPass::Builder(m_context.getDevice());
 
 	// Add color attachment
 	builder.addColorAttachment(
@@ -117,10 +120,10 @@ void Application::createRenderPass()
 
 void Application::createPipeline()
 {
-	LOG_INFO("Creating pipeline");
+	APP_LOG_INFO("Creating pipeline");
 
 	// Create a pipeline builder
-	auto builder = Pipeline::Builder(m_context.getDevice(), m_logger);
+	auto builder = Pipeline::Builder(m_context.getDevice());
 
 	// Build a graphics pipeline
 	Pipeline pipeline = builder.buildPipeline(
@@ -148,8 +151,7 @@ void Application::createVertexBuffer()
 		sizeof(Vertex) * vertices.size(),       // Total bytes
 		static_cast<uint32_t>(vertices.size()), // Number of vertices
 		m_context.getDevice(),                  // Device
-		m_commandManager,                       // Command manager
-		m_logger);                              // Logger
+		m_commandManager);                      // Command manager
 }
 
 void Application::cleanup()
@@ -169,5 +171,5 @@ void Application::cleanup()
 	m_context.cleanup();
 	m_window.cleanup();
 
-	LOG_INFO("Application has been successfully cleaned up");
+	APP_LOG_INFO("Application has been successfully cleaned up");
 }

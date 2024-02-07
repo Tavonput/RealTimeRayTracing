@@ -8,16 +8,14 @@ Buffer::Buffer(
     const VkDeviceSize dataSize,
     const uint32_t dataCount,
     const Device& device, 
-    CommandManager& commandPool, 
-    Logger logger)
+    CommandManager& commandPool)
 {
     m_device = &device;
-    m_logger = logger;
 
     m_size  = dataSize;
     m_count = dataCount;
 
-    LOG_INFO("Creating buffer");
+    APP_LOG_INFO("Creating buffer");
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
@@ -66,7 +64,7 @@ const uint32_t Buffer::getCount() const
 
 void Buffer::cleanup()
 {
-    LOG_INFO("Destroying buffer");
+    APP_LOG_INFO("Destroying buffer");
 
     vkDestroyBuffer(m_device->getLogical(), m_buffer, nullptr);
     vkFreeMemory(m_device->getLogical(), m_memory, nullptr);
@@ -88,7 +86,10 @@ void Buffer::createBuffer(
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device.getLogical(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create buffer");
+    {
+        APP_LOG_CRITICAL("Failed to create buffer");
+        throw;
+    }
 
     // Get memory requirements
     VkMemoryRequirements memRequirements;
@@ -101,7 +102,10 @@ void Buffer::createBuffer(
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, properties, device.getPhysical());
 
     if (vkAllocateMemory(device.getLogical(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    {
+        APP_LOG_CRITICAL("Failed to allocate buffer memory");
+        throw;
+    }
 
     // Bind memory
     vkBindBufferMemory(device.getLogical(), buffer, bufferMemory, 0);

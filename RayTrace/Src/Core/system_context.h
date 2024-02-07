@@ -9,7 +9,7 @@ class SystemContext
 {
 public:
 	// Initializer
-	void init(Window& window, Logger logger);
+	void init(Window& window);
 
 	// Getters
 	const Device& getDevice() const;
@@ -27,8 +27,6 @@ private:
 	VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
 
 	std::vector<const char*> m_instanceLayers;
-
-	Logger m_logger;
 
 	void initInstance();
 	void initDebugMessenger();

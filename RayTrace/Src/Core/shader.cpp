@@ -2,12 +2,11 @@
 
 #include "shader.h"
 
-RasterShaderSet::RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device, Logger logger)
+RasterShaderSet::RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device)
 {
 	m_device = &device;
-	m_logger = logger;
 
-	LOG_INFO("Loading shaders {} {}", vertPath, fragPath);
+	APP_LOG_INFO("Loading shaders {} {}", vertPath, fragPath);
 
 	// Read files
 	m_vertCode = readFile(vertPath);
@@ -52,7 +51,7 @@ VkShaderModule RasterShaderSet::createShaderModule(const std::vector<char>& code
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(m_device->getLogical(), &createInfo, nullptr, &shaderModule))
 	{
-		LOG_CRITICAL("Failed to create shader module");
+		APP_LOG_CRITICAL("Failed to create shader module");
 		throw;
 	}
 
@@ -66,7 +65,7 @@ std::vector<char> RasterShaderSet::readFile(const std::string& filename)
 
 	if (!file.is_open())
 	{
-		LOG_CRITICAL("Failed to open file {}", filename);
+		APP_LOG_CRITICAL("Failed to open file {}", filename);
 		throw;
 	}
 

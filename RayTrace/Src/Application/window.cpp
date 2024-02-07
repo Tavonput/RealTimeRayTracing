@@ -5,15 +5,15 @@
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	// Callback on a window resize
+	APP_LOG_TRACE("Detected framebuffer resize w: {}, h: {}", width, height);
+
 	auto context = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	context->framebufferResized = true;
 }
 
-void Window::init(uint32_t width, uint32_t height, Logger logger)
+void Window::init(uint32_t width, uint32_t height)
 {
-	m_logger = logger;
-
-	LOG_INFO("Initializing GLFW");
+	APP_LOG_INFO("Initializing GLFW");
 
 	// Initialize GLFW
 	glfwInit();
@@ -29,7 +29,7 @@ void Window::init(uint32_t width, uint32_t height, Logger logger)
 	// Set framebuffer resize callback
 	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 
-	LOG_INFO("GLFW initialization successful");
+	APP_LOG_INFO("GLFW initialization successful");
 }
 
 GLFWwindow* Window::getWindowGLFW() const
@@ -47,9 +47,14 @@ void Window::resetFramebufferResize()
 	framebufferResized = false;
 }
 
+bool Window::isWindowClosed()
+{
+	return glfwWindowShouldClose(m_window);
+}
+
 void Window::cleanup()
 {
-	LOG_INFO("Destroying window and GLFW");
+	APP_LOG_INFO("Destroying window and GLFW");
 
 	glfwDestroyWindow(m_window);
 	glfwTerminate();

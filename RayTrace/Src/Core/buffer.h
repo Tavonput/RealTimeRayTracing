@@ -21,8 +21,7 @@ public:
 		const VkDeviceSize dataSize,
 		const uint32_t dataCount,
 		const Device& device,
-		CommandManager& commandPool,
-		Logger logger);
+		CommandManager& commandPool);
 
 	const VkBuffer& getBuffer() const;
 	const uint32_t getCount() const;
@@ -46,8 +45,6 @@ public:
 
 private:
 	const Device* m_device = nullptr;
-
-	Logger m_logger;
 
 	VkBuffer       m_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_memory = VK_NULL_HANDLE;

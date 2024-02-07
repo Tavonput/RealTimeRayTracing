@@ -2,15 +2,24 @@
 
 #include "logging.h"
 
-void Logger::init(spdlog::level::level_enum logLevel)
+// Define static loggers
+std::shared_ptr<spdlog::logger> Logger::s_appLogger;
+std::shared_ptr<spdlog::logger> Logger::s_valLogger;
+
+void Logger::init(LogLevel level)
 {
-	// Initialize logger
-	m_logger = spdlog::stdout_color_mt("LOGGER");
-	m_logger->set_pattern("%^[%T] %n: %v%$");
-	m_logger->set_level(logLevel);
+	// Initialize loggers
+	spdlog::set_pattern("%^[%T] %n: %v%$");
+
+	s_appLogger = spdlog::stdout_color_mt("APP");
+	s_appLogger->set_level((spdlog::level::level_enum)level);
+
+	s_valLogger = spdlog::stdout_color_mt("VAL");
+	s_valLogger->set_level((spdlog::level::level_enum)level);
 }
 
-std::shared_ptr<spdlog::logger> Logger::getLogger() const
+void Logger::changeLogLevel(LogLevel level)
 {
-	return m_logger;
+	s_appLogger->set_level((spdlog::level::level_enum)level);
+	s_valLogger->set_level((spdlog::level::level_enum)level);
 }
