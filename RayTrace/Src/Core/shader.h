@@ -6,7 +6,7 @@
 class RasterShaderSet
 {
 public:
-	RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device, Logger logger);
+	RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device);
 
 	VkPipelineShaderStageCreateInfo* getStages();
 
@@ -14,8 +14,6 @@ public:
 
 private:
 	const Device* m_device = nullptr;
-
-	Logger m_logger;
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> m_shaderStages{};
 

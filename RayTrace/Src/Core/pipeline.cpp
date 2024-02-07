@@ -8,18 +8,17 @@
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-Pipeline::Builder::Builder(const Device& device, Logger logger)
+Pipeline::Builder::Builder(const Device& device)
 {
 	m_device = &device;
-	m_logger = logger;
 }
 
 Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass)
 {
-	LOG_INFO("Building pipeline");
+	APP_LOG_INFO("Building pipeline");
 
 	// Shaders
-	RasterShaderSet shaders(vertexShaderPath, fragmentShaderPath, *m_device, m_logger);
+	RasterShaderSet shaders(vertexShaderPath, fragmentShaderPath, *m_device);
 
 	// Vertex buffer
 	auto bindingDescription = Vertex::getBindingDescription();
@@ -111,7 +110,7 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 	VkPipelineLayout layout;
 	if (vkCreatePipelineLayout(m_device->getLogical(), &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create pipeline layout");
+		APP_LOG_CRITICAL("Failed to create pipeline layout");
 		throw;
 	}
 
@@ -136,13 +135,13 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 	VkPipeline pipeline;
 	if (vkCreateGraphicsPipelines(m_device->getLogical(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create pipeline");
+		APP_LOG_CRITICAL("Failed to create pipeline");
 		throw;
 	}
 
 	shaders.cleanup();
 
-	LOG_INFO("Pipeling build successful");
+	APP_LOG_INFO("Pipeling build successful");
 
 	return Pipeline(pipeline, layout);
 }
@@ -153,10 +152,9 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-void Pipeline::Manager::init(const Device& device, Logger logger)
+void Pipeline::Manager::init(const Device& device)
 {
 	m_device = &device;
-	m_logger = logger;
 }
 
 void Pipeline::Manager::addPipeline(Pipeline pipeline)
@@ -171,7 +169,7 @@ void Pipeline::Manager::bindPipeline(uint32_t index, VkCommandBuffer commandBuff
 
 void Pipeline::Manager::cleanup()
 {
-	LOG_INFO("Destroying pipelines");
+	APP_LOG_INFO("Destroying pipelines");
 
 	for (auto& pipeline : m_pipelines)
 	{

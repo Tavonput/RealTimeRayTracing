@@ -6,7 +6,6 @@
 struct CommandManagerCreateInfo
 {
 	const Device* device;
-	Logger        logger;
 
 	uint32_t graphicsBufferCount = 1;
 };
@@ -31,8 +30,6 @@ private:
 	std::vector<VkCommandBuffer> m_buffers;
 
 	const Device* m_device = nullptr;
-
-	Logger  m_logger;
 
 	void createCommandPool();
 	void createGraphicsBuffers(uint32_t count);

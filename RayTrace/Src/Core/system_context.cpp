@@ -13,10 +13,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	return VK_FALSE;
 }
 
-void SystemContext::init(Window& window, Logger logger)
+void SystemContext::init(Window& window)
 {
-	m_logger = logger;
-
 	initInstance();
 
 #ifdef RT_DEBUG
@@ -25,7 +23,7 @@ void SystemContext::init(Window& window, Logger logger)
 
 	initSurface(window);
 
-	m_device.init(m_instance, m_surface, m_instanceLayers, m_logger);
+	m_device.init(m_instance, m_surface, m_instanceLayers);
 }
 
 const Device& SystemContext::getDevice() const
@@ -42,7 +40,7 @@ void SystemContext::cleanup()
 {
 	m_device.cleanup();
 
-	LOG_INFO("Destroying system context");
+	APP_LOG_INFO("Destroying system context");
 
 #ifdef RT_DEBUG
 	destroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
@@ -54,7 +52,7 @@ void SystemContext::cleanup()
 
 void SystemContext::initInstance()
 {
-	LOG_INFO("Initializing Vulkan instance");
+	APP_LOG_INFO("Initializing Vulkan instance");
 
 #ifdef RT_DEBUG
 	m_instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
@@ -94,16 +92,16 @@ void SystemContext::initInstance()
 
 	if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create Vulkan instance");
+		APP_LOG_CRITICAL("Failed to create Vulkan instance");
 		throw;
 	}
 
-	LOG_INFO("Vulkan instance initialization successful");
+	APP_LOG_INFO("Vulkan instance initialization successful");
 }
 
 void SystemContext::initDebugMessenger()
 {
-	LOG_INFO("Initializing debug messenger");
+	APP_LOG_INFO("Initializing debug messenger");
 
 	// Create debug messenger
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -111,18 +109,18 @@ void SystemContext::initDebugMessenger()
 
 	if (createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create debug messenger");
+		APP_LOG_CRITICAL("Failed to create debug messenger");
 		throw;
 	}
 
-	LOG_INFO("Debug messenger initialization successful");
+	APP_LOG_INFO("Debug messenger initialization successful");
 }
 
 void SystemContext::initSurface(Window& window)
 {
 	if (glfwCreateWindowSurface(m_instance, window.getWindowGLFW(), nullptr, &m_surface))
 	{
-		LOG_CRITICAL("Failed to create window surface");
+		APP_LOG_CRITICAL("Failed to create window surface");
 		throw;
 	}
 }
@@ -202,7 +200,7 @@ void SystemContext::checkLayerSupport()
 		}
 		if (!layerFound)
 		{
-			LOG_CRITICAL("{} not supported", layerName);
+			APP_LOG_CRITICAL("{} not supported", layerName);
 			throw;
 		}
 	}

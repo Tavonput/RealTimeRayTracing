@@ -5,7 +5,6 @@
 void CommandManager::init(CommandManagerCreateInfo& createInfo)
 {
 	m_device = createInfo.device;
-	m_logger = createInfo.logger;
 
 	m_buffers.resize(createInfo.graphicsBufferCount);
 
@@ -60,14 +59,14 @@ void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const 
 
 void CommandManager::cleanup()
 {
-    LOG_INFO("Destroying command manager");
+    APP_LOG_INFO("Destroying command manager");
 
     vkDestroyCommandPool(m_device->getLogical(), m_pool, nullptr);
 }
 
 void CommandManager::createCommandPool()
 {
-    LOG_INFO("Initializing command pool");
+    APP_LOG_INFO("Initializing command pool");
 
     // Create a command pool for the graphics family
     QueueFamilyIndices queueFamilyIndices = m_device->getIndicies();
@@ -78,16 +77,16 @@ void CommandManager::createCommandPool()
 
     if (vkCreateCommandPool(m_device->getLogical(), &poolInfo, nullptr, &m_pool) != VK_SUCCESS)
     {
-        LOG_CRITICAL("Failed to create command pool");
+        APP_LOG_CRITICAL("Failed to create command pool");
         throw;
     }
 
-    LOG_INFO("Command pool initialization successful");
+    APP_LOG_INFO("Command pool initialization successful");
 }
 
 void CommandManager::createGraphicsBuffers(uint32_t count)
 {
-    LOG_INFO("Allocating {} command buffers for graphics rendering", count);
+    APP_LOG_INFO("Allocating {} command buffers for graphics rendering", count);
 
     // Allocate command buffers for the main render loop
     VkCommandBufferAllocateInfo allocInfo{};
@@ -98,9 +97,9 @@ void CommandManager::createGraphicsBuffers(uint32_t count)
 
     if (vkAllocateCommandBuffers(m_device->getLogical(), &allocInfo, m_buffers.data()) != VK_SUCCESS)
     {
-        LOG_CRITICAL("Failed to allocate command buffers");
+        APP_LOG_CRITICAL("Failed to allocate command buffers");
         throw;
     }
 
-    LOG_INFO("Command buffer allocation successful");
+    APP_LOG_INFO("Command buffer allocation successful");
 }

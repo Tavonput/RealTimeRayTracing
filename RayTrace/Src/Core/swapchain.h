@@ -14,8 +14,6 @@ struct SwapchainCreateInfo
 	Window*             window;
 
 	uint32_t framesInFlight = 1;
-
-	Logger logger;
 };
 
 class Swapchain
@@ -56,8 +54,6 @@ private:
 	const Device*       m_device     = nullptr;
 	const VkSurfaceKHR* m_surface    = nullptr;
 	const VkRenderPass* m_renderPass = nullptr;
-
-	Logger m_logger;
 
 	void setupSwapchain();
 	void setupImageViews();

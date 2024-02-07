@@ -11,7 +11,7 @@ public:
 	class Builder
 	{
 	public:
-		Builder(const Device& device, Logger logger);
+		Builder(const Device& device);
 
 		RenderPass buildPass();
 		std::vector<VkClearValue> getClearValues();
@@ -38,8 +38,6 @@ public:
 	private:
 		const Device* m_device = nullptr;
 
-		Logger m_logger;
-
 		// Color
 		bool m_usingColor = false;
 		std::vector<VkAttachmentDescription> m_colorAttachments;
@@ -63,7 +61,7 @@ public:
 	class Manager
 	{
 	public:
-		void init(const Device& device, Logger logger);
+		void init(const Device& device);
 
 		void addPass(RenderPass renderPass);
 		void beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer);
@@ -74,7 +72,6 @@ public:
 
 	private:
 		const Device* m_device;
-		Logger        m_logger;
 
 		std::vector<RenderPass> m_passes;
 	};

@@ -3,29 +3,51 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
+enum class LogLevel
+{
+	TRACE    = spdlog::level::trace,
+	INFO     = spdlog::level::info,
+	WARN     = spdlog::level::warn,
+	ERR      = spdlog::level::err,
+	CRTITCAL = spdlog::level::critical
+};
+
 class Logger
 {
 public:
-	void init(spdlog::level::level_enum logLevel);
+	static void init(LogLevel level);
 
-	std::shared_ptr<spdlog::logger> getLogger() const;
+	inline static std::shared_ptr<spdlog::logger>& getAppLogger() { return s_appLogger; }
+	inline static std::shared_ptr<spdlog::logger>& getValLogger() { return s_valLogger; }
 
 private:
-	std::shared_ptr<spdlog::logger> m_logger;
+	static std::shared_ptr<spdlog::logger> s_appLogger;
+	static std::shared_ptr<spdlog::logger> s_valLogger;
 };
 
 // Logging macros
-// * EVERY LOGGER MUST BE NAME "m_logger" *
 #ifndef RT_DIST
-	#define LOG_TRACE(...)    m_logger.getLogger()->trace(__VA_ARGS__)
-	#define LOG_INFO(...)     m_logger.getLogger()->info(__VA_ARGS__)
-	#define LOG_WARN(...)     m_logger.getLogger()->warn(__VA_ARGS__)
-	#define LOG_ERROR(...)    m_logger.getLogger()->error(__VA_ARGS__)
-	#define LOG_CRITICAL(...) m_logger.getLogger()->critical(__VA_ARGS__)
+	#define APP_LOG_TRACE(...)    Logger::getAppLogger()->trace(__VA_ARGS__)
+	#define APP_LOG_INFO(...)     Logger::getAppLogger()->info(__VA_ARGS__)
+	#define APP_LOG_WARN(...)     Logger::getAppLogger()->warn(__VA_ARGS__)
+	#define APP_LOG_ERROR(...)    Logger::getAppLogger()->error(__VA_ARGS__)
+	#define APP_LOG_CRITICAL(...) Logger::getAppLogger()->critical(__VA_ARGS__)
+
+	#define VAL_LOG_TRACE(...)    Logger::getValLogger()->trace(__VA_ARGS__)
+	#define VAL_LOG_INFO(...)     Logger::getValLogger()->info(__VA_ARGS__)
+	#define VAL_LOG_WARN(...)     Logger::getValLogger()->warn(__VA_ARGS__)
+	#define VAL_LOG_ERROR(...)    Logger::getValLogger()->error(__VA_ARGS__)
+	#define VAL_LOG_CRITICAL(...) Logger::getValLogger()->critical(__VA_ARGS__)
 #else
-	#define LOG_TRACE(...)    (void)0
-	#define LOG_INFO(...)     (void)0
-	#define LOG_WARN(...)     (void)0
-	#define LOG_ERROR(...)    (void)0
-	#define LOG_CRITICAL(...) (void)0
+	#define APP_LOG_TRACE(...)    (void)0
+	#define APP_LOG_INFO(...)     (void)0
+	#define APP_LOG_WARN(...)     (void)0
+	#define APP_LOG_ERROR(...)    (void)0
+	#define APP_LOG_CRITICAL(...) (void)0
+
+	#define VAL_LOG_TRACE(...)    (void)0
+	#define VAL_LOG_INFO(...)     (void)0
+	#define VAL_LOG_WARN(...)     (void)0
+	#define VAL_LOG_ERROR(...)    (void)0
+	#define VAL_LOG_CRITICAL(...) (void)0
 #endif

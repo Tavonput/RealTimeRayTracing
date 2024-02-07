@@ -7,7 +7,6 @@ void Swapchain::init(SwapchainCreateInfo& createInfo)
 	m_device  = createInfo.device;
 	m_window  = createInfo.window;
 	m_surface = createInfo.surface;
-	m_logger  = createInfo.logger;
 
 	setupSwapchain();
 	setupImageViews();
@@ -38,7 +37,7 @@ void Swapchain::setupFramebuffers(const VkRenderPass& renderPass)
 
 		if (vkCreateFramebuffer(m_device->getLogical(), &framebufferInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
 		{
-			LOG_CRITICAL("Failed to create framebuffers");
+			APP_LOG_CRITICAL("Failed to create framebuffers");
 			throw;
 		}
 	}
@@ -89,10 +88,10 @@ uint32_t Swapchain::acquireImage(uint32_t& frameIndex)
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
-			LOG_ERROR("Failed to acquire swap chain image");
+			APP_LOG_ERROR("Failed to acquire swap chain image");
 		}
 
-		// Unsignal fence
+		// Un-signal fence
 		vkResetFences(m_device->getLogical(), 1, &m_inFlightFences[frameIndex]);
 
 		return imageIndex;
@@ -124,7 +123,7 @@ void Swapchain::submitGraphics(VkCommandBuffer commandBuffer, uint32_t& frameInd
 	submitInfo.pSignalSemaphores    = signalSemaphores;
 
 	if (vkQueueSubmit(m_device->getGraphicsQueue(), 1, &submitInfo, m_inFlightFences[frameIndex]) != VK_SUCCESS)
-		LOG_CRITICAL("Failed to submit to graphics queue");
+		APP_LOG_CRITICAL("Failed to submit to graphics queue");
 }
 
 void Swapchain::present(uint32_t frameIndex, uint32_t& imageIndex)
@@ -152,7 +151,7 @@ void Swapchain::present(uint32_t frameIndex, uint32_t& imageIndex)
 	}
 	else if (result != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to present frame");
+		APP_LOG_CRITICAL("Failed to present frame");
 		throw;
 	}
 }
@@ -174,7 +173,7 @@ VkFramebuffer Swapchain::getFramebuffer(uint32_t index)
 
 void Swapchain::cleanup()
 {
-	LOG_INFO("Destroying swapchain");
+	APP_LOG_INFO("Destroying swapchain");
 
 	// Framebuffers
 	for (auto framebuffer : m_framebuffers)
@@ -187,7 +186,7 @@ void Swapchain::cleanup()
 	// Swapchain
 	vkDestroySwapchainKHR(m_device->getLogical(), m_swapchain, nullptr);
 
-	// Don't desctroy syncronization object during recreation
+	// Don't destroy syncronization object during recreation
 	if (m_recreate)
 		return;
 
@@ -203,7 +202,7 @@ void Swapchain::cleanup()
 
 void Swapchain::setupSwapchain()
 {
-	LOG_INFO("Initializing swapchain");
+	APP_LOG_INFO("Initializing swapchain");
 
 	// Choose a format, present mode, and extent
 	SwapChainSupportDetails swapChainSupport = Device::querySwapChainSupport(m_device->getPhysical(), *m_surface);
@@ -246,7 +245,7 @@ void Swapchain::setupSwapchain()
 
 	if (vkCreateSwapchainKHR(m_device->getLogical(), &createInfo, nullptr, &m_swapchain) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create swapchain");
+		APP_LOG_CRITICAL("Failed to create swapchain");
 		throw;
 	}
 
@@ -258,7 +257,7 @@ void Swapchain::setupSwapchain()
 	m_format = surfaceFormat.format;
 	m_extent = scExtent;
 
-	LOG_INFO("Swapchain initialization successful");
+	APP_LOG_INFO("Swapchain initialization successful");
 }
 
 void Swapchain::setupImageViews()
@@ -297,7 +296,7 @@ void Swapchain::setupSyncObjects(uint32_t framesInFlight)
 			vkCreateSemaphore(m_device->getLogical(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
 			vkCreateFence(m_device->getLogical(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 		{
-			LOG_CRITICAL("Failed to create syncronization objects for frame {}", i);
+			APP_LOG_CRITICAL("Failed to create syncronization objects for frame {}", i);
 			throw;
 		}
 	}
@@ -305,14 +304,14 @@ void Swapchain::setupSyncObjects(uint32_t framesInFlight)
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
-	LOG_TRACE("Looking for image format VK_FORMAT_B8G8R8A8_SRGB with VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
+	APP_LOG_TRACE("Looking for image format VK_FORMAT_B8G8R8A8_SRGB with VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
 
 	// Find a format for RGBA8 and SRGB Nonlinear
 	for (const auto& availableFormat : availableFormats)
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return availableFormat;
 
-	LOG_TRACE("Image format not found. Use backup format");
+	APP_LOG_TRACE("Image format not found. Use backup format");
 
 	// Return the first format as a backup
 	return availableFormats[0];
@@ -320,14 +319,14 @@ VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 
 VkPresentModeKHR Swapchain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
-	LOG_TRACE("Looking for present mode VK_PRESENT_MODE_MAILBOX_KHR");
+	APP_LOG_TRACE("Looking for present mode VK_PRESENT_MODE_MAILBOX_KHR");
 
 	// Find mailbox present mode
 	for (const auto& availablePresentMode : availablePresentModes)
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
 			return availablePresentMode;
 
-	LOG_TRACE("Present mode not found. Using backup VK_PRESENT_MODE_FIFO_KHR");
+	APP_LOG_TRACE("Present mode not found. Using backup VK_PRESENT_MODE_FIFO_KHR");
 
 	// Return FIFO as a backup
 	return VK_PRESENT_MODE_FIFO_KHR;

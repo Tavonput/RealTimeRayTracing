@@ -8,16 +8,14 @@ Buffer::Buffer(
     const VkDeviceSize dataSize,
     const uint32_t dataCount,
     const Device& device, 
-    CommandManager& commandPool, 
-    Logger logger)
+    CommandManager& commandPool)
 {
     m_device = &device;
-    m_logger = logger;
 
     m_size  = dataSize;
     m_count = dataCount;
 
-    LOG_INFO("Creating buffer");
+    APP_LOG_INFO("Creating buffer");
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
@@ -66,7 +64,7 @@ const uint32_t Buffer::getCount() const
 
 void Buffer::cleanup()
 {
-    LOG_INFO("Destroying buffer");
+    APP_LOG_INFO("Destroying buffer");
 
     vkDestroyBuffer(m_device->getLogical(), m_buffer, nullptr);
     vkFreeMemory(m_device->getLogical(), m_memory, nullptr);

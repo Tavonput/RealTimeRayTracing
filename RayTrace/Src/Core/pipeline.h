@@ -13,20 +13,19 @@ public:
 	class Builder
 	{
 	public:
-		Builder(const Device& device, Logger logger);
+		Builder(const Device& device);
 
 		Pipeline buildPipeline(const char* vertexShaderPath, const char* fragmentShaderPath, VkRenderPass& renderPass);
 
 	private:
 		const Device* m_device;
-		Logger        m_logger;
 	};
 
 	// Manager Class
 	class Manager
 	{
 	public:
-		void init(const Device& device, Logger logger);
+		void init(const Device& device);
 
 		void addPipeline(Pipeline pipeline);
 		void bindPipeline(uint32_t index, VkCommandBuffer commandBuffer);
@@ -35,7 +34,6 @@ public:
 
 	private:
 		const Device* m_device;
-		Logger        m_logger;
 
 		std::vector<Pipeline> m_pipelines;
 	};

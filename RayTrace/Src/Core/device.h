@@ -26,8 +26,7 @@ public:
 	void init(
 		VkInstance& instance,
 		VkSurfaceKHR& surface,
-		std::vector<const char*> instanceLayers,
-		Logger logger);
+		std::vector<const char*> instanceLayers);
 
 	const VkPhysicalDevice& getPhysical() const;
 	const VkDevice& getLogical() const;
@@ -58,8 +57,6 @@ private:
 
 	std::vector<const char*> m_instanceLayers;
 	std::vector<const char*> m_deviceExtensions;
-
-	Logger m_logger;
 
 	void pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	void createLogicalDevice();

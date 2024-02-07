@@ -8,10 +8,9 @@
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-RenderPass::Builder::Builder(const Device& device, Logger logger)
+RenderPass::Builder::Builder(const Device& device)
 {
 	m_device = &device;
-	m_logger = logger;
 }
 
 RenderPass RenderPass::Builder::buildPass()
@@ -54,11 +53,11 @@ RenderPass RenderPass::Builder::buildPass()
 	VkRenderPass renderPass;
 	if (vkCreateRenderPass(m_device->getLogical(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create render pass");
+		APP_LOG_CRITICAL("Failed to create render pass");
 		throw;
 	}
 
-	LOG_INFO("Render pass build successful");
+	APP_LOG_INFO("Render pass build successful");
 
 	return RenderPass(renderPass, m_clearValues);
 }
@@ -192,10 +191,9 @@ void RenderPass::Builder::addResolveAttachment(VkFormat format, VkImageLayout in
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-void RenderPass::Manager::init(const Device& device, Logger logger)
+void RenderPass::Manager::init(const Device& device)
 {
 	m_device = &device;
-	m_logger = logger;
 }
 
 void RenderPass::Manager::addPass(RenderPass renderPass)
@@ -224,7 +222,7 @@ VkRenderPass& RenderPass::Manager::getPass(uint32_t index)
 
 void RenderPass::Manager::cleanup()
 {
-	LOG_INFO("Destroying render passes");
+	APP_LOG_INFO("Destroying render passes");
 
 	for (auto& pass : m_passes)
 		vkDestroyRenderPass(m_device->getLogical(), pass.renderPass, nullptr);

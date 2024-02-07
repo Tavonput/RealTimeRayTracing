@@ -28,7 +28,6 @@ public:
 
 private:
 	// System fields
-	Logger        m_logger;
 	Window        m_window;
 	SystemContext m_context;
 

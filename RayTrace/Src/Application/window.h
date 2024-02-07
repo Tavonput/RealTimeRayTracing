@@ -10,7 +10,7 @@ public:
 	bool framebufferResized = false;
 
 	// Initializer
-	void init(uint32_t width, uint32_t height, Logger logger);
+	void init(uint32_t width, uint32_t height);
 
 	// Getters
 	GLFWwindow* getWindowGLFW() const;
@@ -22,7 +22,5 @@ public:
 	void cleanup();
 
 private:
-	Logger m_logger;
-
 	GLFWwindow* m_window = nullptr;
 };
