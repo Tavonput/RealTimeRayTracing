@@ -7,8 +7,8 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Store frames in flight value
 	m_framesInFlight = createInfo.framesInFlight;
 
-	// Logger
-	Logger::init(LogLevel::TRACE);
+	// Initialize logger to info level
+	Logger::init(LogLevel::INFO);
 
 	// Window
 	m_window.init(createInfo.windowWidth, createInfo.windowHeight);
@@ -59,8 +59,11 @@ void Application::run()
 
 	APP_LOG_INFO("Starting main render loop");
 
+	// Change logger to trace level
+	Logger::changeLogLevel(LogLevel::TRACE);
+
 	// Run until the window is closed
-	while (!glfwWindowShouldClose(m_window.getWindowGLFW()))
+	while (!m_window.isWindowClosed())
 	{
 		// Process input events
 		glfwPollEvents();
@@ -82,10 +85,13 @@ void Application::run()
 
 	}
 
+	// Change logger to info level
+	Logger::changeLogLevel(LogLevel::INFO);
+
 	APP_LOG_INFO("Main render loop ended");
 
 	// Wait for the gpu to finish
-	vkDeviceWaitIdle(m_context.getDevice().getLogical());
+	m_context.getDevice().waitForGPU();
 
 	cleanup();
 }

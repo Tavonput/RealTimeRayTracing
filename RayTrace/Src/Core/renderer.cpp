@@ -15,7 +15,10 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 	if (vkBeginCommandBuffer(ctx.commandBuffer, &beginInfo) != VK_SUCCESS)
-		throw std::runtime_error("Failed to begin recording command buffer");
+	{
+		APP_LOG_CRITICAL("Failed to begin recording command buffer");
+		throw;
+	}
 
 	// Update dynamic states
 	VkExtent2D extent = ctx.swapchain.getExtent();

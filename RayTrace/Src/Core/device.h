@@ -34,6 +34,8 @@ public:
 	const VkQueue& getGraphicsQueue() const;
 	const VkQueue& getPresentQueue() const;
 
+	const void waitForGPU() const;
+
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,
 		VkImageTiling tiling,

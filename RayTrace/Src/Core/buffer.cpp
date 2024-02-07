@@ -86,7 +86,10 @@ void Buffer::createBuffer(
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device.getLogical(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create buffer");
+    {
+        APP_LOG_CRITICAL("Failed to create buffer");
+        throw;
+    }
 
     // Get memory requirements
     VkMemoryRequirements memRequirements;
@@ -99,7 +102,10 @@ void Buffer::createBuffer(
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, properties, device.getPhysical());
 
     if (vkAllocateMemory(device.getLogical(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    {
+        APP_LOG_CRITICAL("Failed to allocate buffer memory");
+        throw;
+    }
 
     // Bind memory
     vkBindBufferMemory(device.getLogical(), buffer, bufferMemory, 0);

@@ -17,6 +17,8 @@ class Logger
 public:
 	static void init(LogLevel level);
 
+	static void changeLogLevel(LogLevel level);
+
 	inline static std::shared_ptr<spdlog::logger>& getAppLogger() { return s_appLogger; }
 	inline static std::shared_ptr<spdlog::logger>& getValLogger() { return s_valLogger; }
 

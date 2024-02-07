@@ -17,6 +17,7 @@ public:
 	void getSize(int* width, int* height) const;
 
 	void resetFramebufferResize();
+	bool isWindowClosed();
 
 	// Cleanup
 	void cleanup();

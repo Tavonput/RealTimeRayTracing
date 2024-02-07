@@ -8,8 +8,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData)
 {
-	// Debug messenger validation layer callback
-	std::cerr << "[ VK VALIDATION ]: " << pCallbackData->pMessage << std::endl;
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT || messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+		VAL_LOG_TRACE("{}", pCallbackData->pMessage);
+
+	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		VAL_LOG_WARN("{}", pCallbackData->pMessage);
+
+	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		VAL_LOG_ERROR("{}", pCallbackData->pMessage);
+
 	return VK_FALSE;
 }
 
@@ -17,7 +24,7 @@ void SystemContext::init(Window& window)
 {
 	initInstance();
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	initDebugMessenger();
 #endif
 
@@ -42,7 +49,7 @@ void SystemContext::cleanup()
 
 	APP_LOG_INFO("Destroying system context");
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	destroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 #endif
 
@@ -54,7 +61,7 @@ void SystemContext::initInstance()
 {
 	APP_LOG_INFO("Initializing Vulkan instance");
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	m_instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
 
@@ -83,7 +90,7 @@ void SystemContext::initInstance()
 
 	// Debug messenger
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	populateDebugMessengerCreateInfo(debugCreateInfo);
 	createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
@@ -153,6 +160,7 @@ void SystemContext::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreate
 	createInfo = {};
 	createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	createInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -170,7 +178,7 @@ std::vector<const char*> SystemContext::getRequiredExtensions()
 
 	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-#ifdef RT_DEBUG
+#ifndef RT_DIST
 	extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 

@@ -34,5 +34,8 @@ void Image::setupImageView(
     createInfo.subresourceRange.layerCount     = layerCount;
 
     if (vkCreateImageView(device, &createInfo, nullptr, &imageView) != VK_SUCCESS)
-        throw std::runtime_error("failed to create image views!");
+    {
+        APP_LOG_CRITICAL("Failed to create image view");
+        throw;
+    }
 }

@@ -17,3 +17,9 @@ void Logger::init(LogLevel level)
 	s_valLogger = spdlog::stdout_color_mt("VAL");
 	s_valLogger->set_level((spdlog::level::level_enum)level);
 }
+
+void Logger::changeLogLevel(LogLevel level)
+{
+	s_appLogger->set_level((spdlog::level::level_enum)level);
+	s_valLogger->set_level((spdlog::level::level_enum)level);
+}

@@ -35,6 +35,11 @@ const VkQueue& Device::getPresentQueue() const
 	return m_presentQueue;
 }
 
+const void Device::waitForGPU() const
+{
+	vkDeviceWaitIdle(m_logical);
+}
+
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
 	for (VkFormat format : candidates)

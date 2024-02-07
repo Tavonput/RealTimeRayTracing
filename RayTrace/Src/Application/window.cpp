@@ -5,6 +5,8 @@
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	// Callback on a window resize
+	APP_LOG_TRACE("Detected framebuffer resize w: {}, h: {}", width, height);
+
 	auto context = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	context->framebufferResized = true;
 }
@@ -43,6 +45,11 @@ void Window::getSize(int* width, int* height) const
 void Window::resetFramebufferResize()
 {
 	framebufferResized = false;
+}
+
+bool Window::isWindowClosed()
+{
+	return glfwWindowShouldClose(m_window);
 }
 
 void Window::cleanup()
