@@ -50,7 +50,7 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode             = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth               = 1.0f;
-	rasterizer.cullMode                = VK_CULL_MODE_FRONT_BIT;
+	rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable         = VK_FALSE;
 
@@ -101,12 +101,19 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates    = dynamicStates.data();
 
+	// Push constants
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(MeshPushConstants);
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	// Pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount         = 0;
 	pipelineLayoutInfo.pSetLayouts            = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges    = &pushConstantRange;
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
 
 	VkPipelineLayout layout;
 	if (vkCreatePipelineLayout(m_device->getLogical(), &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
@@ -142,7 +149,7 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 
 	shaders.cleanup();
 
-	APP_LOG_INFO("Pipeling build successful");
+	APP_LOG_INFO("Pipeline build successful");
 
 	return Pipeline(pipeline, layout);
 }

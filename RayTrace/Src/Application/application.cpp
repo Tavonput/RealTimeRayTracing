@@ -50,12 +50,10 @@ void Application::run()
 
 	// Load scene
 	APP_LOG_INFO("Loading scene");
-	ExampleScene scene;
+	SimpleCubeScene scene;
 	scene.onLoad(m_context.getDevice(), m_commandSystem);
 
-	// Change logger to trace level
 	Logger::changeLogLevel(LogLevel::TRACE);
-
 	APP_LOG_INFO("Starting main render loop");
 
 	// Run until the window is closed
@@ -65,17 +63,12 @@ void Application::run()
 		scene.onUpdate(rctx);
 	}
 
-	// Change logger to info level
+	APP_LOG_INFO("Main render loop ended");
 	Logger::changeLogLevel(LogLevel::INFO);
 
-	APP_LOG_INFO("Main render loop ended");
-
-	// Wait for the gpu to finish
+	// Cleanup
 	m_context.getDevice().waitForGPU();
-
-	// Unload scene
 	scene.onUnload();
-
 	cleanup();
 }
 
@@ -91,7 +84,7 @@ void Application::createRenderPass()
 		m_swapchain.getFormat(),
 		m_swapchain.getMSAASampleCount(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {1.0f, 1.0f, 1.0f, 1.0f} });
+		{ {0.0f, 0.0f, 0.0f, 1.0f} });
 
 	// Add depth attachment for depth buffer
 	builder.addDepthAttachment(
@@ -104,7 +97,7 @@ void Application::createRenderPass()
 	builder.addResolveAttachment(
 		m_swapchain.getFormat(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {1.0f, 1.0f, 1.0f, 1.0f} });
+		{ {0.0f, 0.0f, 0.0f, 1.0f} });
 
 	// Build pass - MAIN
 	m_renderPasses.push_back(builder.buildPass());

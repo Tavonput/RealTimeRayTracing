@@ -2,7 +2,7 @@
 
 #include "logging.h"
 
-#include "Scene/example_scene.h"
+#include "Scene/simple_cube_scene.h"
 
 #include "Core/system_context.h"
 #include "Core/swapchain.h"

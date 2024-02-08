@@ -6,6 +6,7 @@
 #include "render_pass.h"
 #include "buffer.h"
 #include "pipeline.h"
+#include "push_constant.h"
 
 struct RenderingContext
 {
@@ -22,10 +23,18 @@ struct RenderingContext
 	uint32_t frameIndex = 0;
 	uint32_t imageIndex = 0;
 
+	float deltaTime     = 0.0f;
+	float lastFrameTime = 0.0f;
+
+	float aspectRatio = 0.0f;
+
 	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
+
+	RenderPass::PassType   passIndex     = RenderPass::MAIN;
+	Pipeline::PipelineType pipelineIndex = Pipeline::MAIN;
 
 	// Constructor
 	RenderingContext(
@@ -56,6 +65,8 @@ public:
 	static void BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline);
 	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
 	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
+
+	static void PushConstants(RenderingContext& ctx, MeshPushConstants& pushConstant);
 
 	static void DrawVertex(RenderingContext& ctx);
 	static void DrawIndexed(RenderingContext& ctx);

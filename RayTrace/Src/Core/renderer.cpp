@@ -7,6 +7,11 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	// Acquire image from swapchain
 	ctx.imageIndex = ctx.swapchain.acquireImage(ctx.frameIndex);
 
+	// Compute delta time
+	float currentFrameTime = static_cast<float>(glfwGetTime());
+	ctx.deltaTime = currentFrameTime - ctx.lastFrameTime;
+	ctx.lastFrameTime = currentFrameTime;
+
 	// Reset and begin command buffer
 	ctx.commandBuffer = ctx.commandSystem.getCommandBuffer(ctx.frameIndex);
 	vkResetCommandBuffer(ctx.commandBuffer, 0);
@@ -36,6 +41,8 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	scissor.offset = { 0, 0 };
 	scissor.extent = extent;
 	vkCmdSetScissor(ctx.commandBuffer, 0, 1, &scissor);
+
+	ctx.aspectRatio = extent.width / (float)extent.height;
 }
 
 void Renderer::Submit(RenderingContext& ctx)
@@ -63,6 +70,8 @@ void Renderer::BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass)
 	beginInfo.pClearValues      = ctx.renderPasses[pass].clearValues.data();
 
 	vkCmdBeginRenderPass(ctx.commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	ctx.passIndex = pass;
 }
 
 void Renderer::EndRenderPass(RenderingContext& ctx)
@@ -73,6 +82,8 @@ void Renderer::EndRenderPass(RenderingContext& ctx)
 void Renderer::BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline)
 {
 	vkCmdBindPipeline(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[pipeline].pipeline);
+
+	ctx.pipelineIndex = pipeline;
 }
 
 void Renderer::BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer)
@@ -89,6 +100,11 @@ void Renderer::BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer)
 	vkCmdBindIndexBuffer(ctx.commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 	ctx.indexBuffer = indexBuffer;
+}
+
+void Renderer::PushConstants(RenderingContext& ctx, MeshPushConstants& pushConstant)
+{
+	vkCmdPushConstants(ctx.commandBuffer, ctx.pipelines[ctx.pipelineIndex].layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &pushConstant);
 }
 
 void Renderer::DrawVertex(RenderingContext& ctx)
