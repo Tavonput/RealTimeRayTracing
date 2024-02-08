@@ -187,43 +187,13 @@ void RenderPass::Builder::addResolveAttachment(VkFormat format, VkImageLayout in
 
 // -----------------------------------------------------
 // -----------------------------------------------------
-// Manager
+// Render Pass
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-void RenderPass::Manager::init(const Device& device)
-{
-	m_device = &device;
-}
-
-void RenderPass::Manager::addPass(RenderPass renderPass)
-{
-	m_passes.push_back(renderPass);
-}
-
-void RenderPass::Manager::beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer)
-{
-	VkRenderPassBeginInfo beginInfo{};
-	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.renderPass        = m_passes[index].renderPass;
-	beginInfo.framebuffer       = framebuffer;
-	beginInfo.renderArea.offset = { 0, 0 };
-	beginInfo.renderArea.extent = extent;
-	beginInfo.clearValueCount   = static_cast<uint32_t>(m_passes[index].clearValues.size());
-	beginInfo.pClearValues      = m_passes[index].clearValues.data();
-
-	vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-VkRenderPass& RenderPass::Manager::getPass(uint32_t index)
-{
-	return m_passes[index].renderPass;
-}
-
-void RenderPass::Manager::cleanup()
+void RenderPass::cleanup(const Device& device)
 {
 	APP_LOG_INFO("Destroying render passes");
 
-	for (auto& pass : m_passes)
-		vkDestroyRenderPass(m_device->getLogical(), pass.renderPass, nullptr);
+	vkDestroyRenderPass(device.getLogical(), renderPass, nullptr);
 }

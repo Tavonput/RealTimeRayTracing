@@ -1,23 +1,23 @@
 #include "pch.h"
 
-#include "command_manager.h"
+#include "command.h"
 
-void CommandManager::init(CommandManagerCreateInfo& createInfo)
+void CommandSystem::init(const Device& device, uint32_t bufferCount)
 {
-	m_device = createInfo.device;
+	m_device = &device;
 
-	m_buffers.resize(createInfo.graphicsBufferCount);
+	m_buffers.resize(bufferCount);
 
 	createCommandPool();
-    createGraphicsBuffers(createInfo.graphicsBufferCount);
+    createGraphicsBuffers(bufferCount);
 }
 
-VkCommandBuffer CommandManager::getCommandBuffer(uint32_t index)
+VkCommandBuffer CommandSystem::getCommandBuffer(uint32_t index)
 {
     return m_buffers[index];
 }
 
-VkCommandBuffer CommandManager::beginSingleTimeCommands()
+VkCommandBuffer CommandSystem::beginSingleTimeCommands()
 {
     // Allocate a single use command buffer
     VkCommandBufferAllocateInfo allocInfo{};
@@ -39,7 +39,7 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue)
+void CommandSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue)
 {
     // End command buffer
     vkEndCommandBuffer(commandBuffer);
@@ -57,14 +57,14 @@ void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const 
     vkFreeCommandBuffers(m_device->getLogical(), m_pool, 1, &commandBuffer);
 }
 
-void CommandManager::cleanup()
+void CommandSystem::cleanup()
 {
     APP_LOG_INFO("Destroying command manager");
 
     vkDestroyCommandPool(m_device->getLogical(), m_pool, nullptr);
 }
 
-void CommandManager::createCommandPool()
+void CommandSystem::createCommandPool()
 {
     APP_LOG_INFO("Initializing command pool");
 
@@ -84,7 +84,7 @@ void CommandManager::createCommandPool()
     APP_LOG_INFO("Command pool initialization successful");
 }
 
-void CommandManager::createGraphicsBuffers(uint32_t count)
+void CommandSystem::createGraphicsBuffers(uint32_t count)
 {
     APP_LOG_INFO("Allocating {} command buffers for graphics rendering", count);
 

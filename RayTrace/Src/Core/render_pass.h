@@ -7,6 +7,12 @@ class RenderPass
 {
 public:
 
+	// All render passes
+	enum PassType
+	{
+		MAIN
+	};
+
 	// Builder Class
 	class Builder
 	{
@@ -57,29 +63,12 @@ public:
 		std::vector<VkClearValue>            m_clearValues;
 	};
 
-	// Manager Class
-	class Manager
-	{
-	public:
-		void init(const Device& device);
-
-		void addPass(RenderPass renderPass);
-		void beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer);
-
-		VkRenderPass& getPass(uint32_t index);
-
-		void cleanup();
-
-	private:
-		const Device* m_device;
-
-		std::vector<RenderPass> m_passes;
-	};
-
 	// Render Pass Class
 	VkRenderPass              renderPass;
 	std::vector<VkClearValue> clearValues;
 
 	RenderPass(VkRenderPass _renderPass, std::vector<VkClearValue> _clearValues)
 		: renderPass(_renderPass), clearValues(_clearValues) {}
+
+	void cleanup(const Device& device);
 };

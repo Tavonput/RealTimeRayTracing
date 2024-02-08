@@ -2,18 +2,18 @@
 
 #include "Application/logging.h"
 #include "device.h"
-#include "command_manager.h"
+#include "command.h"
 
 class Buffer
 {
 public:
 	struct CreateInfo
 	{
-		const void*        data           = nullptr;
-		VkDeviceSize dataSize       = 0;
-		uint32_t     dataCount      = 0;
-		const Device*      device         = nullptr;
-		CommandManager*    commandManager = nullptr;
+		const void*    data          = nullptr;
+		VkDeviceSize   dataSize      = 0;
+		uint32_t       dataCount     = 0;
+		const Device*  device        = nullptr;
+		CommandSystem* commandSystem = nullptr;
 	};
 
 	Buffer() {}
@@ -38,7 +38,7 @@ public:
 		VkBuffer srcBuffer,
 		VkBuffer dstBuffer,
 		VkDeviceSize size,
-		CommandManager& commandManager,
+		CommandSystem& commandSystem,
 		const VkQueue& queue);
 
 private:
@@ -56,5 +56,5 @@ private:
 		const VkDeviceSize dataSize,
 		const uint32_t dataCount,
 		const Device& device,
-		CommandManager& commandManager);
+		CommandSystem& commandSystem);
 };

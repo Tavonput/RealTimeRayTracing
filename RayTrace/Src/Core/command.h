@@ -3,17 +3,10 @@
 #include "Application/logging.h"
 #include "device.h"
 
-struct CommandManagerCreateInfo
-{
-	const Device* device;
-
-	uint32_t graphicsBufferCount = 1;
-};
-
-class CommandManager
+class CommandSystem
 {
 public:
-	void init(CommandManagerCreateInfo& createInfo);
+	void init(const Device& device, uint32_t bufferCount);
 
 	VkCommandBuffer getCommandBuffer(uint32_t index);
 

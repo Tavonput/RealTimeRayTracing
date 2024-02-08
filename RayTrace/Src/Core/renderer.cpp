@@ -8,7 +8,7 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	ctx.imageIndex = ctx.swapchain.acquireImage(ctx.frameIndex);
 
 	// Reset and begin command buffer
-	ctx.commandBuffer = ctx.commandManager.getCommandBuffer(ctx.frameIndex);
+	ctx.commandBuffer = ctx.commandSystem.getCommandBuffer(ctx.frameIndex);
 	vkResetCommandBuffer(ctx.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -51,13 +51,18 @@ void Renderer::EndFrame(RenderingContext& ctx)
 	ctx.frameIndex = (ctx.frameIndex + 1) % ctx.framesInFlight;
 }
 
-void Renderer::BeginRenderPass(RenderingContext& ctx, uint32_t passIndex)
+void Renderer::BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass)
 {
-	ctx.renderPassManager.beginPass(
-		passIndex,
-		ctx.swapchain.getFramebuffer(ctx.imageIndex),
-		ctx.swapchain.getExtent(),
-		ctx.commandBuffer);
+	VkRenderPassBeginInfo beginInfo{};
+	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	beginInfo.renderPass        = ctx.renderPasses[pass].renderPass;
+	beginInfo.framebuffer       = ctx.swapchain.getFramebuffer(ctx.imageIndex);
+	beginInfo.renderArea.offset = { 0, 0 };
+	beginInfo.renderArea.extent = ctx.swapchain.getExtent();
+	beginInfo.clearValueCount   = static_cast<uint32_t>(ctx.renderPasses[pass].clearValues.size());
+	beginInfo.pClearValues      = ctx.renderPasses[pass].clearValues.data();
+
+	vkCmdBeginRenderPass(ctx.commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Renderer::EndRenderPass(RenderingContext& ctx)
@@ -65,9 +70,9 @@ void Renderer::EndRenderPass(RenderingContext& ctx)
 	vkCmdEndRenderPass(ctx.commandBuffer);
 }
 
-void Renderer::BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex)
+void Renderer::BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline)
 {
-	ctx.pipelineManager.bindPipeline(pipelineIndex, ctx.commandBuffer);
+	vkCmdBindPipeline(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[pipeline].pipeline);
 }
 
 void Renderer::BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer)

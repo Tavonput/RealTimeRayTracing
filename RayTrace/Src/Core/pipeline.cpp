@@ -149,32 +149,14 @@ Pipeline Pipeline::Builder::buildPipeline(const char* vertexShaderPath, const ch
 
 // -----------------------------------------------------
 // -----------------------------------------------------
-// Manager
+// Pipeline
 // -----------------------------------------------------
 // -----------------------------------------------------
 
-void Pipeline::Manager::init(const Device& device)
+void Pipeline::cleanup(const Device& device)
 {
-	m_device = &device;
-}
+	APP_LOG_INFO("Destroying pipeline");
 
-void Pipeline::Manager::addPipeline(Pipeline pipeline)
-{
-	m_pipelines.push_back(pipeline);
-}
-
-void Pipeline::Manager::bindPipeline(uint32_t index, VkCommandBuffer commandBuffer)
-{
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[index].pipeline);
-}
-
-void Pipeline::Manager::cleanup()
-{
-	APP_LOG_INFO("Destroying pipelines");
-
-	for (auto& pipeline : m_pipelines)
-	{
-		vkDestroyPipeline(m_device->getLogical(), pipeline.pipeline, nullptr);
-		vkDestroyPipelineLayout(m_device->getLogical(), pipeline.layout, nullptr);
-	}
+	vkDestroyPipeline(device.getLogical(), pipeline, nullptr);
+	vkDestroyPipelineLayout(device.getLogical(), layout, nullptr);
 }

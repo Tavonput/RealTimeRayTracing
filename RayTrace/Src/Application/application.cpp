@@ -26,21 +26,15 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	m_swapchain.init(swapchainCreateInfo);
 
 	// Render pass manager
-	m_renderPassManager.init(m_context.getDevice());
 	createRenderPass();
 
 	// Update the swapchain framebuffers with the render pass
-	m_swapchain.setupFramebuffers(m_renderPassManager.getPass(0));
+	m_swapchain.setupFramebuffers(m_renderPasses[RenderPass::MAIN].renderPass);
 
-	// Command manager
-	CommandManagerCreateInfo commandManagerCreateInfo{};
-	commandManagerCreateInfo.device              = &m_context.getDevice();
-	commandManagerCreateInfo.graphicsBufferCount = m_framesInFlight;
+	// Command system
+	m_commandSystem.init(m_context.getDevice(), m_framesInFlight);
 
-	m_commandManager.init(commandManagerCreateInfo);
-
-	// Pipeline manager
-	m_pipelineManager.init(m_context.getDevice());
+	// Pipeline
 	createPipeline();
 
 	// Create scene data
@@ -52,9 +46,9 @@ void Application::run()
 	// Setup rendering context
 	RenderingContext rCtx(
 		m_swapchain,
-		m_commandManager,
-		m_renderPassManager,
-		m_pipelineManager,
+		m_commandSystem,
+		m_renderPasses,
+		m_pipelines,
 		m_framesInFlight);
 
 	APP_LOG_INFO("Starting main render loop");
@@ -71,9 +65,9 @@ void Application::run()
 		{
 			Renderer::BeginFrame(rCtx);
 
-			Renderer::BeginRenderPass(rCtx, 0);
+			Renderer::BeginRenderPass(rCtx, RenderPass::MAIN);
 
-			Renderer::BindPipeline(rCtx, 0);
+			Renderer::BindPipeline(rCtx, Pipeline::MAIN);
 			Renderer::BindVertexBuffer(rCtx, m_vertexBuffer);
 			Renderer::BindIndexBuffer(rCtx, m_indexBuffer);
 			Renderer::DrawIndexed(rCtx, m_indexBuffer);
@@ -125,11 +119,8 @@ void Application::createRenderPass()
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		{ {1.0f, 1.0f, 1.0f, 1.0f} });
 
-	// Build pass
-	RenderPass renderPass = builder.buildPass();
-
-	// Store pass in manager
-	m_renderPassManager.addPass(renderPass);
+	// Build pass - MAIN
+	m_renderPasses.push_back(builder.buildPass());
 }
 
 void Application::createPipeline()
@@ -139,14 +130,13 @@ void Application::createPipeline()
 	// Create a pipeline builder
 	auto builder = Pipeline::Builder(m_context.getDevice());
 
-	// Build a graphics pipeline
-	Pipeline pipeline = builder.buildPipeline(
-		"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
-		m_renderPassManager.getPass(0),
-		m_swapchain.getMSAASampleCount());
-
-	// Store pipeline in manager
-	m_pipelineManager.addPipeline(pipeline);
+	// Build a graphics pipeline - MAIN
+	m_pipelines.push_back(
+		builder.buildPipeline(
+			"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
+			m_renderPasses[RenderPass::MAIN].renderPass,
+			m_swapchain.getMSAASampleCount())
+	);
 }
 
 void Application::createSceneData()
@@ -176,7 +166,7 @@ void Application::createSceneData()
 	createInfo.dataSize       = sizeof(Vertex) * vertices.size();
 	createInfo.dataCount      = static_cast<uint32_t>(vertices.size());
 	createInfo.device         = &m_context.getDevice();
-	createInfo.commandManager = &m_commandManager;
+	createInfo.commandSystem  = &m_commandSystem;
 
 	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
 
@@ -194,11 +184,17 @@ void Application::cleanup()
 	m_vertexBuffer.cleanup();
 	m_indexBuffer.cleanup();
 
-	// Managers
-	m_commandManager.cleanup();
-	m_renderPassManager.cleanup();
-	m_pipelineManager.cleanup();
+	// Render passes
+	for (auto& renderPass : m_renderPasses)
+		renderPass.cleanup(m_context.getDevice());
 
+	// Pipelines
+	for (auto& pipeline : m_pipelines)
+		pipeline.cleanup(m_context.getDevice());
+
+	// Command System
+	m_commandSystem.cleanup();
+	
 	// Swapchain
 	m_swapchain.cleanup();
 

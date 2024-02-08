@@ -2,7 +2,7 @@
 
 #include "device.h"
 #include "swapchain.h"
-#include "command_manager.h"
+#include "command.h"
 #include "render_pass.h"
 #include "buffer.h"
 #include "pipeline.h"
@@ -11,9 +11,9 @@ struct RenderingContext
 {
 	// Provided by the application
 	Swapchain&           swapchain;
-	CommandManager&      commandManager;
-	RenderPass::Manager& renderPassManager;
-	Pipeline::Manager&   pipelineManager;
+	CommandSystem&      commandSystem;
+	std::vector<RenderPass>& renderPasses;
+	std::vector<Pipeline>&   pipelines;
 
 	uint32_t framesInFlight = 1;
 
@@ -26,15 +26,15 @@ struct RenderingContext
 	// Constructor
 	RenderingContext(
 		Swapchain&           _swapchain, 
-		CommandManager&      _commandManager, 
-		RenderPass::Manager& _renderPassManager, 
-		Pipeline::Manager&   _pipelineManager, 
+		CommandSystem&      _commandSystem, 
+		std::vector<RenderPass>& _renderPasses,
+		std::vector<Pipeline>&   _pipelines,
 		uint32_t             _framesInFlight
 	)
 		: swapchain        (_swapchain), 
-		  commandManager   (_commandManager), 
-		  renderPassManager(_renderPassManager), 
-		  pipelineManager  (_pipelineManager), 
+		  commandSystem   (_commandSystem), 
+		  renderPasses     (_renderPasses),
+		  pipelines        (_pipelines), 
 		  framesInFlight   (_framesInFlight)
 	{}
 };
@@ -46,10 +46,10 @@ public:
 	static void Submit(RenderingContext& ctx);
 	static void EndFrame(RenderingContext& ctx);
 
-	static void BeginRenderPass(RenderingContext& ctx, uint32_t passIndex);
+	static void BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass);
 	static void EndRenderPass(RenderingContext& ctx);
 
-	static void BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex);
+	static void BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline);
 	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
 	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
 
