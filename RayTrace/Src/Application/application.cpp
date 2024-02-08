@@ -25,7 +25,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	m_swapchain.init(swapchainCreateInfo);
 
-	// Render pass manager
+	// Render pass
 	createRenderPass();
 
 	// Update the swapchain framebuffers with the render pass
@@ -36,49 +36,33 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	// Pipeline
 	createPipeline();
-
-	// Create scene data
-	createSceneData();
 }
 
 void Application::run()
 {
 	// Setup rendering context
-	RenderingContext rCtx(
+	RenderingContext rctx(
 		m_swapchain,
 		m_commandSystem,
 		m_renderPasses,
 		m_pipelines,
 		m_framesInFlight);
 
-	APP_LOG_INFO("Starting main render loop");
+	// Load scene
+	APP_LOG_INFO("Loading scene");
+	ExampleScene scene;
+	scene.onLoad(m_context.getDevice(), m_commandSystem);
 
 	// Change logger to trace level
 	Logger::changeLogLevel(LogLevel::TRACE);
 
+	APP_LOG_INFO("Starting main render loop");
+
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
-		// Process input events
 		glfwPollEvents();
-
-		{
-			Renderer::BeginFrame(rCtx);
-
-			Renderer::BeginRenderPass(rCtx, RenderPass::MAIN);
-
-			Renderer::BindPipeline(rCtx, Pipeline::MAIN);
-			Renderer::BindVertexBuffer(rCtx, m_vertexBuffer);
-			Renderer::BindIndexBuffer(rCtx, m_indexBuffer);
-			Renderer::DrawIndexed(rCtx, m_indexBuffer);
-
-			Renderer::EndRenderPass(rCtx);
-
-			Renderer::Submit(rCtx);
-
-			Renderer::EndFrame(rCtx);
-		}
-
+		scene.onUpdate(rctx);
 	}
 
 	// Change logger to info level
@@ -88,6 +72,9 @@ void Application::run()
 
 	// Wait for the gpu to finish
 	m_context.getDevice().waitForGPU();
+
+	// Unload scene
+	scene.onUnload();
 
 	cleanup();
 }
@@ -139,51 +126,8 @@ void Application::createPipeline()
 	);
 }
 
-void Application::createSceneData()
-{
-	// Define two rectangles
-	std::vector<Vertex> vertices = {
-		// Position             Color
-		{{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}}, 
-		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 0.0f}},
-
-		{{-0.4f, -0.6f,  0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.6f, -0.6f,  0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.6f,  0.4f,  0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.4f,  0.4f,  0.0f}, {0.0f, 0.0f, 0.0f}}
-	};
-
-	std::vector<uint32_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
-
-	// Create the vertex buffer
-	Buffer::CreateInfo createInfo{};
-	createInfo.data           = vertices.data();
-	createInfo.dataSize       = sizeof(Vertex) * vertices.size();
-	createInfo.dataCount      = static_cast<uint32_t>(vertices.size());
-	createInfo.device         = &m_context.getDevice();
-	createInfo.commandSystem  = &m_commandSystem;
-
-	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
-
-	// Create the index buffer
-	createInfo.data      = indices.data();
-	createInfo.dataSize  = sizeof(Vertex) * indices.size();
-	createInfo.dataCount = static_cast<uint32_t>(indices.size());
-
-	m_indexBuffer = Buffer::CreateIndexBuffer(createInfo);
-}
-
 void Application::cleanup()
 {
-	// Scene data
-	m_vertexBuffer.cleanup();
-	m_indexBuffer.cleanup();
-
 	// Render passes
 	for (auto& renderPass : m_renderPasses)
 		renderPass.cleanup(m_context.getDevice());

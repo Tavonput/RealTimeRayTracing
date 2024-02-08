@@ -80,19 +80,23 @@ void Renderer::BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer)
 	VkBuffer vertexBuffers[] = { vertexBuffer.getBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(ctx.commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	ctx.vertexBuffer = vertexBuffer;
 }
 
 void Renderer::BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer)
 {
 	vkCmdBindIndexBuffer(ctx.commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+	ctx.indexBuffer = indexBuffer;
 }
 
-void Renderer::DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer)
+void Renderer::DrawVertex(RenderingContext& ctx)
 {
-	vkCmdDraw(ctx.commandBuffer, vertexBuffer.getCount(), 1, 0, 0);
+	vkCmdDraw(ctx.commandBuffer, ctx.vertexBuffer.getCount(), 1, 0, 0);
 }
 
-void Renderer::DrawIndexed(RenderingContext& ctx, Buffer& indexBuffer)
+void Renderer::DrawIndexed(RenderingContext& ctx)
 {
-	vkCmdDrawIndexed(ctx.commandBuffer, indexBuffer.getCount(), 1, 0, 0, 0);
+	vkCmdDrawIndexed(ctx.commandBuffer, ctx.indexBuffer.getCount(), 1, 0, 0, 0);
 }

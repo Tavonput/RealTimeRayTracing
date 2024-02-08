@@ -17,7 +17,7 @@ VkCommandBuffer CommandSystem::getCommandBuffer(uint32_t index)
     return m_buffers[index];
 }
 
-VkCommandBuffer CommandSystem::beginSingleTimeCommands()
+VkCommandBuffer CommandSystem::beginSingleTimeCommands() const
 {
     // Allocate a single use command buffer
     VkCommandBufferAllocateInfo allocInfo{};
@@ -39,7 +39,7 @@ VkCommandBuffer CommandSystem::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void CommandSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue)
+void CommandSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue) const
 {
     // End command buffer
     vkEndCommandBuffer(commandBuffer);

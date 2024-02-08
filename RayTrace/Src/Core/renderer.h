@@ -10,29 +10,33 @@
 struct RenderingContext
 {
 	// Provided by the application
-	Swapchain&           swapchain;
-	CommandSystem&      commandSystem;
+	Swapchain&               swapchain;
+	CommandSystem&           commandSystem;
+
 	std::vector<RenderPass>& renderPasses;
 	std::vector<Pipeline>&   pipelines;
 
 	uint32_t framesInFlight = 1;
 
-	// Handled by the renderer
+	// Current rendering state
 	uint32_t frameIndex = 0;
 	uint32_t imageIndex = 0;
 
 	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 
+	Buffer vertexBuffer;
+	Buffer indexBuffer;
+
 	// Constructor
 	RenderingContext(
-		Swapchain&           _swapchain, 
-		CommandSystem&      _commandSystem, 
+		Swapchain&               _swapchain, 
+		CommandSystem&           _commandSystem, 
 		std::vector<RenderPass>& _renderPasses,
 		std::vector<Pipeline>&   _pipelines,
-		uint32_t             _framesInFlight
+		uint32_t                 _framesInFlight
 	)
 		: swapchain        (_swapchain), 
-		  commandSystem   (_commandSystem), 
+		  commandSystem    (_commandSystem), 
 		  renderPasses     (_renderPasses),
 		  pipelines        (_pipelines), 
 		  framesInFlight   (_framesInFlight)
@@ -53,6 +57,6 @@ public:
 	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
 	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
 
-	static void DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer);
-	static void DrawIndexed(RenderingContext& ctx, Buffer& indexBuffer);
+	static void DrawVertex(RenderingContext& ctx);
+	static void DrawIndexed(RenderingContext& ctx);
 };

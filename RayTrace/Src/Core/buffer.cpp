@@ -87,7 +87,7 @@ void Buffer::copyBuffer(
     VkBuffer srcBuffer, 
     VkBuffer dstBuffer, 
     VkDeviceSize size, 
-    CommandSystem& commandSystem, 
+    const CommandSystem& commandSystem, 
     const VkQueue& queue)
 {
     // Allocate and begin a single-use command buffer
@@ -110,7 +110,7 @@ Buffer::Buffer(
     const VkDeviceSize dataSize,
     const uint32_t dataCount,
     const Device& device,
-    CommandSystem& commandPool)
+    const CommandSystem& commandPool)
 {
     m_device = &device;
 

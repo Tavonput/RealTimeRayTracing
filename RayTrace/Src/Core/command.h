@@ -10,11 +10,9 @@ public:
 
 	VkCommandBuffer getCommandBuffer(uint32_t index);
 
-	VkCommandBuffer beginSingleTimeCommands();
+	VkCommandBuffer beginSingleTimeCommands() const;
 
-	void endSingleTimeCommands(
-		VkCommandBuffer commandBuffer,
-		const VkQueue& queue);
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue) const;
 
 	void cleanup();
 

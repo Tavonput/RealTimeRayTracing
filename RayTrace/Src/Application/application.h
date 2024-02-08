@@ -2,6 +2,8 @@
 
 #include "logging.h"
 
+#include "Scene/example_scene.h"
+
 #include "Core/system_context.h"
 #include "Core/swapchain.h"
 #include "Core/render_pass.h"
@@ -40,13 +42,8 @@ private:
 
 	uint32_t m_framesInFlight = 1;
 
-	// Scene data fields
-	Buffer m_vertexBuffer;
-	Buffer m_indexBuffer;
-
 	void createRenderPass();
 	void createPipeline();
-	void createSceneData();
 
 	void cleanup();
 };

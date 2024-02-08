@@ -9,11 +9,11 @@ class Buffer
 public:
 	struct CreateInfo
 	{
-		const void*    data          = nullptr;
-		VkDeviceSize   dataSize      = 0;
-		uint32_t       dataCount     = 0;
-		const Device*  device        = nullptr;
-		CommandSystem* commandSystem = nullptr;
+		const void*          data          = nullptr;
+		VkDeviceSize         dataSize      = 0;
+		uint32_t             dataCount     = 0;
+		const Device*        device        = nullptr;
+		const CommandSystem* commandSystem = nullptr;
 	};
 
 	Buffer() {}
@@ -38,7 +38,7 @@ public:
 		VkBuffer srcBuffer,
 		VkBuffer dstBuffer,
 		VkDeviceSize size,
-		CommandSystem& commandSystem,
+		const CommandSystem& commandSystem,
 		const VkQueue& queue);
 
 private:
@@ -56,5 +56,5 @@ private:
 		const VkDeviceSize dataSize,
 		const uint32_t dataCount,
 		const Device& device,
-		CommandSystem& commandSystem);
+		const CommandSystem& commandSystem);
 };
