@@ -25,76 +25,50 @@ void Application::init(ApplicationCreateInfo& createInfo)
 
 	m_swapchain.init(swapchainCreateInfo);
 
-	// Render pass manager
-	m_renderPassManager.init(m_context.getDevice());
+	// Render pass
 	createRenderPass();
 
 	// Update the swapchain framebuffers with the render pass
-	m_swapchain.setupFramebuffers(m_renderPassManager.getPass(0));
+	m_swapchain.setupFramebuffers(m_renderPasses[RenderPass::MAIN].renderPass);
 
-	// Command manager
-	CommandManagerCreateInfo commandManagerCreateInfo{};
-	commandManagerCreateInfo.device              = &m_context.getDevice();
-	commandManagerCreateInfo.graphicsBufferCount = m_framesInFlight;
+	// Command system
+	m_commandSystem.init(m_context.getDevice(), m_framesInFlight);
 
-	m_commandManager.init(commandManagerCreateInfo);
-
-	// Pipeline manager
-	m_pipelineManager.init(m_context.getDevice());
+	// Pipeline
 	createPipeline();
-
-	// Create scene data
-	createSceneData();
 }
 
 void Application::run()
 {
 	// Setup rendering context
-	RenderingContext rCtx(
+	RenderingContext rctx(
 		m_swapchain,
-		m_commandManager,
-		m_renderPassManager,
-		m_pipelineManager,
+		m_commandSystem,
+		m_renderPasses,
+		m_pipelines,
 		m_framesInFlight);
 
-	APP_LOG_INFO("Starting main render loop");
+	// Load scene
+	APP_LOG_INFO("Loading scene");
+	SimpleCubeScene scene;
+	scene.onLoad(m_context.getDevice(), m_commandSystem);
 
-	// Change logger to trace level
 	Logger::changeLogLevel(LogLevel::TRACE);
+	APP_LOG_INFO("Starting main render loop");
 
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
-		// Process input events
 		glfwPollEvents();
-
-		{
-			Renderer::BeginFrame(rCtx);
-
-			Renderer::BeginRenderPass(rCtx, 0);
-
-			Renderer::BindPipeline(rCtx, 0);
-			Renderer::BindVertexBuffer(rCtx, m_vertexBuffer);
-			Renderer::BindIndexBuffer(rCtx, m_indexBuffer);
-			Renderer::DrawIndexed(rCtx, m_indexBuffer);
-
-			Renderer::EndRenderPass(rCtx);
-
-			Renderer::Submit(rCtx);
-
-			Renderer::EndFrame(rCtx);
-		}
-
+		scene.onUpdate(rctx);
 	}
 
-	// Change logger to info level
+	APP_LOG_INFO("Main render loop ended");
 	Logger::changeLogLevel(LogLevel::INFO);
 
-	APP_LOG_INFO("Main render loop ended");
-
-	// Wait for the gpu to finish
+	// Cleanup
 	m_context.getDevice().waitForGPU();
-
+	scene.onUnload();
 	cleanup();
 }
 
@@ -110,7 +84,7 @@ void Application::createRenderPass()
 		m_swapchain.getFormat(),
 		m_swapchain.getMSAASampleCount(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {1.0f, 1.0f, 1.0f, 1.0f} });
+		{ {0.0f, 0.0f, 0.0f, 1.0f} });
 
 	// Add depth attachment for depth buffer
 	builder.addDepthAttachment(
@@ -123,13 +97,10 @@ void Application::createRenderPass()
 	builder.addResolveAttachment(
 		m_swapchain.getFormat(),
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		{ {1.0f, 1.0f, 1.0f, 1.0f} });
+		{ {0.0f, 0.0f, 0.0f, 1.0f} });
 
-	// Build pass
-	RenderPass renderPass = builder.buildPass();
-
-	// Store pass in manager
-	m_renderPassManager.addPass(renderPass);
+	// Build pass - MAIN
+	m_renderPasses.push_back(builder.buildPass());
 }
 
 void Application::createPipeline()
@@ -139,66 +110,28 @@ void Application::createPipeline()
 	// Create a pipeline builder
 	auto builder = Pipeline::Builder(m_context.getDevice());
 
-	// Build a graphics pipeline
-	Pipeline pipeline = builder.buildPipeline(
-		"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
-		m_renderPassManager.getPass(0),
-		m_swapchain.getMSAASampleCount());
-
-	// Store pipeline in manager
-	m_pipelineManager.addPipeline(pipeline);
-}
-
-void Application::createSceneData()
-{
-	// Define two rectangles
-	std::vector<Vertex> vertices = {
-		// Position             Color
-		{{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}}, 
-		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 0.0f}},
-
-		{{-0.4f, -0.6f,  0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.6f, -0.6f,  0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.6f,  0.4f,  0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.4f,  0.4f,  0.0f}, {0.0f, 0.0f, 0.0f}}
-	};
-
-	std::vector<uint32_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
-
-	// Create the vertex buffer
-	Buffer::CreateInfo createInfo{};
-	createInfo.data           = vertices.data();
-	createInfo.dataSize       = sizeof(Vertex) * vertices.size();
-	createInfo.dataCount      = static_cast<uint32_t>(vertices.size());
-	createInfo.device         = &m_context.getDevice();
-	createInfo.commandManager = &m_commandManager;
-
-	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
-
-	// Create the index buffer
-	createInfo.data      = indices.data();
-	createInfo.dataSize  = sizeof(Vertex) * indices.size();
-	createInfo.dataCount = static_cast<uint32_t>(indices.size());
-
-	m_indexBuffer = Buffer::CreateIndexBuffer(createInfo);
+	// Build a graphics pipeline - MAIN
+	m_pipelines.push_back(
+		builder.buildPipeline(
+			"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
+			m_renderPasses[RenderPass::MAIN].renderPass,
+			m_swapchain.getMSAASampleCount())
+	);
 }
 
 void Application::cleanup()
 {
-	// Scene data
-	m_vertexBuffer.cleanup();
-	m_indexBuffer.cleanup();
+	// Render passes
+	for (auto& renderPass : m_renderPasses)
+		renderPass.cleanup(m_context.getDevice());
 
-	// Managers
-	m_commandManager.cleanup();
-	m_renderPassManager.cleanup();
-	m_pipelineManager.cleanup();
+	// Pipelines
+	for (auto& pipeline : m_pipelines)
+		pipeline.cleanup(m_context.getDevice());
 
+	// Command System
+	m_commandSystem.cleanup();
+	
 	// Swapchain
 	m_swapchain.cleanup();
 

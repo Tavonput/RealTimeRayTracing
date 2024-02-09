@@ -2,10 +2,12 @@
 
 #include "logging.h"
 
+#include "Scene/simple_cube_scene.h"
+
 #include "Core/system_context.h"
 #include "Core/swapchain.h"
 #include "Core/render_pass.h"
-#include "Core/command_manager.h"
+#include "Core/command.h"
 #include "Core/pipeline.h"
 #include "Core/vertex.h"
 #include "Core/buffer.h"
@@ -33,19 +35,15 @@ private:
 
 	// Rendering fields
 	Swapchain           m_swapchain;
-	RenderPass::Manager m_renderPassManager;
-	Pipeline::Manager   m_pipelineManager;
-	CommandManager      m_commandManager;
+	CommandSystem       m_commandSystem;
+
+	std::vector<Pipeline>   m_pipelines;
+	std::vector<RenderPass> m_renderPasses;
 
 	uint32_t m_framesInFlight = 1;
 
-	// Scene data fields
-	Buffer m_vertexBuffer;
-	Buffer m_indexBuffer;
-
 	void createRenderPass();
 	void createPipeline();
-	void createSceneData();
 
 	void cleanup();
 };

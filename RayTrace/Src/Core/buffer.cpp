@@ -10,7 +10,7 @@ Buffer Buffer::CreateVertexBuffer(CreateInfo& info)
         info.dataSize,
         info.dataCount,
         *info.device,
-        *info.commandManager);
+        *info.commandSystem);
 }
 
 Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
@@ -21,7 +21,7 @@ Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
         info.dataSize,
         info.dataCount,
         *info.device,
-        *info.commandManager);
+        *info.commandSystem);
 }
 
 const VkBuffer& Buffer::getBuffer() const
@@ -87,11 +87,11 @@ void Buffer::copyBuffer(
     VkBuffer srcBuffer, 
     VkBuffer dstBuffer, 
     VkDeviceSize size, 
-    CommandManager& commandManager, 
+    const CommandSystem& commandSystem, 
     const VkQueue& queue)
 {
     // Allocate and begin a single-use command buffer
-    VkCommandBuffer commandBuffer = commandManager.beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = commandSystem.beginSingleTimeCommands();
 
     // Copy data from src to dst buffers
     VkBufferCopy copyRegion{};
@@ -101,7 +101,7 @@ void Buffer::copyBuffer(
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
     // End and submit single-use command buffer
-    commandManager.endSingleTimeCommands(commandBuffer, queue);
+    commandSystem.endSingleTimeCommands(commandBuffer, queue);
 }
 
 Buffer::Buffer(
@@ -110,7 +110,7 @@ Buffer::Buffer(
     const VkDeviceSize dataSize,
     const uint32_t dataCount,
     const Device& device,
-    CommandManager& commandPool)
+    const CommandSystem& commandPool)
 {
     m_device = &device;
 
