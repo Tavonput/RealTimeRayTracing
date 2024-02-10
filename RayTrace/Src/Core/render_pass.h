@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <vector>
-
 #include "Application/logging.h"
 #include "device.h"
 
@@ -11,11 +7,17 @@ class RenderPass
 {
 public:
 
+	// All render passes
+	enum PassType
+	{
+		MAIN
+	};
+
 	// Builder Class
 	class Builder
 	{
 	public:
-		Builder(const Device& device, Logger logger);
+		Builder(const Device& device);
 
 		RenderPass buildPass();
 		std::vector<VkClearValue> getClearValues();
@@ -42,8 +44,6 @@ public:
 	private:
 		const Device* m_device = nullptr;
 
-		Logger m_logger;
-
 		// Color
 		bool m_usingColor = false;
 		std::vector<VkAttachmentDescription> m_colorAttachments;
@@ -63,30 +63,12 @@ public:
 		std::vector<VkClearValue>            m_clearValues;
 	};
 
-	// Manager Class
-	class Manager
-	{
-	public:
-		void init(const Device& device, Logger logger);
-
-		void addPass(RenderPass renderPass);
-		void beginPass(uint32_t index, VkFramebuffer framebuffer, VkExtent2D extent, VkCommandBuffer commandBuffer);
-
-		VkRenderPass& getPass(uint32_t index);
-
-		void cleanup();
-
-	private:
-		const Device* m_device;
-		Logger        m_logger;
-
-		std::vector<RenderPass> m_passes;
-	};
-
 	// Render Pass Class
 	VkRenderPass              renderPass;
 	std::vector<VkClearValue> clearValues;
 
 	RenderPass(VkRenderPass _renderPass, std::vector<VkClearValue> _clearValues)
 		: renderPass(_renderPass), clearValues(_clearValues) {}
+
+	void cleanup(const Device& device);
 };

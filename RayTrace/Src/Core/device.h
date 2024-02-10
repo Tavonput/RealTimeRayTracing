@@ -1,11 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <optional>
-#include <set>
-#include <vector>
-
 #include "Application/logging.h"
 
 struct QueueFamilyIndices
@@ -32,8 +26,7 @@ public:
 	void init(
 		VkInstance& instance,
 		VkSurfaceKHR& surface,
-		std::vector<const char*> instanceLayers,
-		Logger logger);
+		std::vector<const char*> instanceLayers);
 
 	const VkPhysicalDevice& getPhysical() const;
 	const VkDevice& getLogical() const;
@@ -41,12 +34,14 @@ public:
 	const VkQueue& getGraphicsQueue() const;
 	const VkQueue& getPresentQueue() const;
 
+	const void waitForGPU() const;
+
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,
 		VkImageTiling tiling,
-		VkFormatFeatureFlags features);
+		VkFormatFeatureFlags features) const;
 
-	VkSampleCountFlagBits getMaxUsableSampleCount();
+	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
 	static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
 
@@ -64,8 +59,6 @@ private:
 
 	std::vector<const char*> m_instanceLayers;
 	std::vector<const char*> m_deviceExtensions;
-
-	Logger m_logger;
 
 	void pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	void createLogicalDevice();

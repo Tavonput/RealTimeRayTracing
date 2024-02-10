@@ -1,22 +1,23 @@
-#include "command_manager.h"
+#include "pch.h"
 
-void CommandManager::init(CommandManagerCreateInfo& createInfo)
+#include "command.h"
+
+void CommandSystem::init(const Device& device, uint32_t bufferCount)
 {
-	m_device = createInfo.device;
-	m_logger = createInfo.logger;
+	m_device = &device;
 
-	m_buffers.resize(createInfo.graphicsBufferCount);
+	m_buffers.resize(bufferCount);
 
 	createCommandPool();
-    createGraphicsBuffers(createInfo.graphicsBufferCount);
+    createGraphicsBuffers(bufferCount);
 }
 
-VkCommandBuffer CommandManager::getCommandBuffer(uint32_t index)
+VkCommandBuffer CommandSystem::getCommandBuffer(uint32_t index)
 {
     return m_buffers[index];
 }
 
-VkCommandBuffer CommandManager::beginSingleTimeCommands()
+VkCommandBuffer CommandSystem::beginSingleTimeCommands() const
 {
     // Allocate a single use command buffer
     VkCommandBufferAllocateInfo allocInfo{};
@@ -38,7 +39,7 @@ VkCommandBuffer CommandManager::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue)
+void CommandSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer, const VkQueue& queue) const
 {
     // End command buffer
     vkEndCommandBuffer(commandBuffer);
@@ -56,16 +57,16 @@ void CommandManager::endSingleTimeCommands(VkCommandBuffer commandBuffer, const 
     vkFreeCommandBuffers(m_device->getLogical(), m_pool, 1, &commandBuffer);
 }
 
-void CommandManager::cleanup()
+void CommandSystem::cleanup()
 {
-    LOG_INFO("Destroying command manager");
+    APP_LOG_INFO("Destroying command manager");
 
     vkDestroyCommandPool(m_device->getLogical(), m_pool, nullptr);
 }
 
-void CommandManager::createCommandPool()
+void CommandSystem::createCommandPool()
 {
-    LOG_INFO("Initializing command pool");
+    APP_LOG_INFO("Initializing command pool");
 
     // Create a command pool for the graphics family
     QueueFamilyIndices queueFamilyIndices = m_device->getIndicies();
@@ -76,16 +77,16 @@ void CommandManager::createCommandPool()
 
     if (vkCreateCommandPool(m_device->getLogical(), &poolInfo, nullptr, &m_pool) != VK_SUCCESS)
     {
-        LOG_CRITICAL("Failed to create command pool");
+        APP_LOG_CRITICAL("Failed to create command pool");
         throw;
     }
 
-    LOG_INFO("Command pool initialization successful");
+    APP_LOG_INFO("Command pool initialization successful");
 }
 
-void CommandManager::createGraphicsBuffers(uint32_t count)
+void CommandSystem::createGraphicsBuffers(uint32_t count)
 {
-    LOG_INFO("Allocating {} command buffers for graphics rendering", count);
+    APP_LOG_INFO("Allocating {} command buffers for graphics rendering", count);
 
     // Allocate command buffers for the main render loop
     VkCommandBufferAllocateInfo allocInfo{};
@@ -96,9 +97,9 @@ void CommandManager::createGraphicsBuffers(uint32_t count)
 
     if (vkAllocateCommandBuffers(m_device->getLogical(), &allocInfo, m_buffers.data()) != VK_SUCCESS)
     {
-        LOG_CRITICAL("Failed to allocate command buffers");
+        APP_LOG_CRITICAL("Failed to allocate command buffers");
         throw;
     }
 
-    LOG_INFO("Command buffer allocation successful");
+    APP_LOG_INFO("Command buffer allocation successful");
 }

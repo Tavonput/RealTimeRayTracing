@@ -1,42 +1,53 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include "device.h"
 #include "swapchain.h"
-#include "command_manager.h"
+#include "command.h"
 #include "render_pass.h"
 #include "buffer.h"
 #include "pipeline.h"
+#include "push_constant.h"
 
 struct RenderingContext
 {
 	// Provided by the application
-	Swapchain&           swapchain;
-	CommandManager&      commandManager;
-	RenderPass::Manager& renderPassManager;
-	Pipeline::Manager&   pipelineManager;
+	Swapchain&               swapchain;
+	CommandSystem&           commandSystem;
+
+	std::vector<RenderPass>& renderPasses;
+	std::vector<Pipeline>&   pipelines;
 
 	uint32_t framesInFlight = 1;
 
-	// Handled by the renderer
+	// Current rendering state
 	uint32_t frameIndex = 0;
 	uint32_t imageIndex = 0;
 
+	float deltaTime     = 0.0f;
+	float lastFrameTime = 0.0f;
+
+	float aspectRatio = 0.0f;
+
 	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+
+	Buffer vertexBuffer;
+	Buffer indexBuffer;
+
+	RenderPass::PassType   passIndex     = RenderPass::MAIN;
+	Pipeline::PipelineType pipelineIndex = Pipeline::MAIN;
 
 	// Constructor
 	RenderingContext(
-		Swapchain&           _swapchain, 
-		CommandManager&      _commandManager, 
-		RenderPass::Manager& _renderPassManager, 
-		Pipeline::Manager&   _pipelineManager, 
-		uint32_t             _framesInFlight
+		Swapchain&               _swapchain, 
+		CommandSystem&           _commandSystem, 
+		std::vector<RenderPass>& _renderPasses,
+		std::vector<Pipeline>&   _pipelines,
+		uint32_t                 _framesInFlight
 	)
 		: swapchain        (_swapchain), 
-		  commandManager   (_commandManager), 
-		  renderPassManager(_renderPassManager), 
-		  pipelineManager  (_pipelineManager), 
+		  commandSystem    (_commandSystem), 
+		  renderPasses     (_renderPasses),
+		  pipelines        (_pipelines), 
 		  framesInFlight   (_framesInFlight)
 	{}
 };
@@ -48,10 +59,15 @@ public:
 	static void Submit(RenderingContext& ctx);
 	static void EndFrame(RenderingContext& ctx);
 
-	static void BeginRenderPass(RenderingContext& ctx, uint32_t passIndex);
+	static void BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass);
 	static void EndRenderPass(RenderingContext& ctx);
 
-	static void BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex);
+	static void BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline);
+	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
+	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
 
-	static void DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer);
+	static void PushConstants(RenderingContext& ctx, MeshPushConstants& pushConstant);
+
+	static void DrawVertex(RenderingContext& ctx);
+	static void DrawIndexed(RenderingContext& ctx);
 };

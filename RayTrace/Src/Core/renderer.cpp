@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "renderer.h"
 
 void Renderer::BeginFrame(RenderingContext& ctx)
@@ -5,15 +7,23 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	// Acquire image from swapchain
 	ctx.imageIndex = ctx.swapchain.acquireImage(ctx.frameIndex);
 
+	// Compute delta time
+	float currentFrameTime = static_cast<float>(glfwGetTime());
+	ctx.deltaTime = currentFrameTime - ctx.lastFrameTime;
+	ctx.lastFrameTime = currentFrameTime;
+
 	// Reset and begin command buffer
-	ctx.commandBuffer = ctx.commandManager.getCommandBuffer(ctx.frameIndex);
+	ctx.commandBuffer = ctx.commandSystem.getCommandBuffer(ctx.frameIndex);
 	vkResetCommandBuffer(ctx.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 	if (vkBeginCommandBuffer(ctx.commandBuffer, &beginInfo) != VK_SUCCESS)
-		throw std::runtime_error("Failed to begin recording command buffer");
+	{
+		APP_LOG_CRITICAL("Failed to begin recording command buffer");
+		throw;
+	}
 
 	// Update dynamic states
 	VkExtent2D extent = ctx.swapchain.getExtent();
@@ -31,6 +41,8 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	scissor.offset = { 0, 0 };
 	scissor.extent = extent;
 	vkCmdSetScissor(ctx.commandBuffer, 0, 1, &scissor);
+
+	ctx.aspectRatio = extent.width / (float)extent.height;
 }
 
 void Renderer::Submit(RenderingContext& ctx)
@@ -46,13 +58,20 @@ void Renderer::EndFrame(RenderingContext& ctx)
 	ctx.frameIndex = (ctx.frameIndex + 1) % ctx.framesInFlight;
 }
 
-void Renderer::BeginRenderPass(RenderingContext& ctx, uint32_t passIndex)
+void Renderer::BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass)
 {
-	ctx.renderPassManager.beginPass(
-		passIndex,
-		ctx.swapchain.getFramebuffer(ctx.imageIndex),
-		ctx.swapchain.getExtent(),
-		ctx.commandBuffer);
+	VkRenderPassBeginInfo beginInfo{};
+	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	beginInfo.renderPass        = ctx.renderPasses[pass].renderPass;
+	beginInfo.framebuffer       = ctx.swapchain.getFramebuffer(ctx.imageIndex);
+	beginInfo.renderArea.offset = { 0, 0 };
+	beginInfo.renderArea.extent = ctx.swapchain.getExtent();
+	beginInfo.clearValueCount   = static_cast<uint32_t>(ctx.renderPasses[pass].clearValues.size());
+	beginInfo.pClearValues      = ctx.renderPasses[pass].clearValues.data();
+
+	vkCmdBeginRenderPass(ctx.commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	ctx.passIndex = pass;
 }
 
 void Renderer::EndRenderPass(RenderingContext& ctx)
@@ -60,16 +79,40 @@ void Renderer::EndRenderPass(RenderingContext& ctx)
 	vkCmdEndRenderPass(ctx.commandBuffer);
 }
 
-void Renderer::BindPipeline(RenderingContext& ctx, uint32_t pipelineIndex)
+void Renderer::BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline)
 {
-	ctx.pipelineManager.bindPipeline(pipelineIndex, ctx.commandBuffer);
+	vkCmdBindPipeline(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[pipeline].pipeline);
+
+	ctx.pipelineIndex = pipeline;
 }
 
-void Renderer::DrawVertex(RenderingContext& ctx, Buffer& vertexBuffer)
+void Renderer::BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer)
 {
 	VkBuffer vertexBuffers[] = { vertexBuffer.getBuffer() };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(ctx.commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdDraw(ctx.commandBuffer, vertexBuffer.getCount(), 1, 0, 0);
+	ctx.vertexBuffer = vertexBuffer;
+}
+
+void Renderer::BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer)
+{
+	vkCmdBindIndexBuffer(ctx.commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+	ctx.indexBuffer = indexBuffer;
+}
+
+void Renderer::PushConstants(RenderingContext& ctx, MeshPushConstants& pushConstant)
+{
+	vkCmdPushConstants(ctx.commandBuffer, ctx.pipelines[ctx.pipelineIndex].layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &pushConstant);
+}
+
+void Renderer::DrawVertex(RenderingContext& ctx)
+{
+	vkCmdDraw(ctx.commandBuffer, ctx.vertexBuffer.getCount(), 1, 0, 0);
+}
+
+void Renderer::DrawIndexed(RenderingContext& ctx)
+{
+	vkCmdDrawIndexed(ctx.commandBuffer, ctx.indexBuffer.getCount(), 1, 0, 0, 0);
 }

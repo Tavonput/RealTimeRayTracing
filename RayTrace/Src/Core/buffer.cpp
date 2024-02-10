@@ -1,55 +1,27 @@
+#include "pch.h"
+
 #include "buffer.h"
 
-Buffer::Buffer(
-    BufferType type, 
-    const void* data, 
-    const VkDeviceSize dataSize,
-    const uint32_t dataCount,
-    const Device& device, 
-    CommandManager& commandPool, 
-    Logger logger)
+Buffer Buffer::CreateVertexBuffer(CreateInfo& info)
 {
-    m_device = &device;
-    m_logger = logger;
+    return Buffer(
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        info.data,
+        info.dataSize,
+        info.dataCount,
+        *info.device,
+        *info.commandSystem);
+}
 
-    m_size  = dataSize;
-    m_count = dataCount;
-
-    LOG_INFO("Creating buffer");
-
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
-
-    // Create staging buffer
-    Buffer::createBuffer(
-        dataSize,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer, stagingMemory,
-        *m_device);
-
-    // Transfer buffer data into staging buffer memory
-    void* deviceData;
-    vkMapMemory(m_device->getLogical(), stagingMemory, 0, dataSize, 0, &deviceData);
-    memcpy(deviceData, data, (size_t)dataSize);
-    vkUnmapMemory(m_device->getLogical(), stagingMemory);
-
-    // Create buffer
-    Buffer::createBuffer(
-        dataSize,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | static_cast<VkBufferUsageFlags>(type),
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        m_buffer, m_memory,
-        *m_device);
-
-    // Copy staging buffer to device buffer
-    Buffer::copyBuffer(
-        stagingBuffer, m_buffer,
-        dataSize,
-        commandPool, m_device->getGraphicsQueue());
-
-    vkDestroyBuffer(m_device->getLogical(), stagingBuffer, nullptr);
-    vkFreeMemory(m_device->getLogical(), stagingMemory, nullptr);
+Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
+{
+    return Buffer(
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        info.data,
+        info.dataSize,
+        info.dataCount,
+        *info.device,
+        *info.commandSystem);
 }
 
 const VkBuffer& Buffer::getBuffer() const
@@ -64,7 +36,7 @@ const uint32_t Buffer::getCount() const
 
 void Buffer::cleanup()
 {
-    LOG_INFO("Destroying buffer");
+    APP_LOG_INFO("Destroying buffer");
 
     vkDestroyBuffer(m_device->getLogical(), m_buffer, nullptr);
     vkFreeMemory(m_device->getLogical(), m_memory, nullptr);
@@ -86,7 +58,10 @@ void Buffer::createBuffer(
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device.getLogical(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create buffer");
+    {
+        APP_LOG_CRITICAL("Failed to create buffer");
+        throw;
+    }
 
     // Get memory requirements
     VkMemoryRequirements memRequirements;
@@ -99,7 +74,10 @@ void Buffer::createBuffer(
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, properties, device.getPhysical());
 
     if (vkAllocateMemory(device.getLogical(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    {
+        APP_LOG_CRITICAL("Failed to allocate buffer memory");
+        throw;
+    }
 
     // Bind memory
     vkBindBufferMemory(device.getLogical(), buffer, bufferMemory, 0);
@@ -109,11 +87,11 @@ void Buffer::copyBuffer(
     VkBuffer srcBuffer, 
     VkBuffer dstBuffer, 
     VkDeviceSize size, 
-    CommandManager& commandManager, 
+    const CommandSystem& commandSystem, 
     const VkQueue& queue)
 {
     // Allocate and begin a single-use command buffer
-    VkCommandBuffer commandBuffer = commandManager.beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = commandSystem.beginSingleTimeCommands();
 
     // Copy data from src to dst buffers
     VkBufferCopy copyRegion{};
@@ -123,5 +101,55 @@ void Buffer::copyBuffer(
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
     // End and submit single-use command buffer
-    commandManager.endSingleTimeCommands(commandBuffer, queue);
+    commandSystem.endSingleTimeCommands(commandBuffer, queue);
+}
+
+Buffer::Buffer(
+    VkBufferUsageFlagBits type,
+    const void* data,
+    const VkDeviceSize dataSize,
+    const uint32_t dataCount,
+    const Device& device,
+    const CommandSystem& commandPool)
+{
+    m_device = &device;
+
+    m_size = dataSize;
+    m_count = dataCount;
+
+    APP_LOG_INFO("Creating buffer");
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingMemory;
+
+    // Create staging buffer
+    Buffer::createBuffer(
+        dataSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer, stagingMemory,
+        *m_device);
+
+    // Transfer buffer data into staging buffer memory
+    void* deviceData;
+    vkMapMemory(m_device->getLogical(), stagingMemory, 0, dataSize, 0, &deviceData);
+    memcpy(deviceData, data, (size_t)dataSize);
+    vkUnmapMemory(m_device->getLogical(), stagingMemory);
+
+    // Create buffer
+    Buffer::createBuffer(
+        dataSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | type,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        m_buffer, m_memory,
+        *m_device);
+
+    // Copy staging buffer to device buffer
+    Buffer::copyBuffer(
+        stagingBuffer, m_buffer,
+        dataSize,
+        commandPool, m_device->getGraphicsQueue());
+
+    vkDestroyBuffer(m_device->getLogical(), stagingBuffer, nullptr);
+    vkFreeMemory(m_device->getLogical(), stagingMemory, nullptr);
 }

@@ -1,8 +1,9 @@
+#include "pch.h"
+
 #include "device.h"
 
-void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers, Logger logger)
+void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers)
 {
-	m_logger = logger;
 	m_instanceLayers = instanceLayers;
 
 	pickPhysicalDevice(instance, surface);
@@ -34,7 +35,12 @@ const VkQueue& Device::getPresentQueue() const
 	return m_presentQueue;
 }
 
-VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+const void Device::waitForGPU() const
+{
+	vkDeviceWaitIdle(m_logical);
+}
+
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
 {
 	for (VkFormat format : candidates)
 	{
@@ -48,11 +54,11 @@ VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, Vk
 			return format;
 	}
 
-	LOG_CRITICAL("Failed to find supported format");
+	APP_LOG_CRITICAL("Failed to find supported format");
 	throw;
 }
 
-VkSampleCountFlagBits Device::getMaxUsableSampleCount()
+VkSampleCountFlagBits Device::getMaxUsableSampleCount() const
 {
 	// Find max samples for MSAA
 	VkPhysicalDeviceProperties physicalDeviceProperties;
@@ -111,14 +117,14 @@ uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prope
 
 void Device::cleanup()
 {
-	LOG_INFO("Destroying devices");
+	APP_LOG_INFO("Destroying devices");
 
 	vkDestroyDevice(m_logical, nullptr);
 }
 
 void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 {
-	LOG_INFO("Choosing physical device");
+	APP_LOG_INFO("Choosing physical device");
 
 	// Extensions
 	m_deviceExtensions.push_back("VK_KHR_swapchain");
@@ -129,7 +135,7 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 	if (deviceCount == 0)
 	{
-		LOG_CRITICAL("Failed to find any GPUs with Vulkan support");
+		APP_LOG_CRITICAL("Failed to find any GPUs with Vulkan support");
 		throw;
 	}
 
@@ -148,11 +154,11 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 	if (m_physical == VK_NULL_HANDLE)
 	{
-		LOG_CRITICAL("Failed to find a suitable GPU");
+		APP_LOG_CRITICAL("Failed to find a suitable GPU");
 		throw;
 	}
 
-	LOG_INFO("Physical device was found");
+	APP_LOG_INFO("Physical device was found");
 
 	// Set indices
 	m_indices = findQueueFamilies(m_physical, surface);
@@ -160,7 +166,7 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 void Device::createLogicalDevice()
 {
-	LOG_INFO("Initializing logical device");
+	APP_LOG_INFO("Initializing logical device");
 
 	// Queue family create infos
 	std::set<uint32_t> uniqueQueueFamilies = {
@@ -198,7 +204,7 @@ void Device::createLogicalDevice()
 
 	if (vkCreateDevice(m_physical, &createInfo, nullptr, &m_logical) != VK_SUCCESS)
 	{
-		LOG_CRITICAL("Failed to create logical device");
+		APP_LOG_CRITICAL("Failed to create logical device");
 		throw;
 	}
 
@@ -206,7 +212,7 @@ void Device::createLogicalDevice()
 	vkGetDeviceQueue(m_logical, m_indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_logical, m_indices.presentFamily.value(), 0, &m_presentQueue);
 
-	LOG_INFO("Logical device initialization successful");
+	APP_LOG_INFO("Logical device initialization successful");
 }
 
 bool Device::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface)

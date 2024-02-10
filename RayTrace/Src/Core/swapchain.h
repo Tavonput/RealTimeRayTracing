@@ -1,11 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <vector>
-
 #include "device.h"
 #include "image.h"
+#include "depth_buffer.h"
 
 #include "Application/window.h"
 #include "Application/logging.h"
@@ -18,8 +15,6 @@ struct SwapchainCreateInfo
 	Window*             window;
 
 	uint32_t framesInFlight = 1;
-
-	Logger logger;
 };
 
 class Swapchain
@@ -35,37 +30,49 @@ public:
 	void present(uint32_t frameIndex, uint32_t& imageIndex);
 
 	VkFormat getFormat();
+	VkFormat getDepthFormat();
 	VkExtent2D getExtent();
 	VkFramebuffer getFramebuffer(uint32_t index);
+	VkSampleCountFlagBits getMSAASampleCount();
+
 
 	void cleanup();
 
 private:
+	// Swapchain
 	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
 
-	std::vector<VkImage>       m_images;
-	std::vector<VkImageView>   m_imageViews;
+	std::vector<Image>         m_images;
 	std::vector<VkFramebuffer> m_framebuffers;
 
 	VkFormat   m_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_extent = { 0, 0 };
 
+	// Depth buffer
+	DepthBuffer m_depthBuffer;
+
+	// Multisampling
+	Image                 m_MSAAImage;
+	VkSampleCountFlagBits m_MSAASampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+	// Syncronization
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
 	std::vector<VkFence>     m_inFlightFences;
 
+	// Recreation
 	bool m_recreate = false;
 
+	// Context
 	Window*             m_window     = nullptr;
 	const Device*       m_device     = nullptr;
 	const VkSurfaceKHR* m_surface    = nullptr;
 	const VkRenderPass* m_renderPass = nullptr;
 
-	Logger m_logger;
-
 	void setupSwapchain();
 	void setupImageViews();
 	void setupSyncObjects(uint32_t framesInFlight);
+	void setupMSAA();
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
