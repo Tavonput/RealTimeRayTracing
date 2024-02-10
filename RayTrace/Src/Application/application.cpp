@@ -50,7 +50,8 @@ void Application::run()
 
 	// Load scene
 	APP_LOG_INFO("Loading scene");
-	SimpleCubeScene scene;
+	//SimpleCubeScene scene; //**Uncomment to run Tavonput's simple_cube_scene.cpp
+	PyramidScene scene;      
 	scene.onLoad(m_context.getDevice(), m_commandSystem);
 
 	Logger::changeLogLevel(LogLevel::TRACE);

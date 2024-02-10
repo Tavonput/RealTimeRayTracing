@@ -3,6 +3,7 @@
 #include "logging.h"
 
 #include "Scene/simple_cube_scene.h"
+#include "Scene/pyramid_scene.h"
 
 #include "Core/system_context.h"
 #include "Core/swapchain.h"
