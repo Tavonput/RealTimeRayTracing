@@ -11,7 +11,7 @@ public:
 
 	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) = 0;
 
-	virtual void onUpdate(RenderingContext& rctx) = 0;
+	virtual void onUpdate(Renderer& renderer) = 0;
 
 	virtual void onUnload() = 0;
 };

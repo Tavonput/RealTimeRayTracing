@@ -12,80 +12,75 @@
 #include "rendering_structures.h"
 #include "descriptor.h"
 
-struct RenderingContext
-{
-	// Provided by the application
-	Swapchain&     swapchain;
-	CommandSystem& commandSystem;
-
-	std::vector<RenderPass>& renderPasses;
-	std::vector<Pipeline>&   pipelines;
-
-	std::vector<Buffer>&        uniformBuffers;
-	std::vector<DescriptorSet>& descriptorSets;
-
-	Camera camera;
-
-	uint32_t framesInFlight = 2;
-
-	// Current rendering state
-	uint32_t frameIndex = 0;
-	uint32_t imageIndex = 0;
-
-	float deltaTime     = 0.0f;
-	float lastFrameTime = 0.0f;
-
-	float aspectRatio = 0.0f;
-
-	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-
-	Buffer vertexBuffer;
-	Buffer indexBuffer;
-
-	RenderPass::PassType   passIndex     = RenderPass::MAIN;
-	Pipeline::PipelineType pipelineIndex = Pipeline::LIGHTING;
-
-	GlobalUniform     ubo;
-	MeshPushConstants pushConstants{};
-
-	// Constructor
-	RenderingContext(
-		Swapchain&                  _swapchain, 
-		CommandSystem&              _commandSystem, 
-		std::vector<RenderPass>&    _renderPasses,
-		std::vector<Pipeline>&      _pipelines,
-		std::vector<Buffer>&        _uniformBuffers,
-		std::vector<DescriptorSet>& _descriptorSets,
-		Camera&                     _camera,
-		uint32_t                    _framesInFlight
-	)
-		: swapchain     (_swapchain), 
-		  commandSystem (_commandSystem), 
-		  renderPasses  (_renderPasses),
-		  pipelines     (_pipelines), 
-		  uniformBuffers(_uniformBuffers),
-		  descriptorSets(_descriptorSets),
-		  camera        (_camera),
-		  framesInFlight(_framesInFlight)
-	{}
-};
-
 class Renderer
 {
 public:
-	static void BeginFrame(RenderingContext& ctx);
-	static void Submit(RenderingContext& ctx);
-	static void EndFrame(RenderingContext& ctx);
+	// Create info
+	struct CreateInfo
+	{
+		Swapchain*     pSwapchain;
+		CommandSystem* pCommandSystem;
+		RenderPass*    pRenderPasses;
+		Pipeline*      pPipelines;
+		Buffer*        pUniformBuffers;
+		DescriptorSet* pDescriptorSets;
+		Camera*        pCamera;
 
-	static void BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass);
-	static void EndRenderPass(RenderingContext& ctx);
+		uint32_t framesInFlight = 2;
+	};
 
-	static void BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline);
-	static void BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer);
-	static void BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer);
-	static void BindDescriptorSets(RenderingContext& ctx);
-	static void BindPushConstants(RenderingContext& ctx);
+	GlobalUniform     ubo;
+	MeshPushConstants pushConstants;
 
-	static void DrawVertex(RenderingContext& ctx);
-	static void DrawIndexed(RenderingContext& ctx);
+	float deltaTime   = 0.0f;
+	float aspectRatio = 0.0f;
+
+	Renderer(Renderer::CreateInfo info)
+		: m_swapchain     (info.pSwapchain),
+		  m_commandSystem (info.pCommandSystem),
+		  m_renderPasses  (info.pRenderPasses),
+		  m_pipelines     (info.pPipelines),
+		  m_uniformBuffers(info.pUniformBuffers),
+		  m_descriptorSets(info.pDescriptorSets),
+		  m_camera        (info.pCamera),
+		  m_framesInFlight(info.framesInFlight)
+	{}
+
+	void beginFrame();
+	void submit();
+	void endFrame();
+
+	void beginRenderPass(RenderPass::PassType pass);
+	void endRenderPass();
+
+	void bindPipeline(Pipeline::PipelineType pipeline);
+	void bindVertexBuffer(Buffer& vertexBuffer);
+	void bindIndexBuffer(Buffer& indexBuffer);
+	void bindDescriptorSets();
+	void bindPushConstants();
+
+	void drawVertex();
+	void drawIndexed();
+
+private:
+	Swapchain*     m_swapchain      = nullptr;
+	CommandSystem* m_commandSystem  = nullptr;
+	RenderPass*    m_renderPasses   = nullptr;
+	Pipeline*      m_pipelines      = nullptr;
+	Buffer*        m_uniformBuffers = nullptr;
+	DescriptorSet* m_descriptorSets = nullptr;
+	Camera*        m_camera         = nullptr;
+
+	RenderPass::PassType   m_passIndex     = RenderPass::MAIN;
+	Pipeline::PipelineType m_pipelineIndex = Pipeline::LIGHTING;
+
+	uint32_t m_frameIndex     = 0;
+	uint32_t m_imageIndex     = 0;
+	uint32_t m_framesInFlight = 2;
+	float    m_lastFrameTime  = 0.0f;
+
+	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+
+	Buffer m_vertexBuffer;
+	Buffer m_indexBuffer;
 };

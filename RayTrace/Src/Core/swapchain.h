@@ -7,22 +7,22 @@
 #include "Application/window.h"
 #include "Application/logging.h"
 
-
-struct SwapchainCreateInfo
-{
-	const Device*       device;
-	const VkSurfaceKHR* surface;
-	Window*             window;
-
-	uint32_t framesInFlight = 1;
-
-	bool vSync = true;
-};
-
 class Swapchain
 {
 public:
-	void init(SwapchainCreateInfo& createInfo);
+	// Create info
+	struct CreateInfo
+	{
+		const Device*       device;
+		const VkSurfaceKHR* surface;
+		Window*             window;
+
+		uint32_t framesInFlight = 1;
+
+		bool vSync = true;
+	};
+
+	void init(Swapchain::CreateInfo& createInfo);
 
 	void setupFramebuffers(const VkRenderPass& renderPass);
 	void recreateSwapchain();

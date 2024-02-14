@@ -5,31 +5,31 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-void Renderer::BeginFrame(RenderingContext& ctx)
+void Renderer::beginFrame()
 {
 	// Acquire image from swapchain
-	ctx.imageIndex = ctx.swapchain.acquireImage(ctx.frameIndex);
+	m_imageIndex = m_swapchain->acquireImage(m_frameIndex);
 
 	// Compute delta time
 	float currentFrameTime = static_cast<float>(glfwGetTime());
-	ctx.deltaTime = currentFrameTime - ctx.lastFrameTime;
-	ctx.lastFrameTime = currentFrameTime;
+	deltaTime = currentFrameTime - m_lastFrameTime;
+	m_lastFrameTime = currentFrameTime;
 
 	// Reset and begin command buffer
-	ctx.commandBuffer = ctx.commandSystem.getCommandBuffer(ctx.frameIndex);
-	vkResetCommandBuffer(ctx.commandBuffer, 0);
+	m_commandBuffer = m_commandSystem->getCommandBuffer(m_frameIndex);
+	vkResetCommandBuffer(m_commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(ctx.commandBuffer, &beginInfo) != VK_SUCCESS)
+	if (vkBeginCommandBuffer(m_commandBuffer, &beginInfo) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to begin recording command buffer");
 		throw;
 	}
 
 	// Update dynamic states
-	VkExtent2D extent = ctx.swapchain.getExtent();
+	VkExtent2D extent = m_swapchain->getExtent();
 
 	VkViewport viewport{};
 	viewport.x = 0.0f;
@@ -38,95 +38,107 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	viewport.height = (float)extent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(ctx.commandBuffer, 0, 1, &viewport);
+	vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = extent;
-	vkCmdSetScissor(ctx.commandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 
-	ctx.aspectRatio = extent.width / (float)extent.height;
+	aspectRatio = extent.width / (float)extent.height;
 
 	// Update uniform buffers
-	ctx.ubo.viewProjection = ctx.camera.getViewProjection(ctx.aspectRatio);
-	ctx.ubo.viewPosition   = ctx.camera.getPosition();
+	ubo.viewProjection = m_camera->getViewProjection(aspectRatio);
+	ubo.viewPosition   = m_camera->getPosition();
 
-	Buffer::Update(BufferType::UNIFORM, ctx.uniformBuffers[ctx.frameIndex], &ctx.ubo);
+	Buffer::Update(BufferType::UNIFORM, m_uniformBuffers[m_frameIndex], &ubo);
 }
 
-void Renderer::Submit(RenderingContext& ctx)
+void Renderer::submit()
 {
-	ctx.swapchain.submitGraphics(ctx.commandBuffer, ctx.frameIndex);
+	m_swapchain->submitGraphics(m_commandBuffer, m_frameIndex);
 }
 
-void Renderer::EndFrame(RenderingContext& ctx)
+void Renderer::endFrame()
 {
-	ctx.swapchain.present(ctx.frameIndex, ctx.imageIndex);
+	m_swapchain->present(m_frameIndex, m_imageIndex);
 
 	// Update frame
-	ctx.frameIndex = (ctx.frameIndex + 1) % ctx.framesInFlight;
+	m_frameIndex = (m_frameIndex + 1) % m_framesInFlight;
 }
 
-void Renderer::BeginRenderPass(RenderingContext& ctx, RenderPass::PassType pass)
+void Renderer::beginRenderPass(RenderPass::PassType pass)
 {
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.renderPass        = ctx.renderPasses[pass].renderPass;
-	beginInfo.framebuffer       = ctx.swapchain.getFramebuffer(ctx.imageIndex);
+	beginInfo.renderPass        = m_renderPasses[pass].renderPass;
+	beginInfo.framebuffer       = m_swapchain->getFramebuffer(m_imageIndex);
 	beginInfo.renderArea.offset = { 0, 0 };
-	beginInfo.renderArea.extent = ctx.swapchain.getExtent();
-	beginInfo.clearValueCount   = static_cast<uint32_t>(ctx.renderPasses[pass].clearValues.size());
-	beginInfo.pClearValues      = ctx.renderPasses[pass].clearValues.data();
+	beginInfo.renderArea.extent = m_swapchain->getExtent();
+	beginInfo.clearValueCount   = static_cast<uint32_t>(m_renderPasses[pass].clearValues.size());
+	beginInfo.pClearValues      = m_renderPasses[pass].clearValues.data();
 
-	vkCmdBeginRenderPass(ctx.commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(m_commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	ctx.passIndex = pass;
+	m_passIndex = pass;
 }
 
-void Renderer::EndRenderPass(RenderingContext& ctx)
+void Renderer::endRenderPass()
 {
-	vkCmdEndRenderPass(ctx.commandBuffer);
+	vkCmdEndRenderPass(m_commandBuffer);
 }
 
-void Renderer::BindPipeline(RenderingContext& ctx, Pipeline::PipelineType pipeline)
+void Renderer::bindPipeline(Pipeline::PipelineType pipeline)
 {
-	vkCmdBindPipeline(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[pipeline].pipeline);
+	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[pipeline].pipeline);
 
-	ctx.pipelineIndex = pipeline;
+	m_pipelineIndex = pipeline;
 }
 
-void Renderer::BindVertexBuffer(RenderingContext& ctx, Buffer& vertexBuffer)
+void Renderer::bindVertexBuffer(Buffer& vertexBuffer)
 {
 	VkBuffer vertexBuffers[] = { vertexBuffer.getBuffer() };
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(ctx.commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	ctx.vertexBuffer = vertexBuffer;
+	m_vertexBuffer = vertexBuffer;
 }
 
-void Renderer::BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer)
+void Renderer::bindIndexBuffer(Buffer& indexBuffer)
 {
-	vkCmdBindIndexBuffer(ctx.commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(m_commandBuffer, indexBuffer.getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-	ctx.indexBuffer = indexBuffer;
+	m_indexBuffer = indexBuffer;
 }
 
-void Renderer::BindDescriptorSets(RenderingContext& ctx)
+void Renderer::bindDescriptorSets()
 {
-	vkCmdBindDescriptorSets(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[ctx.pipelineIndex].layout, 0, 1, &ctx.descriptorSets[ctx.frameIndex].getSet(), 0, nullptr);
+	vkCmdBindDescriptorSets(
+		m_commandBuffer, 
+		VK_PIPELINE_BIND_POINT_GRAPHICS, 
+		m_pipelines[m_pipelineIndex].layout, 
+		0, 1, 
+		&m_descriptorSets[m_frameIndex].getSet(), 
+		0, nullptr);
 }
 
-void Renderer::BindPushConstants(RenderingContext& ctx)
+void Renderer::bindPushConstants()
 {
-	vkCmdPushConstants(ctx.commandBuffer, ctx.pipelines[ctx.pipelineIndex].layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &ctx.pushConstants);
+	vkCmdPushConstants(
+		m_commandBuffer, 
+		m_pipelines[m_pipelineIndex].layout, 
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
+		0, 
+		sizeof(MeshPushConstants), 
+		&pushConstants);
 }
 
-void Renderer::DrawVertex(RenderingContext& ctx)
+void Renderer::drawVertex()
 {
-	vkCmdDraw(ctx.commandBuffer, ctx.vertexBuffer.getCount(), 1, 0, 0);
+	vkCmdDraw(m_commandBuffer, m_vertexBuffer.getCount(), 1, 0, 0);
 }
 
-void Renderer::DrawIndexed(RenderingContext& ctx)
+void Renderer::drawIndexed()
 {
-	vkCmdDrawIndexed(ctx.commandBuffer, ctx.indexBuffer.getCount(), 1, 0, 0, 0);
+	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
 }

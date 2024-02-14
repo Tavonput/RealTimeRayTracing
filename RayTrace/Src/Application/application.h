@@ -17,20 +17,21 @@
 #include "Core/descriptor.h"
 #include "Core/rendering_structures.h"
 
-struct ApplicationCreateInfo
-{
-	uint32_t windowHeight = 800;
-	uint32_t windowWidth  = 600;
-
-	uint32_t framesInFlight = 2;
-
-	bool     vSync = true;
-};
-
 class Application
 {
 public:
-	void init(ApplicationCreateInfo& createInfo);
+	// Create info
+	struct CreateInfo
+	{
+		uint32_t windowHeight = 800;
+		uint32_t windowWidth  = 600;
+
+		uint32_t framesInFlight = 2;
+
+		bool vSync = true;
+	};
+
+	void init(Application::CreateInfo& createInfo);
 
 	void run();
 

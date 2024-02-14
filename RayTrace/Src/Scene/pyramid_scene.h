@@ -18,7 +18,7 @@ class PyramidScene : public Scene
 public:
 	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) override;
 
-	virtual void onUpdate(RenderingContext& rctx) override;
+	virtual void onUpdate(Renderer& renderer) override;
 
 	virtual void onUnload() override;
 

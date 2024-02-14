@@ -14,9 +14,10 @@ layout(binding = 0) uniform GlobalUnfiform
 layout(push_constant) uniform constants
 {
 	mat4 model;
+	vec3 objectColor;
 } pc;
 
 void main()
 {
-	outColor = vec4(ubo.lightColor, 1.0);
+	outColor = vec4(pc.objectColor, 1.0);
 }

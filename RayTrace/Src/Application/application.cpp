@@ -2,7 +2,7 @@
 
 #include "application.h"
 
-void Application::init(ApplicationCreateInfo& createInfo)
+void Application::init(Application::CreateInfo& createInfo)
 {
 	// Store frames in flight value
 	m_framesInFlight = createInfo.framesInFlight;
@@ -17,7 +17,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	m_context.init(m_window);
 
 	// Swapchain initialization
-	SwapchainCreateInfo swapchainCreateInfo{};
+	Swapchain::CreateInfo swapchainCreateInfo{};
 	swapchainCreateInfo.device         = &m_context.getDevice();
 	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
@@ -63,15 +63,18 @@ void Application::init(ApplicationCreateInfo& createInfo)
 void Application::run()
 {
 	// Setup rendering context
-	RenderingContext rctx(
-		m_swapchain,
-		m_commandSystem,
-		m_renderPasses,
-		m_pipelines,
-		m_uniformBuffers,
-		m_descriptorSets,
-		m_camera,
-		m_framesInFlight);
+	Renderer::CreateInfo rendererInfo{};
+	rendererInfo.pSwapchain      = &m_swapchain;
+	rendererInfo.pCommandSystem  = &m_commandSystem;
+	rendererInfo.pCamera         = &m_camera;
+	rendererInfo.pRenderPasses   = m_renderPasses.data();
+	rendererInfo.pPipelines      = m_pipelines.data();
+	rendererInfo.pDescriptorSets = m_descriptorSets.data();
+	rendererInfo.pUniformBuffers = m_uniformBuffers.data();
+	rendererInfo.framesInFlight  = m_framesInFlight;
+
+	// Create renderer
+	Renderer renderer(rendererInfo);
 
 	// Load scene
 	APP_LOG_INFO("Loading scene");
@@ -86,7 +89,7 @@ void Application::run()
 	while (!m_window.isWindowClosed())
 	{
 		glfwPollEvents();
-		scene.onUpdate(rctx);
+		scene.onUpdate(renderer);
 	}
 
 	APP_LOG_INFO("Main render loop ended");

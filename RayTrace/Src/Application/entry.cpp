@@ -5,7 +5,7 @@
 int main()
 {
 	// Application settings
-	ApplicationCreateInfo settings{};
+	Application::CreateInfo settings{};
 	settings.windowWidth    = 800;
 	settings.windowHeight   = 600;
 	settings.framesInFlight = 3;

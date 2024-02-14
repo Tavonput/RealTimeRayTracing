@@ -21,6 +21,7 @@ layout(binding = 0) uniform GlobalUnfiform
 layout(push_constant) uniform constants
 {
 	mat4 model;
+	vec3 objectColor;
 } pc;
 
 void main()

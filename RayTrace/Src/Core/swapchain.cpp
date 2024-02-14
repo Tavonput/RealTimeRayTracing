@@ -2,7 +2,7 @@
 
 #include "swapchain.h"
 
-void Swapchain::init(SwapchainCreateInfo& createInfo)
+void Swapchain::init(Swapchain::CreateInfo& createInfo)
 {
 	m_device  = createInfo.device;
 	m_window  = createInfo.window;

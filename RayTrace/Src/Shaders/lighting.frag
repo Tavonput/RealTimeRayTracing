@@ -18,6 +18,7 @@ layout(binding = 0) uniform GlobalUnfiform
 layout(push_constant) uniform constants
 {
 	mat4 model;
+	vec3 objectColor;
 } pc;
 
 vec3 pointLight(vec3 lightPosition, vec3 lightColor, vec3 normal, vec3 fragPosition, vec3 viewDirection)

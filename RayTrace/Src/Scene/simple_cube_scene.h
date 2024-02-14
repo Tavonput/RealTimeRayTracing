@@ -18,7 +18,7 @@ class SimpleCubeScene : public Scene
 public:
 	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) override;
 
-	virtual void onUpdate(RenderingContext& rctx) override;
+	virtual void onUpdate(Renderer& renderer) override;
 
 	virtual void onUnload() override;
 	
@@ -37,6 +37,6 @@ private:
 	float m_radius     = 3.0f;
 	float m_speed      = 1.5f;
 
-	void updateMainCubeTransform(RenderingContext& rctx);
-	void updateLightPosition(RenderingContext& rctx);
+	void updateMainCube(Renderer& renderer);
+	void updateLightPosition(Renderer& renderer);
 };
