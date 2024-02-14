@@ -2,6 +2,9 @@
 
 #include "renderer.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 void Renderer::BeginFrame(RenderingContext& ctx)
 {
 	// Acquire image from swapchain
@@ -43,6 +46,13 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	vkCmdSetScissor(ctx.commandBuffer, 0, 1, &scissor);
 
 	ctx.aspectRatio = extent.width / (float)extent.height;
+
+	// Update uniform buffers
+	ctx.ubo.viewProjection = ctx.camera.getViewProjection(ctx.aspectRatio);
+	ctx.ubo.viewPosition   = ctx.camera.getPosition();
+	ctx.ubo.lightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	Buffer::Update(BufferType::UNIFORM, ctx.uniformBuffers[ctx.frameIndex], &ctx.ubo);
 }
 
 void Renderer::Submit(RenderingContext& ctx)
@@ -102,9 +112,14 @@ void Renderer::BindIndexBuffer(RenderingContext& ctx, Buffer& indexBuffer)
 	ctx.indexBuffer = indexBuffer;
 }
 
-void Renderer::PushConstants(RenderingContext& ctx, MeshPushConstants& pushConstant)
+void Renderer::BindDescriptorSets(RenderingContext& ctx)
 {
-	vkCmdPushConstants(ctx.commandBuffer, ctx.pipelines[ctx.pipelineIndex].layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &pushConstant);
+	vkCmdBindDescriptorSets(ctx.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelines[ctx.pipelineIndex].layout, 0, 1, &ctx.descriptorSets[ctx.frameIndex].getSet(), 0, nullptr);
+}
+
+void Renderer::BindPushConstants(RenderingContext& ctx)
+{
+	vkCmdPushConstants(ctx.commandBuffer, ctx.pipelines[ctx.pipelineIndex].layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &ctx.pushConstants);
 }
 
 void Renderer::DrawVertex(RenderingContext& ctx)

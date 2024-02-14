@@ -11,7 +11,7 @@
 #include "Core/buffer.h"
 #include "Core/render_pass.h"
 #include "Core/pipeline.h"
-#include "Core/push_constant.h"
+#include "Core/rendering_structures.h"
 
 class SimpleCubeScene : public Scene
 {
@@ -25,10 +25,16 @@ public:
 private:
 	Buffer m_vertexBuffer;
 
-	MeshPushConstants m_cameraMatrix;
+	// Transforms
+	glm::mat4 m_mainCubeTransform;
+	glm::mat4 m_lightCubeTransform;
 
-	glm::mat4 m_model;
-	glm::vec3 m_cameraPosition = { 2.0f, 2.0f, 2.0f };
+	// Light cube properties
+	glm::vec3 m_currentPosition = {1.0f, 0.0f, 1.0f};
+	float     m_totalAngle      = 0.0f;
+	float     m_radius          = 3.0f;
+	float     m_speed           = 0.5f;
 
-	void updateRenderMatrix(float time, float aspectRatio);
+	void updateMainCubeTransform(RenderingContext& rctx);
+	void updateLightPosition(RenderingContext& rctx);
 };

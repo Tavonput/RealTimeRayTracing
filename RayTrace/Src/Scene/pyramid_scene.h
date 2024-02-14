@@ -11,7 +11,7 @@
 #include "Core/buffer.h"
 #include "Core/render_pass.h"
 #include "Core/pipeline.h"
-#include "Core/push_constant.h"
+#include "Core/rendering_structures.h"
 
 class PyramidScene : public Scene
 {

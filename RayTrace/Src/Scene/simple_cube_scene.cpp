@@ -61,28 +61,37 @@ void SimpleCubeScene::onLoad(const Device& device, const CommandSystem& commandS
 	createInfo.data          = vertices.data();
 	createInfo.dataSize      = sizeof(Vertex) * vertices.size();
 	createInfo.dataCount     = static_cast<uint32_t>(vertices.size());
-
 	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
 
-	// Initialize push constant stuff
-	m_model = glm::mat4(1.0f);
+	// Set up transforms
+	m_mainCubeTransform = glm::mat4(1.0f);
+	m_mainCubeTransform = glm::scale(m_mainCubeTransform, glm::vec3(2.0f, 2.0f, 2.0f));
+
+	m_lightCubeTransform = glm::mat4(1.0f);
 }
 
 void SimpleCubeScene::onUpdate(RenderingContext& rctx)
 {
 	Renderer::BeginFrame(rctx);
-
-	updateRenderMatrix(rctx.deltaTime, rctx.aspectRatio);
-
 	Renderer::BeginRenderPass(rctx, RenderPass::MAIN);
 
-	Renderer::BindPipeline(rctx, Pipeline::MAIN);
+	// Bind common resources
 	Renderer::BindVertexBuffer(rctx, m_vertexBuffer);
-	Renderer::PushConstants(rctx, m_cameraMatrix);
+	Renderer::BindDescriptorSets(rctx);
+	
+	// Draw main spinning cube
+	Renderer::BindPipeline(rctx, Pipeline::LIGHTING);
+	updateMainCubeTransform(rctx);
+	Renderer::BindPushConstants(rctx);
+	Renderer::DrawVertex(rctx);
+
+	// Draw light cube
+	Renderer::BindPipeline(rctx, Pipeline::FLAT);
+	updateLightPosition(rctx);
+	Renderer::BindPushConstants(rctx);
 	Renderer::DrawVertex(rctx);
 
 	Renderer::EndRenderPass(rctx);
-
 	Renderer::Submit(rctx);
 	Renderer::EndFrame(rctx);
 }
@@ -92,16 +101,34 @@ void SimpleCubeScene::onUnload()
 	m_vertexBuffer.cleanup();
 }
 
-void SimpleCubeScene::updateRenderMatrix(float time, float aspectRatio)
+void SimpleCubeScene::updateMainCubeTransform(RenderingContext& rctx)
 {
-	m_model = glm::rotate(m_model, time * glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	m_model = glm::rotate(m_model, time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	m_model = glm::rotate(m_model, time * glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	// Rotations
+	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, rctx.deltaTime * glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // X-axis
+	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, rctx.deltaTime * glm::radians(90.0f),  glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis
+	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, rctx.deltaTime * glm::radians(45.0f),  glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis
 
-	glm::mat4 view = glm::lookAt(m_cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-	projection[1][1] *= -1;
+	// Update push constant model matrix
+	rctx.pushConstants.model = m_mainCubeTransform;
+}
 
-	m_cameraMatrix.renderMatrix = projection * view * m_model;
-	m_cameraMatrix.model = m_model;
+void SimpleCubeScene::updateLightPosition(RenderingContext& rctx)
+{
+	// Compute new position
+	float angleDelta = rctx.deltaTime * m_speed;
+	m_totalAngle += angleDelta;
+
+	m_currentPosition.x = m_radius * cos(m_totalAngle);
+	m_currentPosition.y = m_radius * sin(m_totalAngle);
+	m_currentPosition.z = m_radius * sin(m_totalAngle);
+
+	// Set UBO light position
+	rctx.ubo.lightPosition = m_currentPosition;
+
+	// Update model matrix
+	m_lightCubeTransform = glm::translate(glm::mat4(1.0f), m_currentPosition);
+	m_lightCubeTransform = glm::scale(m_lightCubeTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+
+	// Update push constant model matrix
+	rctx.pushConstants.model = m_lightCubeTransform;
 }
