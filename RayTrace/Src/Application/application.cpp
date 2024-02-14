@@ -22,6 +22,7 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
+	swapchainCreateInfo.vSync          = createInfo.vSync;
 
 	m_swapchain.init(swapchainCreateInfo);
 

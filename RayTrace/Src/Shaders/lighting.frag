@@ -20,22 +20,20 @@ layout(push_constant) uniform constants
 	mat4 model;
 } pc;
 
-void main()
+vec3 pointLight(vec3 lightPosition, vec3 lightColor, vec3 normal, vec3 fragPosition, vec3 viewDirection)
 {
 	// Ambient
-	vec3 ambient = 0.1 * fragColor;
+	vec3 ambient = 0.05 * fragColor;
 
 	// Diffuse
-	vec3 norm     = normalize(normal);
-	vec3 lightDir = normalize(ubo.lightPosition - fragPos);
-	float diff    = max(dot(norm, lightDir), 0.0);
-	vec3 diffuse  = diff * fragColor;
+	vec3 lightDir = normalize(lightPosition - fragPosition);
+	float diff    = max(dot(normal, lightDir), 0.0);
+	vec3 diffuse  = diff * lightColor;
 
 	// Specular
-	vec3 viewDir    = normalize(ubo.viewPosition - fragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);  
-    float spec      = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
-    vec3 specular   = vec3(0.3) * spec;  
+    vec3 reflectDir = reflect(-lightDir, normal);  
+    float spec      = pow(max(dot(viewDirection, reflectDir), 0.0), 32.0);
+    vec3 specular   = vec3(0.3) * spec * lightColor;  
 
 	// Attenuation
 	float constant  = 1.0;
@@ -49,5 +47,41 @@ void main()
 	diffuse  *= attenuation;
 	specular *= attenuation;
 
-	outColor = vec4(ambient + diffuse + specular, 1.0);
+	return (ambient + diffuse + specular);
+}
+
+vec3 directionalLight(vec3 lightDirection, vec3 lightColor, vec3 normal, vec3 viewDirection)
+{
+	// Ambient
+	vec3 ambient = 0.005 * fragColor;
+
+	// Diffuse
+	vec3 lightDir = normalize(lightDirection);
+	float diff    = max(dot(normal, lightDir), 0.0);
+	vec3 diffuse  = diff * lightColor;
+
+	// Specular
+    vec3 reflectDir = reflect(-lightDir, normal);  
+    float spec      = pow(max(dot(viewDirection, reflectDir), 0.0), 8.0);
+    vec3 specular   = vec3(0.03) * spec * lightColor;  
+
+	return (ambient + diffuse + specular);
+}
+
+void main()
+{
+	vec3 sunDirection = vec3(0.5, 0.0, -1.0);
+	vec3 sunColor     = vec3(1.0, 1.0, 1.0);
+	vec3 norm         = normalize(normal);
+	vec3 viewDir      = normalize(ubo.viewPosition - fragPos);
+	
+	vec3 lighting = vec3(0.0);
+
+	// Directional light
+	// lighting += directionalLight(sunDirection, sunColor, norm, viewDir);
+
+	// Point light
+	lighting += pointLight(ubo.lightPosition, ubo.lightColor, norm, fragPos, viewDir);
+
+	outColor = vec4(lighting * fragColor, 1.0);
 }

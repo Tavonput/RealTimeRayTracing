@@ -50,7 +50,6 @@ void Renderer::BeginFrame(RenderingContext& ctx)
 	// Update uniform buffers
 	ctx.ubo.viewProjection = ctx.camera.getViewProjection(ctx.aspectRatio);
 	ctx.ubo.viewPosition   = ctx.camera.getPosition();
-	ctx.ubo.lightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	Buffer::Update(BufferType::UNIFORM, ctx.uniformBuffers[ctx.frameIndex], &ctx.ubo);
 }

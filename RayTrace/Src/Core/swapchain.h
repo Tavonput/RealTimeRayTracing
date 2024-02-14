@@ -15,6 +15,8 @@ struct SwapchainCreateInfo
 	Window*             window;
 
 	uint32_t framesInFlight = 1;
+
+	bool vSync = true;
 };
 
 class Swapchain
@@ -68,6 +70,8 @@ private:
 	const Device*       m_device     = nullptr;
 	const VkSurfaceKHR* m_surface    = nullptr;
 	const VkRenderPass* m_renderPass = nullptr;
+
+	bool m_vSync = true;
 
 	void setupSwapchain();
 	void setupImageViews();

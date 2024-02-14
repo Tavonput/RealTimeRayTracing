@@ -23,6 +23,8 @@ struct ApplicationCreateInfo
 	uint32_t windowWidth  = 600;
 
 	uint32_t framesInFlight = 2;
+
+	bool     vSync = true;
 };
 
 class Application

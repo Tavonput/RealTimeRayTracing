@@ -30,10 +30,12 @@ private:
 	glm::mat4 m_lightCubeTransform;
 
 	// Light cube properties
-	glm::vec3 m_currentPosition = {1.0f, 0.0f, 1.0f};
-	float     m_totalAngle      = 0.0f;
-	float     m_radius          = 3.0f;
-	float     m_speed           = 0.5f;
+	glm::vec3 m_lightColor    = { 0.8f, 0.5f, 0.2f };
+	glm::vec3 m_lightPosition = { 1.0f, 0.0f, 1.0f };
+
+	float m_totalAngle = 0.0f;
+	float m_radius     = 3.0f;
+	float m_speed      = 1.5f;
 
 	void updateMainCubeTransform(RenderingContext& rctx);
 	void updateLightPosition(RenderingContext& rctx);
