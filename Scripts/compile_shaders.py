@@ -25,16 +25,28 @@ def check_shader_directory() -> None:
 def compile_shaders(vulkan_version) -> None:
     executable = f"../Vendor/VulkanSDK/{vulkan_version}/Bin/glslc.exe"
 
-    # Vertex shader
+    # Vertex shader - Flat
     print("Compiling vertex shader")
-    vert_src = "../RayTrace/Src/Shaders/shader.vert"
-    vert_bin = "../Bin/Shaders/shader_vert.spv"
+    vert_src = "../RayTrace/Src/Shaders/flat.vert"
+    vert_bin = "../Bin/Shaders/flat_vert.spv"
     subprocess.run([executable, vert_src, "-o", vert_bin])
 
-    # Fragment shader
+    # Fragment shader - Flat
     print("Compiling fragment shader")
-    frag_src = "../RayTrace/Src/Shaders/shader.frag"
-    frag_bin = "../Bin/Shaders/shader_frag.spv"
+    frag_src = "../RayTrace/Src/Shaders/flat.frag"
+    frag_bin = "../Bin/Shaders/flat_frag.spv"
+    subprocess.run([executable, frag_src, "-o", frag_bin])
+    
+    # Vertex shader - Lighting
+    print("Compiling vertex shader")
+    vert_src = "../RayTrace/Src/Shaders/lighting.vert"
+    vert_bin = "../Bin/Shaders/lighting_vert.spv"
+    subprocess.run([executable, vert_src, "-o", vert_bin])
+    
+    # Fragment shader - Flat
+    print("Compiling fragment shader")
+    frag_src = "../RayTrace/Src/Shaders/lighting.frag"
+    frag_bin = "../Bin/Shaders/lighting_frag.spv"
     subprocess.run([executable, frag_src, "-o", frag_bin])
 
     print("Compilation finished")

@@ -17,19 +17,11 @@ RenderPass RenderPass::Builder::buildPass()
 {
 	// Subpass description
 	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-	if (m_usingColor)
-	{
-		subpass.colorAttachmentCount = static_cast<uint32_t>(m_colorAttachments.size());
-		subpass.pColorAttachments    = m_colorAttachmentRefs.data();
-	}
-
-	if (m_usingDepth)
-		subpass.pDepthStencilAttachment = &m_depthAttachmentRef;
-
-	if (m_usingResolve)
-		subpass.pResolveAttachments = &m_resolveAttachmentRef;
+	subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorAttachments.size());
+	subpass.pColorAttachments       = m_usingColor   ? m_colorAttachmentRefs.data() : nullptr;
+	subpass.pDepthStencilAttachment = m_usingDepth   ? &m_depthAttachmentRef        : nullptr;
+	subpass.pResolveAttachments     = m_usingResolve ? &m_resolveAttachmentRef      : nullptr;
 
 	// Subpass dependency
 	VkSubpassDependency dependency{};
@@ -47,8 +39,8 @@ RenderPass RenderPass::Builder::buildPass()
 	renderPassInfo.pAttachments    = m_attachments.data();
 	renderPassInfo.subpassCount    = 1;
 	renderPassInfo.pSubpasses      = &subpass;
-	// renderPassInfo.dependencyCount = 1;
-	// renderPassInfo.pDependencies   = &dependency;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies   = &dependency;
 
 	VkRenderPass renderPass;
 	if (vkCreateRenderPass(m_device->getLogical(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)

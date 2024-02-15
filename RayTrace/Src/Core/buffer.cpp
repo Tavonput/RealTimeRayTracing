@@ -24,6 +24,25 @@ Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
         *info.commandSystem);
 }
 
+Buffer Buffer::CreateUniformBuffer(CreateInfo& info)
+{
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+
+    Buffer::CreateBuffer(
+        info.dataSize,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        buffer, memory,
+        *info.device);
+
+    // Create custom buffer and map memory
+    auto uniformBuffer = Buffer(*info.device, buffer, memory, info.dataSize, 0);
+    uniformBuffer.mapMemory();
+
+    return uniformBuffer;
+}
+
 const VkBuffer& Buffer::getBuffer() const
 {
     return m_buffer;
@@ -34,6 +53,16 @@ const uint32_t Buffer::getCount() const
     return m_count;
 }
 
+const VkDeviceSize Buffer::getSize() const
+{
+    return m_size;
+}
+
+void* Buffer::getMap()
+{
+    return m_map;
+}
+
 void Buffer::cleanup()
 {
     APP_LOG_INFO("Destroying buffer");
@@ -42,7 +71,17 @@ void Buffer::cleanup()
     vkFreeMemory(m_device->getLogical(), m_memory, nullptr);
 }
 
-void Buffer::createBuffer(
+void Buffer::Update(BufferType type, Buffer& buffer, const void* data)
+{
+    switch (type)
+    {
+        case BufferType::UNIFORM:
+            memcpy(buffer.getMap(), data, buffer.getSize());
+            break;
+    }
+}
+
+void Buffer::CreateBuffer(
     VkDeviceSize size, 
     VkBufferUsageFlags usage, 
     VkMemoryPropertyFlags properties, 
@@ -69,8 +108,8 @@ void Buffer::createBuffer(
 
     // Memory allocation information
     VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize  = memRequirements.size;
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, properties, device.getPhysical());
 
     if (vkAllocateMemory(device.getLogical(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
@@ -83,7 +122,7 @@ void Buffer::createBuffer(
     vkBindBufferMemory(device.getLogical(), buffer, bufferMemory, 0);
 }
 
-void Buffer::copyBuffer(
+void Buffer::CopyBuffer(
     VkBuffer srcBuffer, 
     VkBuffer dstBuffer, 
     VkDeviceSize size, 
@@ -123,7 +162,7 @@ Buffer::Buffer(
     VkDeviceMemory stagingMemory;
 
     // Create staging buffer
-    Buffer::createBuffer(
+    Buffer::CreateBuffer(
         dataSize,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -137,7 +176,7 @@ Buffer::Buffer(
     vkUnmapMemory(m_device->getLogical(), stagingMemory);
 
     // Create buffer
-    Buffer::createBuffer(
+    Buffer::CreateBuffer(
         dataSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | type,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -145,11 +184,16 @@ Buffer::Buffer(
         *m_device);
 
     // Copy staging buffer to device buffer
-    Buffer::copyBuffer(
+    Buffer::CopyBuffer(
         stagingBuffer, m_buffer,
         dataSize,
         commandPool, m_device->getGraphicsQueue());
 
     vkDestroyBuffer(m_device->getLogical(), stagingBuffer, nullptr);
     vkFreeMemory(m_device->getLogical(), stagingMemory, nullptr);
+}
+
+void Buffer::mapMemory()
+{
+    vkMapMemory(m_device->getLogical(), m_memory, 0, m_size, 0, &m_map);
 }

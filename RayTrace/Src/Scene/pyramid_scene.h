@@ -11,14 +11,14 @@
 #include "Core/buffer.h"
 #include "Core/render_pass.h"
 #include "Core/pipeline.h"
-#include "Core/push_constant.h"
+#include "Core/rendering_structures.h"
 
 class PyramidScene : public Scene
 {
 public:
 	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) override;
 
-	virtual void onUpdate(RenderingContext& rctx) override;
+	virtual void onUpdate(Renderer& renderer) override;
 
 	virtual void onUnload() override;
 
