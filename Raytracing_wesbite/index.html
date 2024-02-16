@@ -4,21 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time Ray Tracing Application</title>
+    
     <!-- Link to external CSS file -->
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+   
     <!-- Additional styling for smooth scrolling -->
     <style>
         html {
             scroll-behavior: smooth;
         }
     </style>
+
 </head>
-<body>
+    <!-- Website header -->
     
     <header>
-        <!-- Website header -->
         <h1>Real-Time Ray Tracing Application</h1>
     </header>
 
@@ -34,14 +36,39 @@
     <!-- About section -->
     <section id="about">
         <h2>About</h2>
-        
     </section>
+
     <!-- Features section -->
     <section id="features">
         <h2>Features</h2>
         <ul>
             <li>Real-time rendering</li>
         </ul>
+        <main>
+            <div class="container">
+                <div class="image-container">
+                    <!-- input path image in here -->
+                  <img class="image-before slider-image" src="image/Gojo_before1.jpg"/>
+                  <img class="image-after slider-image"src="image/Gojo.jpg" />
+                </div>
+
+                <!-- how much we can move the slider -->
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="10"
+                  class="slider"
+                />
+                <div class="slider-line" >
+                <div class="slider-button" >
+                  <!-- whtie cicle that we use as a button -->
+                  <svg width="50" height="50">
+                    <circle cx="25" cy="25" r="20" stroke="black" stroke-width="5" fill="white" />
+                  </svg>
+                </div>
+              </div>
+        </main>
     </section>
 
     <!-- Demo section -->
@@ -54,6 +81,8 @@
     <footer>
         <p2>Created by [RayWizards]</p2>
     </footer>
+    <script src="script.js"></script>
+
 
 </body>
 </html>
