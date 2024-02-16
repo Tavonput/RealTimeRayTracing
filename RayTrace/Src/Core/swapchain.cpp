@@ -2,7 +2,7 @@
 
 #include "swapchain.h"
 
-void Swapchain::init(SwapchainCreateInfo& createInfo)
+void Swapchain::init(Swapchain::CreateInfo& createInfo)
 {
 	m_device  = createInfo.device;
 	m_window  = createInfo.window;
@@ -362,8 +362,6 @@ void Swapchain::setupMSAA()
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
-	APP_LOG_TRACE("Looking for image format VK_FORMAT_B8G8R8A8_SRGB with VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
-
 	// Find a format for RGBA8 and SRGB Nonlinear
 	for (const auto& availableFormat : availableFormats)
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -377,7 +375,8 @@ VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 
 VkPresentModeKHR Swapchain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
-	APP_LOG_TRACE("Looking for present mode VK_PRESENT_MODE_MAILBOX_KHR");
+	if (m_vSync)
+		return VK_PRESENT_MODE_FIFO_KHR;
 
 	// Find mailbox present mode
 	for (const auto& availablePresentMode : availablePresentModes)

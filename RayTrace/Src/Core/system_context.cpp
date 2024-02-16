@@ -61,12 +61,18 @@ void SystemContext::initInstance()
 {
 	APP_LOG_INFO("Initializing Vulkan instance");
 
+	std::vector<const char*> wantedLayers{};
+
+	// Validation layers
 #ifndef RT_DIST
-	m_instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
+	wantedLayers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
 
+	// Automatic FPS counter in window bar
+	wantedLayers.push_back("VK_LAYER_LUNARG_monitor");
+
 	// Check if instance layers are supported
-	checkLayerSupport();
+	m_instanceLayers = checkLayerSupport(wantedLayers);
 
 	// Application info
 	VkApplicationInfo appInfo{};
@@ -214,4 +220,37 @@ void SystemContext::checkLayerSupport()
 	}
 
 	return;
+}
+
+std::vector<const char*> SystemContext::checkLayerSupport(std::vector<const char*>& layers)
+{
+	// Enumerate all supported layers
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	// Vector of wanted supported layers
+	std::vector<const char*> supportedLayers{};
+
+	// Check if wanted instance layers are supported
+	for (const char* layerName : layers)
+	{
+		bool layerFound = false;
+		for (const auto& layerProperties : availableLayers)
+		{
+			if (strcmp(layerName, layerProperties.layerName) == 0)
+			{
+				APP_LOG_TRACE("Layer {} supported", layerName);
+				supportedLayers.push_back(layerName);
+				layerFound = true;
+				break;
+			}
+		}
+		if (!layerFound)
+			APP_LOG_ERROR("Layer {} requested, but is not supported", layerName);
+	}
+
+	return supportedLayers;
 }

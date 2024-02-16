@@ -2,7 +2,7 @@
 
 #include "application.h"
 
-void Application::init(ApplicationCreateInfo& createInfo)
+void Application::init(Application::CreateInfo& createInfo)
 {
 	// Store frames in flight value
 	m_framesInFlight = createInfo.framesInFlight;
@@ -17,11 +17,12 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	m_context.init(m_window);
 
 	// Swapchain initialization
-	SwapchainCreateInfo swapchainCreateInfo{};
+	Swapchain::CreateInfo swapchainCreateInfo{};
 	swapchainCreateInfo.device         = &m_context.getDevice();
 	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
+	swapchainCreateInfo.vSync          = createInfo.vSync;
 
 	m_swapchain.init(swapchainCreateInfo);
 
@@ -34,23 +35,51 @@ void Application::init(ApplicationCreateInfo& createInfo)
 	// Command system
 	m_commandSystem.init(m_context.getDevice(), m_framesInFlight);
 
+	// Uniform buffers
+	Buffer::CreateInfo uboInfo{};
+	uboInfo.device        = &m_context.getDevice();
+	uboInfo.commandSystem = &m_commandSystem;
+	uboInfo.dataSize      = sizeof(GlobalUniform);
+
+	for (uint8_t i = 0; i < m_framesInFlight; i++)
+		m_uniformBuffers.push_back(Buffer::CreateUniformBuffer(uboInfo));
+
+	// Descriptor Sets
+	createDescriptorSets();
+
+	// Camera
+	Camera::CreateInfo cameraInfo{};
+	cameraInfo.position  = { 4.0f, 4.0f, 4.0f };
+	cameraInfo.fov       = 45.0f;
+	cameraInfo.nearPlane = 0.1f;
+	cameraInfo.farPlane  = 100.0f;
+
+	m_camera.init(cameraInfo);
+
 	// Pipeline
-	createPipeline();
+	createPipelines();
 }
 
 void Application::run()
 {
 	// Setup rendering context
-	RenderingContext rctx(
-		m_swapchain,
-		m_commandSystem,
-		m_renderPasses,
-		m_pipelines,
-		m_framesInFlight);
+	Renderer::CreateInfo rendererInfo{};
+	rendererInfo.pSwapchain      = &m_swapchain;
+	rendererInfo.pCommandSystem  = &m_commandSystem;
+	rendererInfo.pCamera         = &m_camera;
+	rendererInfo.pRenderPasses   = m_renderPasses.data();
+	rendererInfo.pPipelines      = m_pipelines.data();
+	rendererInfo.pDescriptorSets = m_descriptorSets.data();
+	rendererInfo.pUniformBuffers = m_uniformBuffers.data();
+	rendererInfo.framesInFlight  = m_framesInFlight;
+
+	// Create renderer
+	Renderer renderer(rendererInfo);
 
 	// Load scene
 	APP_LOG_INFO("Loading scene");
-	SimpleCubeScene scene;
+	SimpleCubeScene scene; // Tavonput Scene
+	// PyramidScene scene; // Alex Scene 
 	scene.onLoad(m_context.getDevice(), m_commandSystem);
 
 	Logger::changeLogLevel(LogLevel::TRACE);
@@ -60,7 +89,7 @@ void Application::run()
 	while (!m_window.isWindowClosed())
 	{
 		glfwPollEvents();
-		scene.onUpdate(rctx);
+		scene.onUpdate(renderer);
 	}
 
 	APP_LOG_INFO("Main render loop ended");
@@ -103,20 +132,62 @@ void Application::createRenderPass()
 	m_renderPasses.push_back(builder.buildPass());
 }
 
-void Application::createPipeline()
+void Application::createPipelines()
 {
-	APP_LOG_INFO("Creating pipeline");
+	APP_LOG_INFO("Creating pipelines");
 
 	// Create a pipeline builder
 	auto builder = Pipeline::Builder(m_context.getDevice());
 
-	// Build a graphics pipeline - MAIN
-	m_pipelines.push_back(
-		builder.buildPipeline(
-			"../../Shaders/shader_vert.spv", "../../Shaders/shader_frag.spv",
-			m_renderPasses[RenderPass::MAIN].renderPass,
-			m_swapchain.getMSAASampleCount())
-	);
+	builder.addGraphicsBase();
+	builder.linkRenderPass(m_renderPasses[RenderPass::MAIN]);
+	builder.linkDescriptorSetLayout(m_descriptorLayout);
+
+	RasterShaderSet lightingShaders("../../Shaders/lighting_vert.spv", "../../Shaders/lighting_frag.spv", m_context.getDevice());
+	builder.linkShaders(lightingShaders);
+
+	builder.enableMultisampling(m_swapchain.getMSAASampleCount());
+
+	// Build graphics pipeline - LIGHTING
+	m_pipelines.push_back(builder.buildPipeline());
+
+	// Link a different set of shaders
+	RasterShaderSet flatShaders("../../Shaders/flat_vert.spv", "../../Shaders/flat_frag.spv", m_context.getDevice());
+	builder.linkShaders(flatShaders);
+
+	// Build graphics pipeline - FLAT
+	m_pipelines.push_back(builder.buildPipeline());
+
+	// Cleanup shader set
+	lightingShaders.cleanup();
+	flatShaders.cleanup();
+}
+
+void Application::createDescriptorSets()
+{
+	// Create descriptor set layout builder
+	auto layoutBuilder = DescriptorSetLayout::Builder(m_context.getDevice());
+
+	// Add a uniform buffer to the global binding
+	layoutBuilder.addBinding(
+		SceneBinding::GLOBAL,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+
+	// Build layout
+	m_descriptorLayout = layoutBuilder.buildLayout();
+
+	// Initialize descriptor pool
+	m_descriptorPool.init(m_context.getDevice(), m_framesInFlight, 1);
+	
+	// Allocate and update descriptors set for each frame in flight
+	for (uint8_t i = 0; i < m_framesInFlight; i++)
+	{
+		m_descriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_descriptorLayout));
+
+		m_descriptorSets[i].addBufferWrite(m_uniformBuffers[i], 0, SceneBinding::GLOBAL);
+		m_descriptorSets[i].update(m_context.getDevice());
+	}
 }
 
 void Application::cleanup()
@@ -132,6 +203,14 @@ void Application::cleanup()
 	// Command System
 	m_commandSystem.cleanup();
 	
+	// Descriptor stuff
+	m_descriptorLayout.cleanup(m_context.getDevice());
+	m_descriptorPool.cleanup();
+
+	// Uniform Buffers
+	for (auto& buffer : m_uniformBuffers)
+		buffer.cleanup();
+
 	// Swapchain
 	m_swapchain.cleanup();
 
