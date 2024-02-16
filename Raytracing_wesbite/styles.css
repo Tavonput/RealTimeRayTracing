@@ -78,3 +78,75 @@ footer {
     bottom: 0;
     width: 100%;
 }
+
+/* clean up edge around image */
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ensure the image below the feature */
+main {
+  display: grid;
+  place-items: center;
+  min-height: 80vh;
+}
+
+/* ensure the image lineup */
+.container {
+  display: grid;
+  place-content: left;
+  position: relative;
+  --position: 50%; /* the slider is center always.*/
+}
+
+/* size of image */
+.image-container {
+  max-width: 1000px;
+  max-height: 1000vh;
+}
+
+/* this ensure the image is aline with the after image*/
+.slider-image {
+  width: 100%;
+  height: 100%;
+  /* but also ensure that the photo is fitted right when pulling the slider */
+  object-position: left;
+  object-fit: cover; 
+}
+
+/* side by side compare */
+.image-before {
+  position: absolute;
+  inset: 0;
+  width: var(--position);
+}
+
+/* The main slider going side to side */
+.slider {
+  position: absolute;
+  inset: 0; /* allow us to move the slider side to side*/
+  cursor: pointer;
+  opacity: 0; /* remove the slider to look cleaner*/
+  
+}
+
+/* The white line down the middle of slider line */
+.slider-line {
+  position: absolute;
+  width: .1rem;
+  height: 100%;
+  background-color: #ffffff;
+  left: var(--position); /* ensure the line is center */
+  pointer-events: none; /* allows elements to not receive hover/click events*/
+}
+
+/*circle buttom */
+.slider-button {
+  position: absolute;
+  /* is center with the slider line */
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+  
