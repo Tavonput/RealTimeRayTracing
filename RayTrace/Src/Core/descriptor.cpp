@@ -100,13 +100,19 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 
 	// Pool sizes
 	// TODO: Figure out the correct pool sizes depending on the layouts
-	std::array<VkDescriptorPoolSize, 1> poolSizes{};
+	//std::array<VkDescriptorPoolSize, 1> poolSizes{};
+	std::array<VkDescriptorPoolSize, 2> poolSizes{};  //***Used to be 1
 	poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = framesInFlight;
+
+	//***Changes
+	poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].descriptorCount = framesInFlight * 2;
 
 	// Descriptor pool creation
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; //***Change
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes    = poolSizes.data();
 	poolInfo.maxSets       = setsPerFrame * framesInFlight;
@@ -136,6 +142,10 @@ DescriptorSet DescriptorPool::allocateDescriptorSet(DescriptorSetLayout& layout)
 	}
 
 	return DescriptorSet(set, &layout);
+}
+
+VkDescriptorPool DescriptorPool::getPool() {
+	return m_pool;
 }
 
 void DescriptorPool::cleanup()

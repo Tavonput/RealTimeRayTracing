@@ -141,4 +141,14 @@ void Renderer::drawVertex()
 void Renderer::drawIndexed()
 {
 	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
+
+	/*ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::ShowDebugLogWindow();
+
+	ImGui::Render();
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_pipelines[m_pipelineIndex].pipeline);*/
+
 }

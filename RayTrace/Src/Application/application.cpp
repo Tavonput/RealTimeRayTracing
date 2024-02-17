@@ -178,7 +178,7 @@ void Application::createDescriptorSets()
 	m_descriptorLayout = layoutBuilder.buildLayout();
 
 	// Initialize descriptor pool
-	m_descriptorPool.init(m_context.getDevice(), m_framesInFlight, 1);
+	m_descriptorPool.init(m_context.getDevice(), m_framesInFlight, 2); //***Last argument used to be 1
 	
 	// Allocate and update descriptors set for each frame in flight
 	for (uint8_t i = 0; i < m_framesInFlight; i++)
@@ -190,8 +190,37 @@ void Application::createDescriptorSets()
 	}
 }
 
+//void Application::initImgui() {
+//	ImGui::CreateContext();
+//	//ImGui::GetIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+//	ImGui_ImplGlfw_InitForVulkan(m_window.getWindowGLFW(), true);
+//
+//	ImGui_ImplVulkan_InitInfo info = {};
+//	info.DescriptorPool = m_descriptorPool.getPool(); //VkDescriptorPool
+//	info.RenderPass = m_renderPasses[0].renderPass;   //VkRenderPass
+//	info.Device = m_context.getDevice().getLogical(); //VkDevice
+//	info.PhysicalDevice = m_context.getDevice().getPhysical(); //VkPhysicalDevice
+//	info.ImageCount = m_framesInFlight;
+//	info.MSAASamples = m_context.getDevice().getMaxUsableSampleCount(); //VkSampleCountFlagBits
+//
+//	ImGui_ImplVulkan_Init(&info);
+//
+//	VkCommandBuffer commandBuffer = m_commandSystem.beginSingleTimeCommands();
+//	ImGui_ImplVulkan_CreateFontsTexture();
+//	m_commandSystem.endSingleTimeCommands(commandBuffer, m_context.getDevice().getGraphicsQueue());
+//
+//	vkDeviceWaitIdle(m_context.getDevice().getLogical());
+//	//ImGui_ImplVulkan_DestroyFontUploadObjects();
+//	ImGui_ImplVulkan_DestroyFontsTexture();
+//
+//}
+
 void Application::cleanup()
 {
+	/*ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();*/
+
 	// Render passes
 	for (auto& renderPass : m_renderPasses)
 		renderPass.cleanup(m_context.getDevice());

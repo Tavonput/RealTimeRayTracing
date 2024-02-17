@@ -12,6 +12,17 @@
 #include "rendering_structures.h"
 #include "descriptor.h"
 
+//#include "ImGui/imconfig.h"
+//#include "ImGui/imgui_tables.cpp"
+//#include "ImGui/imgui_internal.h"
+//#include "ImGui/imgui.cpp"
+//#include "ImGui/imgui_draw.cpp"
+//#include "ImGui/imgui_widgets.cpp"
+//#include "ImGui/imgui_demo.cpp"
+//#include "ImGui/imgui.h"
+//#include "ImGui/imgui_impl_glfw.h"
+//#include "ImGui/imgui_impl_vulkan.h"
+
 class Renderer
 {
 public:

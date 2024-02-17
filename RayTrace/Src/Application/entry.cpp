@@ -14,7 +14,7 @@ int main()
 	// Initialize application
 	Application app;
 	app.init(settings);
-
+	//app.initImgui(); //***Changes
 	// Run application
 	try
 	{
