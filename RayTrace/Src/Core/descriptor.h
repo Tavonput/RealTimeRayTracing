@@ -77,6 +77,8 @@ public:
 
 	DescriptorSet allocateDescriptorSet(DescriptorSetLayout& layout);
 
+	VkDescriptorPool getPool(); //Returns the VkDescriptorPool. Used by ImGui
+
 	void cleanup();
 
 private:
