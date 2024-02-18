@@ -37,6 +37,5 @@ private:
 	float m_radius     = 3.0f;
 	float m_speed      = 1.5f;
 
-	void updateMainCube(Renderer& renderer);
 	void updateLightPosition(Renderer& renderer);
 };

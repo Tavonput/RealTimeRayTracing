@@ -7,6 +7,7 @@ void Swapchain::init(Swapchain::CreateInfo& createInfo)
 	m_device  = createInfo.device;
 	m_window  = createInfo.window;
 	m_surface = createInfo.surface;
+	m_vSync   = createInfo.vSync;
 
 	setupSwapchain();
 	setupImageViews();
@@ -46,6 +47,11 @@ void Swapchain::setupFramebuffers(const VkRenderPass& renderPass)
 			throw;
 		}
 	}
+}
+
+void Swapchain::onWindowResize(WindowResizeEvent event)
+{
+	recreateSwapchain();
 }
 
 void Swapchain::recreateSwapchain()
@@ -153,11 +159,8 @@ void Swapchain::present(uint32_t frameIndex, uint32_t& imageIndex)
 	VkResult result;
 	result = vkQueuePresentKHR(m_device->getPresentQueue(), &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->framebufferResized)
-	{
-		m_window->framebufferResized = false;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		recreateSwapchain();
-	}
 	else if (result != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to present frame");

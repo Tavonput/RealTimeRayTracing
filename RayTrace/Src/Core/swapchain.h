@@ -6,6 +6,7 @@
 
 #include "Application/window.h"
 #include "Application/logging.h"
+#include "Application/event.h"
 
 class Swapchain
 {
@@ -25,7 +26,8 @@ public:
 	void init(Swapchain::CreateInfo& createInfo);
 
 	void setupFramebuffers(const VkRenderPass& renderPass);
-	void recreateSwapchain();
+
+	void onWindowResize(WindowResizeEvent event);
 
 	uint32_t acquireImage(uint32_t& frameIndex);
 	void submitGraphics(VkCommandBuffer commandBuffer, uint32_t& frameIndex);
@@ -77,6 +79,8 @@ private:
 	void setupImageViews();
 	void setupSyncObjects(uint32_t framesInFlight);
 	void setupMSAA();
+
+	void recreateSwapchain();
 
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

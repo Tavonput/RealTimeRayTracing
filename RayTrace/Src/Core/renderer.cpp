@@ -48,7 +48,7 @@ void Renderer::beginFrame()
 	aspectRatio = extent.width / (float)extent.height;
 
 	// Update uniform buffers
-	ubo.viewProjection = m_camera->getViewProjection(aspectRatio);
+	ubo.viewProjection = m_camera->getViewProjection();
 	ubo.viewPosition   = m_camera->getPosition();
 
 	Buffer::Update(BufferType::UNIFORM, m_uniformBuffers[m_frameIndex], &ubo);

@@ -2,6 +2,7 @@
 
 #include "logging.h"
 #include "camera.h"
+#include "event.h"
 
 #include "Scene/simple_cube_scene.h"
 #include "Scene/pyramid_scene.h"
@@ -74,6 +75,8 @@ private:
 	void createRenderPass();
 	void createPipelines();
 	void createDescriptorSets();
+
+	void pollEvents();
 
 	void cleanup();
 };

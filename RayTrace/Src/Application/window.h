@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h> 
 
 #include "logging.h"
+#include "event.h"
 
 class Window
 {
@@ -18,6 +19,11 @@ public:
 
 	void resetFramebufferResize();
 	bool isWindowClosed();
+
+	// Callbacks
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+	static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
 
 	// Cleanup
 	void cleanup();

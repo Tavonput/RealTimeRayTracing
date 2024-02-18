@@ -23,7 +23,6 @@ void Application::init(Application::CreateInfo& createInfo)
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
 	swapchainCreateInfo.vSync          = createInfo.vSync;
-
 	m_swapchain.init(swapchainCreateInfo);
 
 	// Render pass
@@ -49,11 +48,13 @@ void Application::init(Application::CreateInfo& createInfo)
 
 	// Camera
 	Camera::CreateInfo cameraInfo{};
-	cameraInfo.position  = { 4.0f, 4.0f, 4.0f };
-	cameraInfo.fov       = 45.0f;
-	cameraInfo.nearPlane = 0.1f;
-	cameraInfo.farPlane  = 100.0f;
-
+	cameraInfo.position     = { 0.0f, 0.0f, 6.0f };
+	cameraInfo.fov          = 45.0f;
+	cameraInfo.nearPlane    = 0.1f;
+	cameraInfo.farPlane     = 100.0f;
+	cameraInfo.sensitivity  = 0.8f;
+	cameraInfo.windowHeight = m_swapchain.getExtent().height;
+	cameraInfo.windowWidth  = m_swapchain.getExtent().width;
 	m_camera.init(cameraInfo);
 
 	// Pipeline
@@ -88,7 +89,7 @@ void Application::run()
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
-		glfwPollEvents();
+		pollEvents();
 		scene.onUpdate(renderer);
 	}
 
@@ -188,6 +189,65 @@ void Application::createDescriptorSets()
 		m_descriptorSets[i].addBufferWrite(m_uniformBuffers[i], 0, SceneBinding::GLOBAL);
 		m_descriptorSets[i].update(m_context.getDevice());
 	}
+}
+
+void Application::pollEvents()
+{
+	glfwPollEvents();
+
+	// This is used to avoid processing more than one window resize per frame
+	bool processedWindowResize = false;
+
+	// Loop over all events that occurred
+	for (auto& event : EventDispatcher::GetEventQueue())
+	{
+		switch (event->getType())
+		{
+			case EventType::WINDOW_RESIZE:
+			{
+				if (processedWindowResize)
+					break;
+				processedWindowResize = true;
+
+				auto windowResizeEvent = dynamic_cast<WindowResizeEvent*>(event.get());
+				APP_LOG_TRACE(windowResizeEvent->eventString());
+
+				m_swapchain.onWindowResize(*windowResizeEvent);
+				m_camera.onWindowResize(*windowResizeEvent);
+				break;
+			}
+
+			case EventType::MOUSE_CLICK:
+			{
+				auto mouseClickEvent = dynamic_cast<MouseClickEvent*>(event.get());
+				APP_LOG_TRACE(mouseClickEvent->eventString());
+
+				m_camera.onMouseClick(*mouseClickEvent);
+				break;
+			}
+
+			case EventType::MOUSE_RELEASE:
+			{
+				auto mouseReleaseEvent = dynamic_cast<MouseReleaseEvent*>(event.get());
+				APP_LOG_TRACE(mouseReleaseEvent->eventString());
+
+				m_camera.onMouseRelease(*mouseReleaseEvent);
+				break;
+			}
+
+			case EventType::MOUSE_MOVE:
+			{
+				auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event.get());
+				// APP_LOG_TRACE(mouseMoveEvent->eventString());
+
+				m_camera.onMouseMove(*mouseMoveEvent);
+				break;
+			}
+		}
+	}
+
+	// Cleanup event queue
+	EventDispatcher::GetEventQueue().clear();
 }
 
 //void Application::initImgui() {

@@ -81,7 +81,7 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 	
 	// Draw main spinning cube
 	renderer.bindPipeline(Pipeline::LIGHTING);
-	updateMainCube(renderer);
+	renderer.pushConstants.model = m_mainCubeTransform;
 	renderer.bindPushConstants();
 	renderer.drawVertex();
 
@@ -99,19 +99,6 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 void SimpleCubeScene::onUnload()
 {
 	m_vertexBuffer.cleanup();
-}
-
-void SimpleCubeScene::updateMainCube(Renderer& renderer)
-{
-	float time = renderer.deltaTime;
-
-	// Rotations
-	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, time * glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // X-axis
-	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, time * glm::radians(90.0f),  glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis
-	m_mainCubeTransform = glm::rotate(m_mainCubeTransform, time * glm::radians(45.0f),  glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis
-
-	// Update push constant model matrix
-	renderer.pushConstants.model = m_mainCubeTransform;
 }
 
 void SimpleCubeScene::updateLightPosition(Renderer& renderer)
