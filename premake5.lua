@@ -40,7 +40,8 @@ project "RayTrace"
 		"Vendor/VulkanSDK/*/Include",
 		"Vendor/GLFW/include",
 		"Vendor/GLM",
-		"Vendor/spdlog/include"
+		"Vendor/spdlog/include",
+		"Vendor/tinyobjloader"
 	}
 
 	-- Libraries
