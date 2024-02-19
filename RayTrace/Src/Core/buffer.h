@@ -9,7 +9,8 @@ enum class BufferType
 	NONE    = 0,
 	VERTEX  = 1,
 	INDEX   = 2,
-	UNIFORM = 3
+	UNIFORM = 3,
+	STORAGE = 4
 };
 
 class Buffer
@@ -29,11 +30,13 @@ public:
 	static Buffer CreateVertexBuffer(CreateInfo& info);
 	static Buffer CreateIndexBuffer(CreateInfo& info);
 	static Buffer CreateUniformBuffer(CreateInfo& info);
+	static Buffer CreateStorageBuffer(CreateInfo& info);
 
-	const VkBuffer& getBuffer() const;
-	const uint32_t getCount() const;
-	const VkDeviceSize getSize() const;
-	void* getMap();
+	const VkBuffer& getBuffer() const { return m_buffer; }
+	const uint32_t getCount() const { return m_count; }
+	const VkDeviceSize getSize() const { return m_size; }
+	void* getMap() { return m_map; }
+	VkDeviceAddress getDeviceAddress() const;
 
 	void cleanup();
 
@@ -67,7 +70,7 @@ private:
 
 	// GPU buffer via staging
 	Buffer(
-		VkBufferUsageFlagBits type,
+		VkBufferUsageFlags    type,
 		const void*           data,
 		const VkDeviceSize    dataSize,
 		const uint32_t        dataCount,

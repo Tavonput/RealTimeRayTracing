@@ -109,10 +109,11 @@ uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prope
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-		if ((typeFilter & (i << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 			return i;
 
-	throw std::runtime_error("Failed to find suitable memory type!");
+	APP_LOG_CRITICAL("Failed to find suitable memory type");
+	throw;
 }
 
 void Device::cleanup()
@@ -187,20 +188,27 @@ void Device::createLogicalDevice()
 	}
 
 	// Device features
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
-	deviceFeatures.sampleRateShading = VK_TRUE;
+	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceFeatures{};
+	bufferDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures{};
+	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures.pNext                      = &bufferDeviceFeatures;
+	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.features.sampleRateShading = VK_TRUE;
+	deviceFeatures.features.shaderInt64       = VK_TRUE;
 
 	// Device create
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos       = queueCreateInfos.data();
-	createInfo.pEnabledFeatures        = &deviceFeatures;
 	createInfo.enabledExtensionCount   = static_cast<uint32_t>(m_deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 	createInfo.enabledLayerCount       = static_cast<uint32_t>(m_instanceLayers.size());
 	createInfo.ppEnabledLayerNames     = m_instanceLayers.data();
+	createInfo.pNext                   = &deviceFeatures;
 
 	if (vkCreateDevice(m_physical, &createInfo, nullptr, &m_logical) != VK_SUCCESS)
 	{

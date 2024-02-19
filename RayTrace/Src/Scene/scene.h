@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/device.h"
-#include "Core/command.h"
+#include "Application/model.h"
+
 #include "Core/renderer.h"
 
 class Scene
@@ -9,7 +9,7 @@ class Scene
 public:
 	virtual ~Scene() {}
 
-	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) = 0;
+	virtual void onLoad(ModelLoader& modelLoader) = 0;
 
 	virtual void onUpdate(Renderer& renderer) = 0;
 

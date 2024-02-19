@@ -43,24 +43,24 @@ Buffer Buffer::CreateUniformBuffer(CreateInfo& info)
     return uniformBuffer;
 }
 
-const VkBuffer& Buffer::getBuffer() const
+Buffer Buffer::CreateStorageBuffer(CreateInfo& info)
 {
-    return m_buffer;
+    return Buffer(
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        info.data,
+        info.dataSize,
+        info.dataCount,
+        *info.device,
+        *info.commandSystem);
 }
 
-const uint32_t Buffer::getCount() const
+VkDeviceAddress Buffer::getDeviceAddress() const
 {
-    return m_count;
-}
+    VkBufferDeviceAddressInfo info{};
+    info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.buffer = m_buffer;
 
-const VkDeviceSize Buffer::getSize() const
-{
-    return m_size;
-}
-
-void* Buffer::getMap()
-{
-    return m_map;
+    return vkGetBufferDeviceAddress(m_device->getLogical(), &info);
 }
 
 void Buffer::cleanup()
@@ -82,12 +82,12 @@ void Buffer::Update(BufferType type, Buffer& buffer, const void* data)
 }
 
 void Buffer::CreateBuffer(
-    VkDeviceSize size, 
-    VkBufferUsageFlags usage, 
+    VkDeviceSize          size, 
+    VkBufferUsageFlags    usage, 
     VkMemoryPropertyFlags properties, 
-    VkBuffer& buffer, 
-    VkDeviceMemory& bufferMemory, 
-    const Device& device)
+    VkBuffer&             buffer, 
+    VkDeviceMemory&       bufferMemory, 
+    const Device&         device)
 {
     // Create buffer
     VkBufferCreateInfo bufferInfo{};
@@ -106,9 +106,15 @@ void Buffer::CreateBuffer(
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device.getLogical(), buffer, &memRequirements);
 
+    // Memory allocation flags
+    VkMemoryAllocateFlagsInfo allocFlags{};
+    allocFlags.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+    allocFlags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
     // Memory allocation information
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.pNext           = &allocFlags;
     allocInfo.allocationSize  = memRequirements.size;
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, properties, device.getPhysical());
 
@@ -144,7 +150,7 @@ void Buffer::CopyBuffer(
 }
 
 Buffer::Buffer(
-    VkBufferUsageFlagBits type,
+    VkBufferUsageFlags type,
     const void* data,
     const VkDeviceSize dataSize,
     const uint32_t dataCount,

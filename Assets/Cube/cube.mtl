@@ -1,0 +1,59 @@
+newmtl yellow
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 1.0 1.0 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl red
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 1.0 0.1 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl teal
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 0.1 1.0 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl blue
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 0.1 1.0 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl green
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 0.1 0.1 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl magenta
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.1 0.1 0.1
+  Kd 1.0 0.1 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0

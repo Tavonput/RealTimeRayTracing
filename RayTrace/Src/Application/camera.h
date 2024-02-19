@@ -57,8 +57,9 @@ private:
 	uint32_t m_height = 0;
 
 	// Input state
-	bool m_leftMouse = false;
-	bool m_rightMouse = false;
+	bool m_leftMouse     = false;
+	bool m_rightMouse    = false;
+	bool m_shift         = false;
 	glm::vec2 m_mousePos = { 0.0f, 0.0f };
 
 	void updateViewMatrix() { m_view = glm::lookAt(m_eye, m_center, m_up); }

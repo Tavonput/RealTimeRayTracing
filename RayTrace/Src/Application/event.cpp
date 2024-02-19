@@ -14,18 +14,20 @@ std::string WindowResizeEvent::eventString() const
 std::string MouseClickEvent::eventString() const
 {
 	std::string buttonStr = (button == GLFW_MOUSE_BUTTON_LEFT) ? "LEFT" : "RIGHT";
+	std::string shift = (mods & GLFW_MOD_SHIFT) ? "SHIFT" : "NONE";
 
 	std::stringstream ss;
-	ss << "Mouse Click - " << buttonStr;
+	ss << "Mouse Click - " << buttonStr << ", mod: " << shift;
 	return ss.str();
 }
 
 std::string MouseReleaseEvent::eventString() const
 {
 	std::string buttonStr = (button == GLFW_MOUSE_BUTTON_LEFT) ? "LEFT" : "RIGHT";
+	std::string shift = (mods & GLFW_MOD_SHIFT) ? "SHIFT" : "NONE";
 
 	std::stringstream ss;
-	ss << "Mouse Release - " << buttonStr;
+	ss << "Mouse Release - " << buttonStr << ", mod: " << shift;
 	return ss.str();
 }
 

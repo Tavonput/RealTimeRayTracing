@@ -4,14 +4,9 @@
 
 struct MeshPushConstants
 {
-	// Initialize as identity matrix
-	glm::mat4 model = 
-		{ 1.0f, 0.0f, 0.0f, 0.0f, 
-		  0.0f, 1.0f, 0.0f, 0.0f, 
-		  0.0f, 0.0f, 1.0f, 0.0f, 
-		  0.0f, 0.0f, 0.0f, 1.0f };
-
-	glm::vec3 objectColor;
+	glm::mat4 model       = glm::mat4(1.0f);
+	glm::vec3 objectColor = { 0.5f, 0.5f, 0.5f };
+	int32_t objectID      = 0;
 };
 
 struct GlobalUniform
@@ -29,8 +24,9 @@ public:
 	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec3 normal;
+	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions();
 };

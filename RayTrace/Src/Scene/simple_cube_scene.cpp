@@ -1,73 +1,17 @@
 #include "pch.h"
 #include "simple_cube_scene.h"
 
-void SimpleCubeScene::onLoad(const Device& device, const CommandSystem& commandSystem)
+void SimpleCubeScene::onLoad(ModelLoader& modelLoader)
 {
-	// Cube data
-	std::vector<Vertex> vertices = {
-		// Red
-		{{ 0.5f, -0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
-		{{-0.5f, -0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
-		{{ 0.5f,  0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
-		{{ 0.5f,  0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
-		{{-0.5f, -0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
-		{{-0.5f,  0.5f, -0.5f},  {1.0f, 0.1f, 0.1f}, {0.0f, 0.0f, -1.0f}},
+	// Cube model
+	m_cubeModel = modelLoader.loadModel("../../../Assets/Cube/cube.obj");
 
-		// Teal
-		{{-0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{ 0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f,  0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+	// Cube instances
+	m_mainCube = m_cubeModel.createInstance();
+	m_mainCube.transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
 
-		// Magenta
-		{{-0.5f,  0.5f,  0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-		{{-0.5f,  0.5f, -0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-		{{-0.5f, -0.5f, -0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-		{{-0.5f, -0.5f, -0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-		{{-0.5f, -0.5f,  0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-		{{-0.5f,  0.5f,  0.5f},  {1.0f, 0.1f, 0.6f}, {-1.0f, 0.0f, 0.0f}},
-
-		// Yellow
-		{{ 0.5f,  0.5f, -0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f, -0.5f, -0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f, -0.5f, -0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-		{{ 0.5f, -0.5f,  0.5f},  {0.9f, 1.0f, 0.1f}, {1.0f, 0.0f, 0.0f}},
-
-		// Green
-		{{-0.5f, -0.5f, -0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-		{{ 0.5f, -0.5f, -0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-		{{ 0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-		{{ 0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-		{{-0.5f, -0.5f,  0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-		{{-0.5f, -0.5f, -0.5f},  {0.1f, 1.0f, 0.1f}, {0.0f, -1.0f, 0.0f}},
-
-		// Blue
-		{{ 0.5f,  0.5f, -0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f,  0.5f, -0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f,  0.5f, -0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f,  0.5f,  0.5f},  {0.1f, 0.1f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-	};
-
-	// Create vertex buffer
-	Buffer::CreateInfo createInfo{};
-	createInfo.device        = &device;
-	createInfo.commandSystem = &commandSystem;
-	createInfo.data          = vertices.data();
-	createInfo.dataSize      = sizeof(Vertex) * vertices.size();
-	createInfo.dataCount     = static_cast<uint32_t>(vertices.size());
-	m_vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
-
-	// Set up transforms
-	m_mainCubeTransform = glm::mat4(1.0f);
-	m_mainCubeTransform = glm::scale(m_mainCubeTransform, glm::vec3(2.0f, 2.0f, 2.0f));
-
-	m_lightCubeTransform = glm::mat4(1.0f);
+	m_lightCube = m_cubeModel.createInstance();
+	m_lightCube.transform = glm::mat4(1.0f);
 }
 
 void SimpleCubeScene::onUpdate(Renderer& renderer)
@@ -76,20 +20,26 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 	renderer.beginRenderPass(RenderPass::MAIN);
 
 	// Bind common resources
-	renderer.bindVertexBuffer(m_vertexBuffer);
+	renderer.bindVertexBuffer(m_cubeModel.getVertexBuffer());
+	renderer.bindIndexBuffer(m_cubeModel.getIndexBuffer());
 	renderer.bindDescriptorSets();
 	
-	// Draw main spinning cube
+	// Draw main cube
 	renderer.bindPipeline(Pipeline::LIGHTING);
-	renderer.pushConstants.model = m_mainCubeTransform;
+
+	renderer.pushConstants.model = m_mainCube.transform;
+	renderer.pushConstants.objectID = m_mainCube.objectID;
 	renderer.bindPushConstants();
-	renderer.drawVertex();
+
+	renderer.drawIndexed();
 
 	// Draw light cube
 	renderer.bindPipeline(Pipeline::FLAT);
-	updateLightPosition(renderer);
+
+	updateLightCube(renderer);
 	renderer.bindPushConstants();
-	renderer.drawVertex();
+
+	renderer.drawIndexed();
 
 	renderer.endRenderPass();
 	renderer.submit();
@@ -98,10 +48,10 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 void SimpleCubeScene::onUnload()
 {
-	m_vertexBuffer.cleanup();
+	m_cubeModel.cleanup();
 }
 
-void SimpleCubeScene::updateLightPosition(Renderer& renderer)
+void SimpleCubeScene::updateLightCube(Renderer& renderer)
 {
 	// Compute new position
 	float angleDelta = renderer.deltaTime * m_speed;
@@ -111,17 +61,16 @@ void SimpleCubeScene::updateLightPosition(Renderer& renderer)
 	m_lightPosition.y = m_radius * sin(m_totalAngle * 0.8f);
 	m_lightPosition.z = m_radius * sin(m_totalAngle * 0.3f);
 
-	// Set UBO light position
-	renderer.ubo.lightPosition = m_lightPosition;
-
 	// Update model matrix
-	m_lightCubeTransform = glm::translate(glm::mat4(1.0f), m_lightPosition);
-	m_lightCubeTransform = glm::scale(m_lightCubeTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+	m_lightCube.transform = glm::translate(glm::mat4(1.0f), m_lightPosition);
+	m_lightCube.transform = glm::scale(m_lightCube.transform, glm::vec3(0.1f, 0.1f, 0.1f));
+
+	// Set UBO light
+	renderer.ubo.lightPosition = m_lightPosition;
+	renderer.ubo.lightColor    = m_lightColor;
 
 	// Update push constants
-	renderer.pushConstants.model = m_lightCubeTransform;
+	renderer.pushConstants.model       = m_lightCube.transform;
 	renderer.pushConstants.objectColor = m_lightColor;
-
-	// Also set light color
-	renderer.ubo.lightColor = m_lightColor;
+	renderer.pushConstants.objectID    = m_lightCube.objectID;
 }

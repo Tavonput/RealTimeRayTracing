@@ -7,7 +7,8 @@
 
 enum class SceneBinding
 {
-	GLOBAL = 0
+	GLOBAL = 0,
+	MATERIAL = 1
 };
 
 class DescriptorSetLayout
@@ -55,7 +56,7 @@ public:
 	DescriptorSet(VkDescriptorSet set, DescriptorSetLayout* layout)
 		: m_set(set), m_layout(layout) {}
 
-	void addBufferWrite(Buffer buffer, VkDeviceSize offset, SceneBinding binding);
+	void addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, SceneBinding binding);
 	void update(const Device& device);
 
 	VkDescriptorSet& getSet();
@@ -66,8 +67,6 @@ private:
 
 	std::vector<VkWriteDescriptorSet>   m_descriptorWrites{};
 	std::vector<VkDescriptorBufferInfo> m_writeBufferInfos{};
-
-	uint32_t m_currentWrite = 0;
 };
 
 class DescriptorPool

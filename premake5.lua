@@ -30,6 +30,7 @@ project "RayTrace"
 		"%{prj.name}/Src/**.cpp",
 		"%{prj.name}/Src/**.vert",
 		"%{prj.name}/Src/**.frag",
+		"%{prj.name}/Src/**.glsl"
 	}
 
 	-- Include directories

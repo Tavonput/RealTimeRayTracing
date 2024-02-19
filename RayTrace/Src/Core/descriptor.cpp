@@ -1,11 +1,10 @@
 #include "pch.h"
 #include "descriptor.h"
 
-// -----------------------------------------------------
-// -----------------------------------------------------
+// --------------------------------------------------------------------------
 // Descriptor Set Layout
-// -----------------------------------------------------
-// -----------------------------------------------------
+//
+
 DescriptorSetLayout DescriptorSetLayout::Builder::buildLayout()
 {
 	APP_LOG_INFO("Building descriptor set layout");
@@ -49,20 +48,19 @@ void DescriptorSetLayout::cleanup(const Device& device)
 	vkDestroyDescriptorSetLayout(device.getLogical(), layout, nullptr);
 }
 
-// -----------------------------------------------------
-// -----------------------------------------------------
+// --------------------------------------------------------------------------
 // Descriptor Set
-// -----------------------------------------------------
-// -----------------------------------------------------
-void DescriptorSet::addBufferWrite(Buffer buffer, VkDeviceSize offset, SceneBinding binding)
+//
+
+void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, SceneBinding binding)
 {
 	// Write info
 	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer.getBuffer();
 	bufferInfo.offset = offset;
-	bufferInfo.range  = VK_WHOLE_SIZE;
+	bufferInfo.range  = buffer.getSize();
 
-	m_writeBufferInfos.push_back(bufferInfo);
+	m_writeBufferInfos.emplace_back(bufferInfo);
 
 	// Descriptor write
 	VkWriteDescriptorSet descriptorWrite{};
@@ -70,15 +68,33 @@ void DescriptorSet::addBufferWrite(Buffer buffer, VkDeviceSize offset, SceneBind
 	descriptorWrite.dstSet          = m_set;
 	descriptorWrite.dstBinding      = static_cast<uint32_t>(binding);
 	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.pBufferInfo     = &m_writeBufferInfos[m_currentWrite];
 
-	m_descriptorWrites.push_back(descriptorWrite);
+	// Set the correct descriptor type
+	switch (type)
+	{
+	case BufferType::UNIFORM: 
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
+		break;
+
+	case BufferType::STORAGE: 
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; 
+		break;
+
+	default:
+		APP_LOG_CRITICAL("Invalid buffer type for descriptor set");
+		throw;
+	}
+
+	m_descriptorWrites.emplace_back(descriptorWrite);
 }
 
 void DescriptorSet::update(const Device& device)
 {
+	// Setup buffer infos for each write
+	for (uint32_t i = 0; i < m_descriptorWrites.size(); i++)
+		m_descriptorWrites[i].pBufferInfo = &m_writeBufferInfos[i];
+
 	vkUpdateDescriptorSets(device.getLogical(), static_cast<uint32_t>(m_descriptorWrites.size()), m_descriptorWrites.data(), 0, nullptr);
 }
 
@@ -87,11 +103,10 @@ VkDescriptorSet& DescriptorSet::getSet()
 	return m_set;
 }
 
-// -----------------------------------------------------
-// -----------------------------------------------------
+// --------------------------------------------------------------------------
 // Descriptor Pool
-// -----------------------------------------------------
-// -----------------------------------------------------
+//
+
 void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_t setsPerFrame)
 {
 	APP_LOG_INFO("Initializing descriptor pool");
@@ -100,14 +115,16 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 
 	// Pool sizes
 	// TODO: Figure out the correct pool sizes depending on the layouts
-	//std::array<VkDescriptorPoolSize, 1> poolSizes{};
 	std::array<VkDescriptorPoolSize, 2> poolSizes{};  //***Used to be 1
 	poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = framesInFlight;
 
 	//***Changes
-	poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = framesInFlight * 2;
+	//poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//poolSizes[1].descriptorCount = framesInFlight * 2;
+
+	poolSizes[1].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	poolSizes[1].descriptorCount = framesInFlight;
 
 	// Descriptor pool creation
 	VkDescriptorPoolCreateInfo poolInfo{};
