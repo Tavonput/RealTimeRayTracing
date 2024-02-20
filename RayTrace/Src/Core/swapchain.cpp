@@ -365,9 +365,9 @@ void Swapchain::setupMSAA()
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
-	// Find a format for RGBA8 and SRGB Nonlinear
+	// Find a format for RGBA8 in linear space and SRGB non-linear for presentation
 	for (const auto& availableFormat : availableFormats)
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return availableFormat;
 
 	APP_LOG_TRACE("Image format not found. Use backup format");

@@ -1,9 +1,11 @@
 struct GlobalUniform
 {
 	mat4 viewProjection;
+	vec3 viewPosition;
+
+	float lightIntensity;
 	vec3 lightPosition;
 	vec3 lightColor;
-	vec3 viewPosition;
 };
 
 struct MaterialDescription

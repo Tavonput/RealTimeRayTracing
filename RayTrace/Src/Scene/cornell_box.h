@@ -25,6 +25,7 @@ private:
 	Model           m_cornellBoxModel;
 	Model::Instance m_cornellBox;
 
-	glm::vec3 m_lightColor    = { 1.0f, 1.0f, 1.0f };
-	glm::vec3 m_lightPosition = { 0.0f, 2.5f, 0.0f }; // Original (0.0, 2.5, 0.0) - Glossy (0.0, 1.5, 0.0)
+	glm::vec3 m_lightColor     = { 1.0f, 1.0f, 1.0f };
+	glm::vec3 m_lightPosition  = { 0.0f, 2.0f, 0.0f };
+	float     m_lightIntensity = 1.0f;
 };

@@ -145,6 +145,14 @@ Model ModelLoader::loadModel(const std::string& filename)
 	ObjLoader loader;
 	loader.loadObj(filename);
 
+	// Convert from SRGB to linear
+	for (auto& m : loader.materials)
+	{
+		m.ambient  = glm::pow(m.ambient, glm::vec3(2.2f));
+		m.diffuse  = glm::pow(m.diffuse, glm::vec3(2.2f));
+		m.specular = glm::pow(m.specular, glm::vec3(2.2f));
+	}
+
 	Model::CreateInfo modelInfo{};
 	modelInfo.device = m_device;
 

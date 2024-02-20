@@ -75,8 +75,8 @@ private:
 
 	uint32_t m_framesInFlight = 2;
 
-	CornellBoxScene m_scene;
-	// SimpleCubeScene m_scene;
+	// CornellBoxScene m_scene;
+	SimpleCubeScene m_scene;
 
 	void createRenderPass();
 	void createPipelines();

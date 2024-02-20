@@ -41,11 +41,8 @@ vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDi
     vec3  specular = dotNH * mat.specular * uni.lightColor;  
 
 	// Attenuation
-	float linear    = 0.35;
-	float quadratic = 0.44;
-
-	float distance    = length(uni.lightPosition - fragPos);
-	float attenuation = 1.0 / (1.0 + linear * distance + quadratic * (distance * distance));
+	float distance = length(uni.lightPosition - fragPos);
+	float attenuation = uni.lightIntensity / (distance * distance);
 
 	ambient  *= attenuation;
 	diffuse  *= attenuation;
@@ -65,12 +62,17 @@ void main()
 	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];
 	Material material = materialBuffer.m[matIndex];
 
+	// Lighting
 	vec3 norm     = normalize(fragNormal);
 	vec3 viewDir  = normalize(uni.viewPosition - fragPos);
 	vec3 lightDir = normalize(uni.lightPosition - fragPos);
 
-	vec3 lighting     = vec3(0.0);
-	lighting += computeLighting(material, norm, viewDir, lightDir);
+	vec3 color     = vec3(0.0);
+	color += computeLighting(material, norm, viewDir, lightDir);
 
-	outColor = vec4(lighting, 1.0);
+	// Gamma correction
+	float gamma = 2.2;
+	color = pow(color, vec3(1.0 / gamma));
+
+	outColor = vec4(color, 1.0);
 }
