@@ -6,30 +6,30 @@
 #include "structures.glsl"
 
 // Inputs
-layout(location = 0) in vec3 fragNormal;
-layout(location = 1) in vec3 fragPos;
-layout(location = 2) in vec2 texCoords;
+layout (location = 0) in vec3 fragNormal;
+layout (location = 1) in vec3 fragPos;
+layout (location = 2) in vec2 texCoords;
 
 // Outputs
-layout(location = 0) out vec4 outColor;
+layout (location = 0) out vec4 outColor;
 
 // Global uniform buffer
-layout(binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
+layout (binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
 
 // Material storage buffers
-layout(buffer_reference) buffer MaterialBuffer { Material m[]; };
-layout(buffer_reference) buffer MatIndexBuffer { int i[]; };
+layout (buffer_reference) buffer MaterialBuffer { Material m[]; };
+layout (buffer_reference) buffer MatIndexBuffer { int i[]; };
 
 // Addresses to the material storage buffers
-layout(binding = 1)  buffer MaterialDescription_ { MaterialDescription i[]; } matDesc;
+layout (binding = 1) buffer MaterialDescription_ { MaterialDescription i[]; } matDesc;
 
 // Push constant
-layout(push_constant) uniform Constants { PushConstant pc; };
+layout (push_constant) uniform Constants { PushConstant pc; };
 
 vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDirection)
 {
 	// Ambient
-	vec3 ambient = uni.lightColor * mat.ambient * mat.diffuse;
+	vec3 ambient = uni.lightColor * mat.ambient;
 
 	// Diffuse
 	float dotNL    = max(dot(normal, lightDirection), 0.0);

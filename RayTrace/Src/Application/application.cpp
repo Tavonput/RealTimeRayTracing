@@ -54,8 +54,8 @@ void Application::init(Application::CreateInfo& createInfo)
 	cameraInfo.position     = { 0.0f, 0.0f, 6.0f };
 	cameraInfo.fov          = 45.0f;
 	cameraInfo.nearPlane    = 0.1f;
-	cameraInfo.farPlane     = 100.0f;
-	cameraInfo.sensitivity  = 0.8f;
+	cameraInfo.farPlane     = 1000.0f;
+	cameraInfo.sensitivity  = 0.5f;
 	cameraInfo.windowHeight = m_swapchain.getExtent().height;
 	cameraInfo.windowWidth  = m_swapchain.getExtent().width;
 	m_camera.init(cameraInfo);

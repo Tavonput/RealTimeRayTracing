@@ -4,15 +4,14 @@
 
 #include "structures.glsl"
 
-layout(location = 0) out vec4 outColor;
+// Output
+layout (location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform _GlobalUniform
-{
-	GlobalUniform uni;
-};
+// Global uniform
+layout (binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
 
 // Push constant
-layout(push_constant) uniform Constants { PushConstant pc; };
+layout (push_constant) uniform Constants { PushConstant pc; };
 
 void main()
 {
