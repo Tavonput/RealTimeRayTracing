@@ -9,7 +9,7 @@
 enum class EventType
 {
 	NONE = 0,
-	WINDOW_RESIZE,
+	WINDOW_RESIZE, WINDOW_MINIMIZED,
 	MOUSE_CLICK, MOUSE_RELEASE, MOUSE_MOVE
 };
 
@@ -46,6 +46,15 @@ public:
 
 	WindowResizeEvent(int _width, int _height)
 		: width(_width), height(_height) {}
+};
+
+class WindowMinimizedEvent : public Event
+{
+public:
+	virtual EventType getType() const override { return EventType::WINDOW_MINIMIZED; }
+	virtual std::string eventString() const override;
+
+	WindowMinimizedEvent() {}
 };
 
 // --------------------------------------------------------------------------

@@ -35,21 +35,32 @@ void Window::getSize(int* width, int* height) const
 	glfwGetFramebufferSize(m_window, width, height);
 }
 
-void Window::resetFramebufferResize()
-{
-	framebufferResized = false;
-}
-
 bool Window::isWindowClosed()
 {
 	return glfwWindowShouldClose(m_window);
 }
 
+bool Window::isWindowMinimized()
+{
+	int width, height;
+	glfwGetWindowSize(m_window, &width, &height);
+
+	if (width == 0 || height == 0)
+		Sleep(50);
+	else
+		m_minimized = false;
+
+	return m_minimized;
+}
+
 void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
-	// Insert into the beginning to act as FIFO
 	auto& queue = EventDispatcher::GetEventQueue();
-	queue.insert(queue.begin(), std::make_unique<WindowResizeEvent>(width, height));
+
+	if (width == 0 || height == 0)
+		queue.push_back(std::make_unique<WindowMinimizedEvent>());
+	else
+		queue.insert(queue.begin(), std::make_unique<WindowResizeEvent>(width, height));
 }
 
 void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)

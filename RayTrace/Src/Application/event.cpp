@@ -11,6 +11,11 @@ std::string WindowResizeEvent::eventString() const
 	return ss.str();
 }
 
+std::string WindowMinimizedEvent::eventString() const
+{
+	return "Window Minimized";
+}
+
 std::string MouseClickEvent::eventString() const
 {
 	std::string buttonStr = (button == GLFW_MOUSE_BUTTON_LEFT) ? "LEFT" : "RIGHT";

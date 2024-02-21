@@ -87,6 +87,10 @@ void Application::run()
 	while (!m_window.isWindowClosed())
 	{
 		pollEvents();
+
+		if (m_window.isWindowMinimized())
+			continue;
+
 		m_scene.onUpdate(renderer);
 	}
 
@@ -236,6 +240,15 @@ void Application::pollEvents()
 
 				m_swapchain.onWindowResize(*windowResizeEvent);
 				m_camera.onWindowResize(*windowResizeEvent);
+				break;
+			}
+
+			case EventType::WINDOW_MINIMIZED:
+			{
+				auto minimizedEvent = dynamic_cast<WindowMinimizedEvent*>(event.get());
+				APP_LOG_TRACE(minimizedEvent->eventString());
+
+				m_window.onWindowMinimized();
 				break;
 			}
 

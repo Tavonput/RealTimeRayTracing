@@ -59,8 +59,8 @@ private:
 	SystemContext m_context;
 
 	// Rendering fields
-	Swapchain           m_swapchain;
-	CommandSystem       m_commandSystem;
+	Swapchain     m_swapchain;
+	CommandSystem m_commandSystem;
 
 	std::vector<Pipeline>   m_pipelines;
 	std::vector<RenderPass> m_renderPasses;
@@ -75,8 +75,8 @@ private:
 
 	uint32_t m_framesInFlight = 2;
 
-	// CornellBoxScene m_scene;
-	SimpleCubeScene m_scene;
+	CornellBoxScene m_scene;
+	// SimpleCubeScene m_scene;
 
 	void createRenderPass();
 	void createPipelines();
