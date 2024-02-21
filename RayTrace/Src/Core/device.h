@@ -66,4 +66,5 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	void setDeviceFeatures(VkPhysicalDeviceFeatures2& deviceFeatures);
 };

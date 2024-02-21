@@ -195,9 +195,7 @@ void Device::createLogicalDevice()
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext                      = &bufferDeviceFeatures;
-	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
-	deviceFeatures.features.sampleRateShading = VK_TRUE;
-	deviceFeatures.features.shaderInt64       = VK_TRUE;
+	setDeviceFeatures(deviceFeatures);
 
 	// Device create
 	VkDeviceCreateInfo createInfo{};
@@ -293,4 +291,34 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice device)
 		requiredExtensions.erase(extension.extensionName);
 
 	return requiredExtensions.empty();
+}
+
+void Device::setDeviceFeatures(VkPhysicalDeviceFeatures2& deviceFeatures)
+{
+	VkPhysicalDeviceFeatures supportedFeatures{};
+	vkGetPhysicalDeviceFeatures(m_physical, &supportedFeatures);
+
+	// Anisotropic filtering
+	if (supportedFeatures.samplerAnisotropy)
+		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+	else
+		APP_LOG_WARN("Requested device with anisotropic filtering but it is not supported. MAY CAUSE ERRORS");
+
+	// Sample rate shading
+	if (supportedFeatures.sampleRateShading)
+		deviceFeatures.features.sampleRateShading = VK_TRUE;
+	else
+		APP_LOG_WARN("Requested device with sample shading but it is not supported. MAY CAUSE ERRORS");
+
+	// Shader 64-bit integers
+	if (supportedFeatures.shaderInt64)
+		deviceFeatures.features.shaderInt64 = VK_TRUE;
+	else
+		APP_LOG_WARN("Requested device with shader 64-bit integers but it is not supported. MAY CAUSE ERRORS");
+
+	// Geometry shaders
+	if (supportedFeatures.geometryShader)
+		deviceFeatures.features.geometryShader = VK_TRUE;
+	else
+		APP_LOG_WARN("Requested device with geometry shaders but it is not supported. MAY CAUSE ERRORS");
 }
