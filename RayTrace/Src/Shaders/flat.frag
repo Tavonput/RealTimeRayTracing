@@ -1,21 +1,17 @@
 #version 460
 
-layout(location = 0) out vec4 outColor;
+#extension GL_ARB_gpu_shader_int64 : require
 
-layout(binding = 0) uniform GlobalUnfiform
-{
-	mat4 viewProjection;
+#include "structures.glsl"
 
-	vec3 lightPosition;
-	vec3 lightColor;
-	vec3 viewPosition;
-} ubo;
+// Output
+layout (location = 0) out vec4 outColor;
 
-layout(push_constant) uniform constants
-{
-	mat4 model;
-	vec3 objectColor;
-} pc;
+// Global uniform
+layout (binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
+
+// Push constant
+layout (push_constant) uniform Constants { PushConstant pc; };
 
 void main()
 {

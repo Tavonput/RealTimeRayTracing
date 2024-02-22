@@ -33,6 +33,7 @@ public:
 		void linkDescriptorSetLayout(DescriptorSetLayout& layout);
 
 		void enableMultisampling(VkSampleCountFlagBits sampleCount);
+		void disableFaceCulling() { m_rasterizer.cullMode = VK_CULL_MODE_NONE; }
 
 	private:
 		const Device* m_device;

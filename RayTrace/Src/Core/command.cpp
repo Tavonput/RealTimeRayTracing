@@ -59,7 +59,7 @@ void CommandSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer, const V
 
 void CommandSystem::cleanup()
 {
-    APP_LOG_INFO("Destroying command manager");
+    APP_LOG_INFO("Destroying command system");
 
     vkDestroyCommandPool(m_device->getLogical(), m_pool, nullptr);
 }

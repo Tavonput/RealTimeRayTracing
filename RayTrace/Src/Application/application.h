@@ -2,9 +2,12 @@
 
 #include "logging.h"
 #include "camera.h"
+#include "event.h"
+#include "model.h"
 
 #include "Scene/simple_cube_scene.h"
-#include "Scene/pyramid_scene.h"
+#include "Scene/cornell_box.h"
+// #include "Scene/pyramid_scene.h"
 
 #include "Core/system_context.h"
 #include "Core/swapchain.h"
@@ -56,8 +59,8 @@ private:
 	SystemContext m_context;
 
 	// Rendering fields
-	Swapchain           m_swapchain;
-	CommandSystem       m_commandSystem;
+	Swapchain     m_swapchain;
+	CommandSystem m_commandSystem;
 
 	std::vector<Pipeline>   m_pipelines;
 	std::vector<RenderPass> m_renderPasses;
@@ -66,14 +69,21 @@ private:
 	DescriptorPool             m_descriptorPool;
 	std::vector<DescriptorSet> m_descriptorSets;
 	std::vector<Buffer>        m_uniformBuffers;
+	Buffer                     m_materialDescriptionBuffer;
 
 	Camera m_camera;
 
 	uint32_t m_framesInFlight = 2;
 
+	CornellBoxScene m_scene;
+	// SimpleCubeScene m_scene;
+
 	void createRenderPass();
 	void createPipelines();
 	void createDescriptorSets();
+	void loadScene();
+
+	void pollEvents();
 
 	void cleanup();
 };

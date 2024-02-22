@@ -23,7 +23,6 @@ void Application::init(Application::CreateInfo& createInfo)
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_framesInFlight;
 	swapchainCreateInfo.vSync          = createInfo.vSync;
-
 	m_swapchain.init(swapchainCreateInfo);
 
 	// Render pass
@@ -44,16 +43,21 @@ void Application::init(Application::CreateInfo& createInfo)
 	for (uint8_t i = 0; i < m_framesInFlight; i++)
 		m_uniformBuffers.push_back(Buffer::CreateUniformBuffer(uboInfo));
 
+	// Load scene
+	loadScene();
+
 	// Descriptor Sets
 	createDescriptorSets();
 
 	// Camera
 	Camera::CreateInfo cameraInfo{};
-	cameraInfo.position  = { 4.0f, 4.0f, 4.0f };
-	cameraInfo.fov       = 45.0f;
-	cameraInfo.nearPlane = 0.1f;
-	cameraInfo.farPlane  = 100.0f;
-
+	cameraInfo.position     = { 0.0f, 0.0f, 6.0f };
+	cameraInfo.fov          = 45.0f;
+	cameraInfo.nearPlane    = 0.1f;
+	cameraInfo.farPlane     = 1000.0f;
+	cameraInfo.sensitivity  = 0.5f;
+	cameraInfo.windowHeight = m_swapchain.getExtent().height;
+	cameraInfo.windowWidth  = m_swapchain.getExtent().width;
 	m_camera.init(cameraInfo);
 
 	// Pipeline
@@ -76,20 +80,18 @@ void Application::run()
 	// Create renderer
 	Renderer renderer(rendererInfo);
 
-	// Load scene
-	APP_LOG_INFO("Loading scene");
-	SimpleCubeScene scene; // Tavonput Scene
-	// PyramidScene scene; // Alex Scene 
-	scene.onLoad(m_context.getDevice(), m_commandSystem);
-
 	Logger::changeLogLevel(LogLevel::TRACE);
 	APP_LOG_INFO("Starting main render loop");
 
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
-		glfwPollEvents();
-		scene.onUpdate(renderer);
+		pollEvents();
+
+		if (m_window.isWindowMinimized())
+			continue;
+
+		m_scene.onUpdate(renderer);
 	}
 
 	APP_LOG_INFO("Main render loop ended");
@@ -97,7 +99,6 @@ void Application::run()
 
 	// Cleanup
 	m_context.getDevice().waitForGPU();
-	scene.onUnload();
 	cleanup();
 }
 
@@ -147,6 +148,7 @@ void Application::createPipelines()
 	builder.linkShaders(lightingShaders);
 
 	builder.enableMultisampling(m_swapchain.getMSAASampleCount());
+	builder.disableFaceCulling();
 
 	// Build graphics pipeline - LIGHTING
 	m_pipelines.push_back(builder.buildPipeline());
@@ -174,6 +176,12 @@ void Application::createDescriptorSets()
 		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
+	// Add a storage buffer for the scene object materials
+	layoutBuilder.addBinding(
+		SceneBinding::MATERIAL,
+		VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
+		VK_SHADER_STAGE_FRAGMENT_BIT);
+
 	// Build layout
 	m_descriptorLayout = layoutBuilder.buildLayout();
 
@@ -185,9 +193,96 @@ void Application::createDescriptorSets()
 	{
 		m_descriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_descriptorLayout));
 
-		m_descriptorSets[i].addBufferWrite(m_uniformBuffers[i], 0, SceneBinding::GLOBAL);
+		m_descriptorSets[i].addBufferWrite(m_uniformBuffers[i], BufferType::UNIFORM, 0, SceneBinding::GLOBAL);
+		m_descriptorSets[i].addBufferWrite(m_materialDescriptionBuffer, BufferType::STORAGE, 0, SceneBinding::MATERIAL);
 		m_descriptorSets[i].update(m_context.getDevice());
 	}
+}
+
+void Application::loadScene()
+{
+	// Load scene
+	ModelLoader loader(m_context.getDevice(), m_commandSystem);
+	m_scene.onLoad(loader);
+
+	// Create material description buffer
+	std::vector<MaterialDescription> materialDescriptions = loader.getMaterialDescriptions();
+
+	Buffer::CreateInfo createInfo{};
+	createInfo.device           = &m_context.getDevice();
+	createInfo.commandSystem    = &m_commandSystem;
+	createInfo.data             = materialDescriptions.data();
+	createInfo.dataSize         = sizeof(MaterialDescription) * materialDescriptions.size();
+	createInfo.dataCount        = static_cast<uint32_t>(materialDescriptions.size());
+	m_materialDescriptionBuffer = Buffer::CreateStorageBuffer(createInfo);
+}
+
+void Application::pollEvents()
+{
+	glfwPollEvents();
+
+	// This is used to avoid processing more than one window resize per frame
+	bool processedWindowResize = false;
+
+	// Loop over all events that occurred
+	for (auto& event : EventDispatcher::GetEventQueue())
+	{
+		switch (event->getType())
+		{
+			case EventType::WINDOW_RESIZE:
+			{
+				if (processedWindowResize)
+					break;
+				processedWindowResize = true;
+
+				auto windowResizeEvent = dynamic_cast<WindowResizeEvent*>(event.get());
+				APP_LOG_TRACE(windowResizeEvent->eventString());
+
+				m_swapchain.onWindowResize(*windowResizeEvent);
+				m_camera.onWindowResize(*windowResizeEvent);
+				break;
+			}
+
+			case EventType::WINDOW_MINIMIZED:
+			{
+				auto minimizedEvent = dynamic_cast<WindowMinimizedEvent*>(event.get());
+				APP_LOG_TRACE(minimizedEvent->eventString());
+
+				m_window.onWindowMinimized();
+				break;
+			}
+
+			case EventType::MOUSE_CLICK:
+			{
+				auto mouseClickEvent = dynamic_cast<MouseClickEvent*>(event.get());
+				APP_LOG_TRACE(mouseClickEvent->eventString());
+
+				m_camera.onMouseClick(*mouseClickEvent);
+				break;
+			}
+
+			case EventType::MOUSE_RELEASE:
+			{
+				auto mouseReleaseEvent = dynamic_cast<MouseReleaseEvent*>(event.get());
+				APP_LOG_TRACE(mouseReleaseEvent->eventString());
+
+				m_camera.onMouseRelease(*mouseReleaseEvent);
+				break;
+			}
+
+			case EventType::MOUSE_MOVE:
+			{
+				auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event.get());
+				// APP_LOG_TRACE(mouseMoveEvent->eventString());
+
+				m_camera.onMouseMove(*mouseMoveEvent);
+				break;
+			}
+		}
+	}
+
+	// Cleanup event queue
+	EventDispatcher::GetEventQueue().clear();
 }
 
 //void Application::initImgui() {
@@ -221,6 +316,9 @@ void Application::cleanup()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();*/
 
+	// Scene
+	m_scene.onUnload();
+
 	// Render passes
 	for (auto& renderPass : m_renderPasses)
 		renderPass.cleanup(m_context.getDevice());
@@ -236,9 +334,10 @@ void Application::cleanup()
 	m_descriptorLayout.cleanup(m_context.getDevice());
 	m_descriptorPool.cleanup();
 
-	// Uniform Buffers
+	// Buffers
 	for (auto& buffer : m_uniformBuffers)
 		buffer.cleanup();
+	m_materialDescriptionBuffer.cleanup();
 
 	// Swapchain
 	m_swapchain.cleanup();

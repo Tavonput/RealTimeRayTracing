@@ -30,6 +30,7 @@ project "RayTrace"
 		"%{prj.name}/Src/**.cpp",
 		"%{prj.name}/Src/**.vert",
 		"%{prj.name}/Src/**.frag",
+		"%{prj.name}/Src/**.glsl"
 	}
 
 	-- Include directories
@@ -40,7 +41,8 @@ project "RayTrace"
 		"Vendor/VulkanSDK/*/Include",
 		"Vendor/GLFW/include",
 		"Vendor/GLM",
-		"Vendor/spdlog/include"
+		"Vendor/spdlog/include",
+		"Vendor/tinyobjloader"
 	}
 
 	-- Libraries

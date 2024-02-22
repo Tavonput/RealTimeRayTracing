@@ -1,48 +1,48 @@
 #version 460
 
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec3 fragPos;
+#extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_buffer_reference2 : require
 
-layout(location = 0) out vec4 outColor;
+#include "structures.glsl"
 
-layout(binding = 0) uniform GlobalUnfiform
-{
-	mat4 viewProjection;
+// Inputs
+layout (location = 0) in vec3 fragNormal;
+layout (location = 1) in vec3 fragPos;
+layout (location = 2) in vec2 texCoords;
 
-	vec3 lightPosition;
-	vec3 lightColor;
-	vec3 viewPosition;
-} ubo;
+// Outputs
+layout (location = 0) out vec4 outColor;
 
-layout(push_constant) uniform constants
-{
-	mat4 model;
-	vec3 objectColor;
-} pc;
+// Global uniform buffer
+layout (binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
 
-vec3 pointLight(vec3 lightPosition, vec3 lightColor, vec3 normal, vec3 fragPosition, vec3 viewDirection)
+// Material storage buffers
+layout (buffer_reference) buffer MaterialBuffer { Material m[]; };
+layout (buffer_reference) buffer MatIndexBuffer { int i[]; };
+
+// Addresses to the material storage buffers
+layout (binding = 1) buffer MaterialDescription_ { MaterialDescription i[]; } matDesc;
+
+// Push constant
+layout (push_constant) uniform Constants { PushConstant pc; };
+
+vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDirection)
 {
 	// Ambient
-	vec3 ambient = 0.05 * fragColor;
+	vec3 ambient = uni.lightColor * mat.ambient;
 
 	// Diffuse
-	vec3 lightDir = normalize(lightPosition - fragPosition);
-	float diff    = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse  = diff * lightColor;
+	float dotNL    = max(dot(normal, lightDirection), 0.0);
+	vec3  diffuse  = dotNL * mat.diffuse * uni.lightColor;
 
 	// Specular
-    vec3 reflectDir = reflect(-lightDir, normal);  
-    float spec      = pow(max(dot(viewDirection, reflectDir), 0.0), 32.0);
-    vec3 specular   = vec3(0.3) * spec * lightColor;  
+    vec3  halfway  = normalize(lightDirection + viewDirection);  
+    float dotNH    = pow(max(dot(normal, halfway), 0.0), mat.shininess);
+    vec3  specular = dotNH * mat.specular * uni.lightColor;  
 
 	// Attenuation
-	float constant  = 1.0;
-	float linear    = 0.35;
-	float quadratic = 0.44;
-
-	float distance    = length(ubo.lightPosition - fragPos);
-	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+	float distance = length(uni.lightPosition - fragPos);
+	float attenuation = uni.lightIntensity / (distance * distance);
 
 	ambient  *= attenuation;
 	diffuse  *= attenuation;
@@ -51,38 +51,28 @@ vec3 pointLight(vec3 lightPosition, vec3 lightColor, vec3 normal, vec3 fragPosit
 	return (ambient + diffuse + specular);
 }
 
-vec3 directionalLight(vec3 lightDirection, vec3 lightColor, vec3 normal, vec3 viewDirection)
-{
-	// Ambient
-	vec3 ambient = 0.005 * fragColor;
-
-	// Diffuse
-	vec3 lightDir = normalize(lightDirection);
-	float diff    = max(dot(normal, lightDir), 0.0);
-	vec3 diffuse  = diff * lightColor;
-
-	// Specular
-    vec3 reflectDir = reflect(-lightDir, normal);  
-    float spec      = pow(max(dot(viewDirection, reflectDir), 0.0), 8.0);
-    vec3 specular   = vec3(0.03) * spec * lightColor;  
-
-	return (ambient + diffuse + specular);
-}
-
 void main()
 {
-	vec3 sunDirection = vec3(0.5, 0.0, -1.0);
-	vec3 sunColor     = vec3(1.0, 1.0, 1.0);
-	vec3 norm         = normalize(normal);
-	vec3 viewDir      = normalize(ubo.viewPosition - fragPos);
-	
-	vec3 lighting = vec3(0.0);
+	// Get material buffers
+	MaterialDescription matAddresses   = matDesc.i[pc.objectID];
+	MatIndexBuffer      matIndexBuffer = MatIndexBuffer(matAddresses.materialIndexAddress);
+	MaterialBuffer      materialBuffer = MaterialBuffer(matAddresses.materialAddress);
 
-	// Directional light
-	// lighting += directionalLight(sunDirection, sunColor, norm, viewDir);
+	// Get the material
+	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];
+	Material material = materialBuffer.m[matIndex];
 
-	// Point light
-	lighting += pointLight(ubo.lightPosition, ubo.lightColor, norm, fragPos, viewDir);
+	// Lighting
+	vec3 norm     = normalize(fragNormal);
+	vec3 viewDir  = normalize(uni.viewPosition - fragPos);
+	vec3 lightDir = normalize(uni.lightPosition - fragPos);
 
-	outColor = vec4(lighting * fragColor, 1.0);
+	vec3 color     = vec3(0.0);
+	color += computeLighting(material, norm, viewDir, lightDir);
+
+	// Gamma correction
+	float gamma = 2.2;
+	color = pow(color, vec3(1.0 / gamma));
+
+	outColor = vec4(color, 1.0);
 }

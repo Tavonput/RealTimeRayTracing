@@ -191,37 +191,6 @@ std::vector<const char*> SystemContext::getRequiredExtensions()
 	return extensions;
 }
 
-void SystemContext::checkLayerSupport()
-{
-	// Enumerate all supported layers
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-	// Check if wanted instance layers are supported
-	for (const char* layerName : m_instanceLayers)
-	{
-		bool layerFound = false;
-		for (const auto& layerProperties : availableLayers)
-		{
-			if (strcmp(layerName, layerProperties.layerName) == 0)
-			{
-				layerFound = true;
-				break;
-			}
-		}
-		if (!layerFound)
-		{
-			APP_LOG_CRITICAL("{} not supported", layerName);
-			throw;
-		}
-	}
-
-	return;
-}
-
 std::vector<const char*> SystemContext::checkLayerSupport(std::vector<const char*>& layers)
 {
 	// Enumerate all supported layers

@@ -7,6 +7,7 @@ void Swapchain::init(Swapchain::CreateInfo& createInfo)
 	m_device  = createInfo.device;
 	m_window  = createInfo.window;
 	m_surface = createInfo.surface;
+	m_vSync   = createInfo.vSync;
 
 	setupSwapchain();
 	setupImageViews();
@@ -46,6 +47,11 @@ void Swapchain::setupFramebuffers(const VkRenderPass& renderPass)
 			throw;
 		}
 	}
+}
+
+void Swapchain::onWindowResize(WindowResizeEvent event)
+{
+	recreateSwapchain();
 }
 
 void Swapchain::recreateSwapchain()
@@ -153,11 +159,8 @@ void Swapchain::present(uint32_t frameIndex, uint32_t& imageIndex)
 	VkResult result;
 	result = vkQueuePresentKHR(m_device->getPresentQueue(), &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->framebufferResized)
-	{
-		m_window->framebufferResized = false;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		recreateSwapchain();
-	}
 	else if (result != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to present frame");
@@ -362,9 +365,9 @@ void Swapchain::setupMSAA()
 
 VkSurfaceFormatKHR Swapchain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
-	// Find a format for RGBA8 and SRGB Nonlinear
+	// Find a format for RGBA8 in linear space and SRGB non-linear for presentation
 	for (const auto& availableFormat : availableFormats)
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 			return availableFormat;
 
 	APP_LOG_TRACE("Image format not found. Use backup format");

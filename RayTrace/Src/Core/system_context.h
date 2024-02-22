@@ -45,6 +45,5 @@ private:
 
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	std::vector<const char*> getRequiredExtensions();
-	void checkLayerSupport();
 	std::vector<const char*> checkLayerSupport(std::vector<const char*>& layers);
 };

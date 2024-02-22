@@ -2,15 +2,6 @@
 
 #include "window.h"
 
-static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
-{
-	// Callback on a window resize
-	APP_LOG_TRACE("Detected framebuffer resize w: {}, h: {}", width, height);
-
-	auto context = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-	context->framebufferResized = true;
-}
-
 void Window::init(uint32_t width, uint32_t height)
 {
 	APP_LOG_INFO("Initializing GLFW");
@@ -26,8 +17,10 @@ void Window::init(uint32_t width, uint32_t height)
 	// The window will show up 100 pixels off the top left of the monitor
 	glfwSetWindowPos(m_window, 100, 100);
 
-	// Set framebuffer resize callback
-	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+	// Set callbacks
+	glfwSetFramebufferSizeCallback(m_window, &framebufferResizeCallback);
+	glfwSetMouseButtonCallback(m_window, &mouseButtonCallback);
+	glfwSetCursorPosCallback(m_window, &cursorPositionCallback);
 
 	APP_LOG_INFO("GLFW initialization successful");
 }
@@ -42,14 +35,45 @@ void Window::getSize(int* width, int* height) const
 	glfwGetFramebufferSize(m_window, width, height);
 }
 
-void Window::resetFramebufferResize()
-{
-	framebufferResized = false;
-}
-
 bool Window::isWindowClosed()
 {
 	return glfwWindowShouldClose(m_window);
+}
+
+bool Window::isWindowMinimized()
+{
+	int width, height;
+	glfwGetWindowSize(m_window, &width, &height);
+
+	if (width == 0 || height == 0)
+		Sleep(50);
+	else
+		m_minimized = false;
+
+	return m_minimized;
+}
+
+void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto& queue = EventDispatcher::GetEventQueue();
+
+	if (width == 0 || height == 0)
+		queue.push_back(std::make_unique<WindowMinimizedEvent>());
+	else
+		queue.insert(queue.begin(), std::make_unique<WindowResizeEvent>(width, height));
+}
+
+void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (action == GLFW_PRESS)
+		EventDispatcher::GetEventQueue().push_back(std::make_unique<MouseClickEvent>(button, mods));
+	else
+		EventDispatcher::GetEventQueue().push_back(std::make_unique<MouseReleaseEvent>(button, mods));
+}
+
+void Window::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	EventDispatcher::GetEventQueue().push_back(std::make_unique<MouseMoveEvent>(static_cast<int>(xpos), static_cast<int>(ypos)));
 }
 
 void Window::cleanup()
