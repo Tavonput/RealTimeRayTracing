@@ -42,7 +42,8 @@ project "RayTrace"
 		"Vendor/GLFW/include",
 		"Vendor/GLM",
 		"Vendor/spdlog/include",
-		"Vendor/tinyobjloader"
+		"Vendor/tinyobjloader",
+		"Vendor/ImGui"
 	}
 
 	-- Libraries

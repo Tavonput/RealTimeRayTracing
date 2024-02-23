@@ -285,36 +285,8 @@ void Application::pollEvents()
 	EventDispatcher::GetEventQueue().clear();
 }
 
-//void Application::initImgui() {
-//	ImGui::CreateContext();
-//	//ImGui::GetIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-//	ImGui_ImplGlfw_InitForVulkan(m_window.getWindowGLFW(), true);
-//
-//	ImGui_ImplVulkan_InitInfo info = {};
-//	info.DescriptorPool = m_descriptorPool.getPool(); //VkDescriptorPool
-//	info.RenderPass = m_renderPasses[0].renderPass;   //VkRenderPass
-//	info.Device = m_context.getDevice().getLogical(); //VkDevice
-//	info.PhysicalDevice = m_context.getDevice().getPhysical(); //VkPhysicalDevice
-//	info.ImageCount = m_framesInFlight;
-//	info.MSAASamples = m_context.getDevice().getMaxUsableSampleCount(); //VkSampleCountFlagBits
-//
-//	ImGui_ImplVulkan_Init(&info);
-//
-//	VkCommandBuffer commandBuffer = m_commandSystem.beginSingleTimeCommands();
-//	ImGui_ImplVulkan_CreateFontsTexture();
-//	m_commandSystem.endSingleTimeCommands(commandBuffer, m_context.getDevice().getGraphicsQueue());
-//
-//	vkDeviceWaitIdle(m_context.getDevice().getLogical());
-//	//ImGui_ImplVulkan_DestroyFontUploadObjects();
-//	ImGui_ImplVulkan_DestroyFontsTexture();
-//
-//}
-
 void Application::cleanup()
 {
-	/*ImGui_ImplVulkan_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();*/
 
 	// Scene
 	m_scene.onUnload();
