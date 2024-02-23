@@ -50,9 +50,9 @@ nav ul li a:hover {
     color: #006eff;
 }
 
-
 /* Section styles */
 section {
+    
     padding: 40px; /* Increased padding for more space */
     background-color: #fff; /* White background for content */
     margin: 20px 0; /* Add some space between sections */
@@ -149,4 +149,25 @@ main {
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
-  
+
+video {
+  width: 100%; /* makes the video responsive */
+  height: auto; /* maintains the aspect ratio */
+}
+
+/* dark mode styles */
+body.dark-mode {
+  background-color: #020202;
+  color: #e0e0e0;
+}
+
+/* You can add more specific styles for dark mode as needed */
+/* any new section added to the webite, update them for dark mode here */
+.dark-mode header, .dark-mode footer, .dark-mode section {
+  background-color: #1e1e1e;
+}
+
+/* nav-bar color when dark mode*/
+.dark-mode a {
+  color: #2e065f;
+}
