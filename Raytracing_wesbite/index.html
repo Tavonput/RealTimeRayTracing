@@ -22,7 +22,7 @@
     <header>
         <h1>Real-Time Ray Tracing Application</h1>
     </header>
-
+    
     <!-- Navigation bar -->
     <nav>
         <ul>
@@ -31,7 +31,9 @@
             <li><a href="#demo">Demo</a></li> <!-- Link to the Demo section -->
         </ul>
     </nav>
-
+    <!-- dark mode button -->
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    
     <!-- About section -->
     <section id="about">
         <h2>About</h2>
@@ -73,7 +75,10 @@
     <!-- Demo section -->
     <section id="demo">
         <h2>Demo</h2>
-        
+        <video width="1920" height="1080" controls>
+            <!-- path for video -->
+            <source src="video/present.mp4" type="video/mp4">
+          </video>
     </section>
 
     <!-- Footer -->
@@ -81,7 +86,5 @@
         <p2>Created by [RayWizards]</p2>
     </footer>
     <script src="script.js"></script>
-
-
 </body>
 </html>
