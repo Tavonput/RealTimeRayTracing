@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "event.h"
 #include "model.h"
+#include "Gui.h"
 
 #include "Scene/simple_cube_scene.h"
 #include "Scene/cornell_box.h"
@@ -19,19 +20,6 @@
 #include "Core/renderer.h"
 #include "Core/descriptor.h"
 #include "Core/rendering_structures.h"
-
-//#include "ImGui/imconfig.h"
-//#include "ImGui/imgui_tables.cpp"
-//#include "ImGui/imgui_internal.h"
-//#include "ImGui/imgui.cpp"
-//#include "ImGui/imgui_draw.cpp"
-//#include "ImGui/imgui_widgets.cpp"
-//#include "ImGui/imgui_demo.cpp"
-//#include "imgui.h"
-//#include "ImGui/imgui_impl_glfw.h"
-//#include "ImGui/imgui_impl_vulkan.h"
-
-
 
 class Application
 {
@@ -57,6 +45,7 @@ private:
 	// System fields
 	Window        m_window;
 	SystemContext m_context;
+	Gui           m_gui;
 
 	// Rendering fields
 	Swapchain     m_swapchain;
