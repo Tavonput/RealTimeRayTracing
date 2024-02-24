@@ -1,12 +1,20 @@
-
 #include "pch.h"
 
 #include "Gui.h"
 
 
-void Gui::init() {
+
+
+void Gui::init(ImGui_ImplVulkan_InitInfo init_info) {
+	//IMGUI_CHECKVERSION();
 	//ImGui::CreateContext();
-	//ImGui::GetIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	//ImGuiIO& io = ImGui::GetIO();
+	//ImGui::StyleColorsDark();
+	//ImGui::NewFrame();
+
+	//ImGui::Render();
+
+
 	//imgui_implglfw_initforvulkan(m_window.getwindowglfw(), true);
 
 	//imgui_implvulkan_initinfo info = {};

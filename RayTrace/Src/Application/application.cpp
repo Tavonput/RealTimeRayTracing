@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "application.h"
-
+#include "Gui.h"
 void Application::init(Application::CreateInfo& createInfo)
 {
 	// Store frames in flight value
@@ -83,6 +83,11 @@ void Application::run()
 	Logger::changeLogLevel(LogLevel::TRACE);
 	APP_LOG_INFO("Starting main render loop");
 
+	//init gui (not sure if this is where it should take place)
+	//Gui mygui;
+	//ImGui_ImplVulkan_InitInfo init_info;
+	//mygui.init(init_info);
+	// 
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
