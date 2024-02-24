@@ -13,6 +13,11 @@ workspace "RayTrace"
 -- This is for the output directory. Should look something like "Debug-x86_64"
 outputdir = "%{cfg.buildcfg}-%{cfg.architecture}"
 
+-- Dependencies
+group "Dependencies"
+	include "Vendor/ImGui"
+group ""
+
 -- Project
 project "RayTrace"
 	location "RayTrace"
@@ -43,20 +48,23 @@ project "RayTrace"
 		"Vendor/GLM",
 		"Vendor/spdlog/include",
 		"Vendor/tinyobjloader",
-		"Vendor/ImGui"
+		"Vendor/ImGui/Include",
+		"Vendor/NRD/Include"
 	}
 
 	-- Libraries
 	libdirs
 	{
 		"Vendor/VulkanSDK/*/Lib",
-		"Vendor/GLFW/lib-vc2022"
+		"Vendor/GLFW/lib-vc2022",
+		"Bin/%{cfg.buildcfg}-%{cfg.architecture}/ImGui"
 	}
 
 	links
 	{
 		"glfw3",
-		"vulkan-1"
+		"vulkan-1",
+		"ImGui"
 	}
 
 	-- PCH

@@ -6,6 +6,9 @@
 
 
 void Gui::init(ImGui_ImplVulkan_InitInfo init_info) {
+
+	APP_LOG_INFO("Initializing ImGui. IT WORKS!!!!");
+
 	//IMGUI_CHECKVERSION();
 	//ImGui::CreateContext();
 	//ImGuiIO& io = ImGui::GetIO();

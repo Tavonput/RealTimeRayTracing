@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "application.h"
-#include "Gui.h"
+
 void Application::init(Application::CreateInfo& createInfo)
 {
 	// Store frames in flight value
@@ -62,6 +62,10 @@ void Application::init(Application::CreateInfo& createInfo)
 
 	// Pipeline
 	createPipelines();
+
+	// ImGui
+	ImGui_ImplVulkan_InitInfo guiInitInfo{};
+	m_gui.init(guiInitInfo);
 }
 
 void Application::run()
