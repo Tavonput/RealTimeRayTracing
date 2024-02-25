@@ -14,6 +14,7 @@ public:
 	// Getters
 	const Device& getDevice() const;
 	const VkSurfaceKHR& getSurface() const;
+	VkInstance getInstance();
 
 	// Cleanup
 	void cleanup();

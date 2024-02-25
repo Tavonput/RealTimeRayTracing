@@ -76,7 +76,7 @@ public:
 
 	DescriptorSet allocateDescriptorSet(DescriptorSetLayout& layout);
 
-	VkDescriptorPool getPool(); //Returns the VkDescriptorPool. Used by ImGui
+	VkDescriptorPool getImguiPool(); //Returns the VkDescriptorPool. Used by ImGui
 
 	void cleanup();
 
@@ -84,4 +84,5 @@ private:
 	const Device* m_device = nullptr;
 
 	VkDescriptorPool m_pool = VK_NULL_HANDLE;
+	VkDescriptorPool m_imguiDescPool = VK_NULL_HANDLE;
 };

@@ -69,7 +69,7 @@ void CommandSystem::createCommandPool()
     APP_LOG_INFO("Initializing command pool");
 
     // Create a command pool for the graphics family
-    QueueFamilyIndices queueFamilyIndices = m_device->getIndicies();
+    QueueFamilyIndices queueFamilyIndices = m_device->getIndices();
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;

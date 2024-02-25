@@ -30,7 +30,7 @@ public:
 
 	const VkPhysicalDevice& getPhysical() const;
 	const VkDevice& getLogical() const;
-	const QueueFamilyIndices& getIndicies() const;
+	const QueueFamilyIndices& getIndices() const;
 	const VkQueue& getGraphicsQueue() const;
 	const VkQueue& getPresentQueue() const;
 

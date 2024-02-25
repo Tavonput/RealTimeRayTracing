@@ -20,7 +20,7 @@ const VkDevice& Device::getLogical() const
 	return m_logical;
 }
 
-const QueueFamilyIndices& Device::getIndicies() const
+const QueueFamilyIndices& Device::getIndices() const
 {
 	return m_indices;
 }

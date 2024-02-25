@@ -140,6 +140,23 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 		throw;
 	}
 
+	std::array<VkDescriptorPoolSize, 1> imguiPoolSizes = {}; //Might need adjustment later as GUI advances. 
+	imguiPoolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	imguiPoolSizes[0].descriptorCount = 1;
+
+	VkDescriptorPoolCreateInfo imguiPoolInfo = {};
+	imguiPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	imguiPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	imguiPoolInfo.maxSets = 1;
+	imguiPoolInfo.poolSizeCount = static_cast<uint32_t>(imguiPoolSizes.size());
+	imguiPoolInfo.pPoolSizes = imguiPoolSizes.data();
+
+	if (vkCreateDescriptorPool(m_device->getLogical(), &imguiPoolInfo, nullptr, &m_imguiDescPool) != VK_SUCCESS)
+	{
+		APP_LOG_CRITICAL("Failed to create ImGui descriptor pool");
+		throw;
+	}
+
 	APP_LOG_INFO("Descriptor pool initialization successful");
 }
 
@@ -161,8 +178,9 @@ DescriptorSet DescriptorPool::allocateDescriptorSet(DescriptorSetLayout& layout)
 	return DescriptorSet(set, &layout);
 }
 
-VkDescriptorPool DescriptorPool::getPool() {
-	return m_pool;
+VkDescriptorPool DescriptorPool::getImguiPool()
+{
+	return m_imguiDescPool;
 }
 
 void DescriptorPool::cleanup()
@@ -170,4 +188,5 @@ void DescriptorPool::cleanup()
 	APP_LOG_INFO("Destroying descriptor pool");
 
 	vkDestroyDescriptorPool(m_device->getLogical(), m_pool, nullptr);
+	vkDestroyDescriptorPool(m_device->getLogical(), m_imguiDescPool, nullptr);
 }
