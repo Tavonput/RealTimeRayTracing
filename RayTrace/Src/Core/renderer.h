@@ -2,6 +2,7 @@
 
 #include "Application/logging.h"
 #include "Application/camera.h"
+#include "Application/Gui.h"
 
 #include "device.h"
 #include "swapchain.h"
@@ -12,16 +13,6 @@
 #include "rendering_structures.h"
 #include "descriptor.h"
 
-//#include "ImGui/imconfig.h"
-//#include "ImGui/imgui_tables.cpp"
-//#include "ImGui/imgui_internal.h"
-//#include "ImGui/imgui.cpp"
-//#include "ImGui/imgui_draw.cpp"
-//#include "ImGui/imgui_widgets.cpp"
-//#include "ImGui/imgui_demo.cpp"
-//#include "ImGui/imgui.h"
-//#include "ImGui/imgui_impl_glfw.h"
-//#include "ImGui/imgui_impl_vulkan.h"
 
 class Renderer
 {
@@ -36,6 +27,7 @@ public:
 		Buffer*        pUniformBuffers;
 		DescriptorSet* pDescriptorSets;
 		Camera*        pCamera;
+		Gui*           pGui;
 
 		uint32_t framesInFlight = 2;
 	};
@@ -54,7 +46,8 @@ public:
 		  m_uniformBuffers(info.pUniformBuffers),
 		  m_descriptorSets(info.pDescriptorSets),
 		  m_camera        (info.pCamera),
-		  m_framesInFlight(info.framesInFlight)
+		  m_framesInFlight(info.framesInFlight),
+          m_gui           (info.pGui)
 	{}
 
 	void beginFrame();
@@ -81,6 +74,7 @@ private:
 	Buffer*        m_uniformBuffers = nullptr;
 	DescriptorSet* m_descriptorSets = nullptr;
 	Camera*        m_camera         = nullptr;
+	Gui*           m_gui            = nullptr;
 
 	RenderPass::PassType   m_passIndex     = RenderPass::MAIN;
 	Pipeline::PipelineType m_pipelineIndex = Pipeline::LIGHTING;

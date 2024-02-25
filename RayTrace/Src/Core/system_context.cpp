@@ -43,6 +43,11 @@ const VkSurfaceKHR& SystemContext::getSurface() const
 	return m_surface;
 }
 
+VkInstance SystemContext::getInstance()
+{
+	return m_instance;
+}
+
 void SystemContext::cleanup()
 {
 	m_device.cleanup();

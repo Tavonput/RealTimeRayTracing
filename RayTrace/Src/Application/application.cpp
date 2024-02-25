@@ -64,8 +64,20 @@ void Application::init(Application::CreateInfo& createInfo)
 	createPipelines();
 
 	// ImGui
+	Device device = m_context.getDevice(); //Reduce function calls
+
 	ImGui_ImplVulkan_InitInfo guiInitInfo{};
-	m_gui.init(guiInitInfo);
+	guiInitInfo.Instance = m_context.getInstance();
+	guiInitInfo.PhysicalDevice = device.getPhysical();
+	guiInitInfo.Device = device.getLogical();
+	guiInitInfo.QueueFamily = device.getIndices().graphicsFamily.value(); //Graphics or Present?
+	guiInitInfo.Queue = device.getGraphicsQueue();
+	guiInitInfo.DescriptorPool = m_descriptorPool.getImguiPool(); //Make separate descriptor pool class? Ex. ImGuiDescriptorPool m_imguiDesPool
+	guiInitInfo.RenderPass = m_renderPasses[0].renderPass;
+	guiInitInfo.ImageCount = 2; //Not entirely sure what to put here
+	guiInitInfo.MinImageCount = 2;
+	guiInitInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	m_gui.init(guiInitInfo, m_window);
 }
 
 void Application::run()
@@ -80,6 +92,7 @@ void Application::run()
 	rendererInfo.pDescriptorSets = m_descriptorSets.data();
 	rendererInfo.pUniformBuffers = m_uniformBuffers.data();
 	rendererInfo.framesInFlight  = m_framesInFlight;
+	rendererInfo.pGui            = &m_gui;
 
 	// Create renderer
 	Renderer renderer(rendererInfo);

@@ -7,6 +7,9 @@
 
 void Renderer::beginFrame()
 {
+
+	m_gui->beginUI();
+
 	// Acquire image from swapchain
 	m_imageIndex = m_swapchain->acquireImage(m_frameIndex);
 
@@ -55,7 +58,10 @@ void Renderer::beginFrame()
 }
 
 void Renderer::submit()
-{
+{ 
+
+	m_gui->renderUI(m_commandBuffer);
+
 	m_swapchain->submitGraphics(m_commandBuffer, m_frameIndex);
 }
 
@@ -141,14 +147,5 @@ void Renderer::drawVertex()
 void Renderer::drawIndexed()
 {
 	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
-
-	/*ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	ImGui::ShowDebugLogWindow();
-
-	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_pipelines[m_pipelineIndex].pipeline);*/
 
 }
