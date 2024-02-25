@@ -41,6 +41,8 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 	renderer.drawIndexed();
 
+	renderer.drawUI();
+	
 	renderer.endRenderPass();
 	renderer.submit();
 	renderer.endFrame();
