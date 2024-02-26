@@ -2,6 +2,7 @@
 body, h1, h2, p, ul {
     margin: 0;
     padding: 0;
+    text-align: center
 }
 
 /* Set font family */
@@ -52,7 +53,6 @@ nav ul li a:hover {
 
 /* Section styles */
 section {
-    
     padding: 40px; /* Increased padding for more space */
     background-color: #fff; /* White background for content */
     margin: 20px 0; /* Add some space between sections */
@@ -171,3 +171,4 @@ body.dark-mode {
 .dark-mode a {
   color: #2e065f;
 }
+
