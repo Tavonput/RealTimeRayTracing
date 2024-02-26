@@ -67,16 +67,16 @@ void Application::init(Application::CreateInfo& createInfo)
 	Device device = m_context.getDevice(); //Reduce function calls
 
 	ImGui_ImplVulkan_InitInfo guiInitInfo{};
-	guiInitInfo.Instance = m_context.getInstance();
+	guiInitInfo.Instance       = m_context.getInstance();
 	guiInitInfo.PhysicalDevice = device.getPhysical();
-	guiInitInfo.Device = device.getLogical();
-	guiInitInfo.QueueFamily = device.getIndices().graphicsFamily.value(); //Graphics or Present?
-	guiInitInfo.Queue = device.getGraphicsQueue();
+	guiInitInfo.Device         = device.getLogical();
+	guiInitInfo.QueueFamily    = device.getIndices().graphicsFamily.value(); //Graphics or Present?
+	guiInitInfo.Queue          = device.getGraphicsQueue();
 	guiInitInfo.DescriptorPool = m_descriptorPool.getImguiPool(); //Make separate descriptor pool class? Ex. ImGuiDescriptorPool m_imguiDesPool
-	guiInitInfo.RenderPass = m_renderPasses[0].renderPass;
-	guiInitInfo.ImageCount = 2; //Not entirely sure what to put here
-	guiInitInfo.MinImageCount = 2;
-	guiInitInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	guiInitInfo.RenderPass     = m_renderPasses[RenderPass::MAIN].renderPass;
+	guiInitInfo.ImageCount     = m_swapchain.getImageCount();
+	guiInitInfo.MinImageCount  = 2;
+	guiInitInfo.MSAASamples    = m_swapchain.getMSAASampleCount();
 	m_gui.init(guiInitInfo, m_window);
 }
 
@@ -309,9 +309,11 @@ void Application::pollEvents()
 
 void Application::cleanup()
 {
-
 	// Scene
 	m_scene.onUnload();
+
+	// ImGui
+	m_gui.cleanup();
 
 	// Render passes
 	for (auto& renderPass : m_renderPasses)

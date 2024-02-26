@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "window.h"
+#include "imgui.h"
 
 void Window::init(uint32_t width, uint32_t height)
 {
@@ -65,6 +66,10 @@ void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height
 
 void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+	// ImGui event
+	if (ImGui::GetIO().WantCaptureMouse)
+		return;
+
 	if (action == GLFW_PRESS)
 		EventDispatcher::GetEventQueue().push_back(std::make_unique<MouseClickEvent>(button, mods));
 	else

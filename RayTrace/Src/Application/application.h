@@ -37,8 +37,6 @@ public:
 
 	void init(Application::CreateInfo& createInfo);
 
-	//void initImgui(); //***Changes
-
 	void run();
 
 private:

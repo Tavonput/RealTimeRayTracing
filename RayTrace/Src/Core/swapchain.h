@@ -38,6 +38,7 @@ public:
 	VkExtent2D getExtent();
 	VkFramebuffer getFramebuffer(uint32_t index);
 	VkSampleCountFlagBits getMSAASampleCount();
+	const uint32_t getImageCount() const { return static_cast<uint32_t>(m_images.size()); }
 
 
 	void cleanup();

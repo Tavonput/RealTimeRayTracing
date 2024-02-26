@@ -65,6 +65,7 @@ public:
 
 	void drawVertex();
 	void drawIndexed();
+	void drawUI();
 
 private:
 	Swapchain*     m_swapchain      = nullptr;

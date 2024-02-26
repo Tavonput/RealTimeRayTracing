@@ -7,7 +7,6 @@
 
 void Renderer::beginFrame()
 {
-
 	m_gui->beginUI();
 
 	// Acquire image from swapchain
@@ -59,9 +58,6 @@ void Renderer::beginFrame()
 
 void Renderer::submit()
 { 
-
-	m_gui->renderUI(m_commandBuffer);
-
 	m_swapchain->submitGraphics(m_commandBuffer, m_frameIndex);
 }
 
@@ -148,4 +144,9 @@ void Renderer::drawIndexed()
 {
 	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
 
+}
+
+void Renderer::drawUI()
+{
+	m_gui->renderUI(m_commandBuffer);
 }

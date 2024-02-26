@@ -45,6 +45,8 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 	 // renderer.bindPushConstants();
 	 // renderer.drawIndexed();
 
+	renderer.drawUI();
+
 	renderer.endRenderPass();
 	renderer.submit();
 	renderer.endFrame();
