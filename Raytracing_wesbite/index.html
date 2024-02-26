@@ -29,28 +29,30 @@
             <li><a href="#about">About</a></li> <!-- Link to the About section -->
             <li><a href="#features">Features</a></li> <!-- Link to the Features section -->
             <li><a href="#demo">Demo</a></li> <!-- Link to the Demo section -->
+            <button onclick="toggleDarkMode()">Toggle Dark Mode</button> <!-- dark mode button -->
         </ul>
     </nav>
-    <!-- dark mode button -->
-    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
     
     <!-- About section -->
     <section id="about">
-        <h2>About</h2>
+        <h2>Our Application</h2>
+        <h>At RayWizards,  we're very passionate about using real-time ray tracing to bring a new level of realism and 
+            depth to digital experiences.</h>
     </section>
 
     <!-- Features section -->
     <section id="features">
         <h2>Features</h2>
-        <ul>
-            <li>Real-time rendering</li>
-        </ul>
+        <p>Our image slider feature provides users with an interactive 
+            way to visualize the transformative power of our real-time ray tracing technology, 
+            enabling a direct comparison between blurry rendering and our ray-traced graphics.</p>
+        
         <main>
             <div class="container">
                 <div class="image-container">
                     <!-- input path image in here -->
-                  <img class="image-before slider-image" src="image/Gojo_before1.jpg"/>
-                  <img class="image-after slider-image"src="image/Gojo.jpg" />
+                  <img class="image-before slider-image" src="image/before.png"/>
+                  <img class="image-after slider-image"src="image/after.jpg" />
                 </div>
 
                 <!-- how much we can move the slider -->

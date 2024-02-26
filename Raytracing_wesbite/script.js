@@ -9,14 +9,16 @@ document.querySelector('.slider').addEventListener('input', (e) => {
 
 // function to toggle dark mode
 function toggleDarkMode() {
-  const body = document.body;
-  body.classList.toggle('dark-mode');
-  
-  // save the user preference in a localStorage
-  if(body.classList.contains('dark-mode')) {
-      localStorage.setItem('darkMode', 'enabled');
+  var element = document.body;
+  var themeToggleImg = document.getElementById('theme-toggle');
+  element.classList.toggle("dark-mode");
+
+  if (element.classList.contains("dark-mode")) {
+      themeToggleImg.src = 'image\sun.png'; // path to your sun image
+      themeToggleImg.alt = 'Toggle Light Mode';
   } else {
-      localStorage.setItem('darkMode', 'disabled');
+      themeToggleImg.src = 'image\moon.png'; // path to your moon image
+      themeToggleImg.alt = 'Toggle Dark Mode';
   }
 }
 
