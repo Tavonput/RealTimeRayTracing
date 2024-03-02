@@ -43,10 +43,10 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 		renderer.drawIndexed();
 
 		// Visualize the light position
-		// glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), m_lightPosition);
-		// renderer.pushConstants.model = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
-		// renderer.bindPushConstants();
-		// renderer.drawIndexed();
+		glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), m_lightPosition);
+		renderer.pushConstants.model = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+		renderer.bindPushConstants();
+		renderer.drawIndexed();
 
 		renderer.endRenderPass();
 	}

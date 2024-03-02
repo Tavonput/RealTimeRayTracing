@@ -61,7 +61,7 @@ public:
 		: m_set(set), m_layout(layout) {}
 
 	void addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, uint32_t binding);
-	void addImageWrite(VkImageView imageView, VkSampler sampler, uint32_t binding);
+	void addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding);
 	void update(const Device& device);
 
 	VkDescriptorSet& getSet();

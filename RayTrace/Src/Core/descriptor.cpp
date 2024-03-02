@@ -94,14 +94,8 @@ void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize 
 	m_descriptorWrites.emplace_back(descriptorWrite);
 }
 
-void DescriptorSet::addImageWrite(VkImageView imageView, VkSampler sampler, uint32_t binding)
+void DescriptorSet::addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding)
 {
-	// Write info
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView   = imageView;
-	imageInfo.sampler     = sampler;
-
 	m_writeImageInfos.push_back(imageInfo);
 
 	// Descriptor write

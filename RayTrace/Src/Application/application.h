@@ -25,6 +25,7 @@
 #include "Core/descriptor.h"
 #include "Core/rendering_structures.h"
 #include "Core/framebuffer.h"
+#include "Core/texture.h"
 
 class Application
 {
@@ -65,11 +66,10 @@ private:
 	DescriptorSetLayout        m_postDescriptorLayout;
 	std::vector<DescriptorSet> m_postDescriptorSets;
 
-	// Main offscreen pass (Will be refactored)
+	// Main offscreen pass
 	Framebuffer                m_offscreenFramebuffer;
-	Image                      m_offscreenColorImage;
+	Texture                    m_offscreenColorTexture;
 	DepthBuffer                m_offscreenDepthBuffer;
-	VkSampler                  m_offscreenSampler = VK_NULL_HANDLE;
 	DescriptorSetLayout        m_offscreenDescriptorLayout;
 	std::vector<DescriptorSet> m_offscreenDescriptorSets;
 	std::vector<Buffer>        m_uniformBuffers;
@@ -85,8 +85,8 @@ private:
 	void createPipelines();
 	void createDescriptorSets();
 	void createFramebuffers();
-	void setupOffscreenRender();
 
+	void setupOffscreenRender();
 	void resetOffscreenRender();
 
 	void loadScene();

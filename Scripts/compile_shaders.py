@@ -1,69 +1,59 @@
 import os
 import subprocess
 
-def find_vulkan_version() -> str:
-    parentDirectory = "../Vendor/VulkanSDK"
+from glob import glob
 
-    # There should only be one subdirectory
-    subDirectories = [d for d in os.listdir(parentDirectory)]
-    return subDirectories[0]
+class ShaderCompiler:
+    def __init__(self) -> None:
+        pass
 
-def check_shader_directory() -> None:
-    bin_dir = "../Bin"
-    shader_dir = "../Bin/Shaders"
+    def compile(self) -> None:
+        vulkan_version = self._find_vulkan_version()
+        self._check_shader_directory()
+        
+        executable = f"../Vendor/VulkanSDK/{vulkan_version}/Bin/glslc.exe"
+        source_dir = "../RayTrace/Src/Shaders"
+        bin_dir    = "../Bin/Shaders"
+        extensions = ["*.vert", "*.frag"]
 
-    # Check for binaries directory
-    if not os.path.exists(bin_dir):
-        os.makedirs(bin_dir)
-        print(f"Created directory {bin_dir}")
+        # Find all shader sources to compile
+        source_paths = []
+        for ext in extensions:
+            source_paths.extend(glob(f"{source_dir}/{ext}"))
 
-    # Check for shaders directory
-    if not os.path.exists(shader_dir):
-        os.makedirs(shader_dir)
-        print(f"Created directory {shader_dir}")
+        # Compile
+        for source_path in source_paths:
+            name = os.path.basename(source_path)
+            name, ext = os.path.splitext(name)
+            bin_path = f"{bin_dir}/{name}_{ext[1:]}.spv"
 
-def compile_shaders(vulkan_version) -> None:
-    executable = f"../Vendor/VulkanSDK/{vulkan_version}/Bin/glslc.exe"
+            print(f"Compiling [{source_path}] ---> [{bin_path}]")
+            subprocess.run([executable, source_path, "-o", bin_path])
 
-    # Vertex shader - Flat
-    print("Compiling vertex shader")
-    vert_src = "../RayTrace/Src/Shaders/flat.vert"
-    vert_bin = "../Bin/Shaders/flat_vert.spv"
-    subprocess.run([executable, vert_src, "-o", vert_bin])
+        print("Compilation finished")
 
-    # Fragment shader - Flat
-    print("Compiling fragment shader")
-    frag_src = "../RayTrace/Src/Shaders/flat.frag"
-    frag_bin = "../Bin/Shaders/flat_frag.spv"
-    subprocess.run([executable, frag_src, "-o", frag_bin])
-    
-    # Vertex shader - Lighting
-    print("Compiling vertex shader")
-    vert_src = "../RayTrace/Src/Shaders/lighting.vert"
-    vert_bin = "../Bin/Shaders/lighting_vert.spv"
-    subprocess.run([executable, vert_src, "-o", vert_bin])
-    
-    # Fragment shader - Flat
-    print("Compiling fragment shader")
-    frag_src = "../RayTrace/Src/Shaders/lighting.frag"
-    frag_bin = "../Bin/Shaders/lighting_frag.spv"
-    subprocess.run([executable, frag_src, "-o", frag_bin])
+    def _find_vulkan_version(self) -> str:
+        parentDirectory = "../Vendor/VulkanSDK"
 
-    # Vertex shader - Post
-    print("Compiling vertex shader")
-    vert_src = "../RayTrace/Src/Shaders/post.vert"
-    vert_bin = "../Bin/Shaders/post_vert.spv"
-    subprocess.run([executable, vert_src, "-o", vert_bin])
-    
-    # Fragment shader - Post
-    print("Compiling fragment shader")
-    frag_src = "../RayTrace/Src/Shaders/post.frag"
-    frag_bin = "../Bin/Shaders/post_frag.spv"
-    subprocess.run([executable, frag_src, "-o", frag_bin])
+        # There should only be one subdirectory
+        subDirectories = [d for d in os.listdir(parentDirectory)]
+        return subDirectories[0]
 
-    print("Compilation finished")
+    def _check_shader_directory(self) -> None:
+        bin_dir = "../Bin"
+        shader_dir = "../Bin/Shaders"
+
+        # Check for binaries directory
+        if not os.path.exists(bin_dir):
+            os.makedirs(bin_dir)
+            print(f"Created directory {bin_dir}")
+
+        # Check for shaders directory
+        if not os.path.exists(shader_dir):
+            os.makedirs(shader_dir)
+            print(f"Created directory {shader_dir}")
+
 
 if __name__ == "__main__":
-    vulkan_version = find_vulkan_version()
-    check_shader_directory()
-    compile_shaders(vulkan_version)
+    compiler = ShaderCompiler()
+    compiler.compile()

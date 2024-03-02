@@ -5,11 +5,7 @@
 void Application::init(Application::Settings& settings)
 {
 	// Store settings
-	m_settings.windowHeight   = settings.windowHeight;
-	m_settings.windowWidth    = settings.windowWidth;
-	m_settings.framesInFlight = settings.framesInFlight;
-	m_settings.vSync          = settings.vSync;
-	m_settings.cpuRaytracing  = settings.cpuRaytracing;
+	m_settings = settings;
 
 	// Initialize logger to info level
 	Logger::init(LogLevel::INFO);
@@ -64,7 +60,6 @@ void Application::init(Application::Settings& settings)
 
 		m_uniformBuffers.push_back(Buffer::CreateUniformBuffer(uboInfo));
 	}
-
 
 	// Load scene
 	loadScene();
@@ -133,11 +128,6 @@ void Application::run()
 	Logger::changeLogLevel(LogLevel::TRACE);
 	APP_LOG_INFO("Starting main render loop");
 
-	//init gui (not sure if this is where it should take place)
-	//Gui mygui;
-	//ImGui_ImplVulkan_InitInfo init_info;
-	//mygui.init(init_info);
-	// 
 	// Run until the window is closed
 	while (!m_window.isWindowClosed())
 	{
@@ -167,10 +157,10 @@ void Application::createRenderPasses()
 	// Offscreen - MAIN
 	{
 		builder.addColorAttachment(
-			m_offscreenColorImage.format,
-			m_offscreenColorImage.numSamples,
+			m_offscreenColorTexture.getImage().format,
+			m_offscreenColorTexture.getImage().numSamples,
 			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			m_offscreenColorTexture.getDescriptor().imageLayout,
 			{ {0.0f, 0.0f, 0.0f, 1.0f} });
 
 		builder.addDepthAttachment(
@@ -200,12 +190,6 @@ void Application::createRenderPasses()
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			{ 1.0f, 0 });
 
-		// Add resolve attachment for presentation for MSAA
-		// builder.addResolveAttachment(
-		//     m_swapchain.getFormat(),
-		//     VK_IMAGE_LAYOUT_UNDEFINED,
-		//     { {0.0f, 0.0f, 0.0f, 1.0f} });
-
 		m_renderPasses.push_back(builder.buildPass("Post Render Pass"));
 	}
 }
@@ -220,7 +204,9 @@ void Application::createPipelines()
 	// Offscreen
 	{
 		builder.addGraphicsBase();
+
 		builder.disableFaceCulling();
+
 		builder.linkRenderPass(m_renderPasses[RenderPass::MAIN]);
 		builder.linkDescriptorSetLayout(m_offscreenDescriptorLayout);
 		builder.linkPushConstants(sizeof(MeshPushConstants));
@@ -248,8 +234,10 @@ void Application::createPipelines()
 	{
 		builder.reset();
 		builder.addGraphicsBase();
+
 		builder.disableFaceCulling();
 		builder.disableDepthTesting();
+
 		builder.linkRenderPass(m_renderPasses[RenderPass::POST]);
 		builder.linkDescriptorSetLayout(m_postDescriptorLayout);
 
@@ -316,7 +304,7 @@ void Application::createDescriptorSets()
 		m_offscreenDescriptorSets[i].update(m_context.getDevice());
 
 		// Update post set
-		m_postDescriptorSets[i].addImageWrite(m_offscreenColorImage.view, m_offscreenSampler, 0);
+		m_postDescriptorSets[i].addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
 		m_postDescriptorSets[i].update(m_context.getDevice());
 	}
 }
@@ -326,7 +314,7 @@ void Application::createFramebuffers()
 	// Create offscreen framebuffer
 	{
 		std::array<VkImageView, 2> offscreenAttachments = {
-			m_offscreenColorImage.view,
+			m_offscreenColorTexture.getImage().view,
 			m_offscreenDepthBuffer.image.view
 		};
 
@@ -371,77 +359,19 @@ void Application::createFramebuffers()
 
 void Application::setupOffscreenRender()
 {
-	//
-	// NOTE: Some of this stuff will be moved to a separate texture class
-	//
-
-	// Create color image
-	{
-		// Create image
-		Image::CreateInfo imgCreateInfo{};
-		imgCreateInfo.width      = m_swapchain.getExtent().width;
-		imgCreateInfo.height     = m_swapchain.getExtent().height;
-		imgCreateInfo.mipLevels  = 1;
-		imgCreateInfo.layerCount = 1;
-		imgCreateInfo.numSamples = VK_SAMPLE_COUNT_1_BIT;
-		imgCreateInfo.tiling     = VK_IMAGE_TILING_OPTIMAL;
-		imgCreateInfo.usage      = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		imgCreateInfo.device     = &m_context.getDevice();
-		imgCreateInfo.name       = "Offscreen Color Image";
-
-		imgCreateInfo.format = m_context.getDevice().findSupportedFormat(
-			{ VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
-
-		m_offscreenColorImage = Image::CreateImage(imgCreateInfo);
-
-		// Setup image view
-		Image::ImageViewSetupInfo viewSetupInfo{};
-		viewSetupInfo.format      = VK_FORMAT_R32G32B32A32_SFLOAT;
-		viewSetupInfo.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewSetupInfo.mipLevels   = 1;
-		viewSetupInfo.layerCount  = 1;
-		viewSetupInfo.device      = &m_context.getDevice();
-
-		Image::SetupImageView(m_offscreenColorImage, viewSetupInfo);
-	}
+	// Color texture
+	Texture::CreateInfo textureInfo{};
+	textureInfo.pDevice     = &m_context.getDevice();
+	textureInfo.extent      = m_swapchain.getExtent();
+	textureInfo.name        = "Offscreen Texture";
+	m_offscreenColorTexture = Texture::Create(textureInfo);
 
 	// Create depth buffer
-	m_offscreenDepthBuffer = DepthBuffer(m_context.getDevice(), m_swapchain.getExtent(), VK_SAMPLE_COUNT_1_BIT, "Offscreen Depth Buffer");
-
-	// Sampler
-	{
-		// Get physical device properties for anisotropy
-		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(m_context.getDevice().getPhysical(), &properties);
-
-		// Create sampler
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter               = VK_FILTER_LINEAR;
-		samplerInfo.minFilter               = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.anisotropyEnable        = VK_TRUE;
-		samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
-		samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable           = VK_FALSE;
-		samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.minLod                  = 0.0f;
-		samplerInfo.maxLod                  = 1.0f;
-		samplerInfo.mipLodBias              = 0.0f;
-
-		if (vkCreateSampler(m_context.getDevice().getLogical(), &samplerInfo, nullptr, &m_offscreenSampler) != VK_SUCCESS)
-		{
-			APP_LOG_CRITICAL("Failed to create sampler");
-			throw;
-		}
-	}
+	m_offscreenDepthBuffer = DepthBuffer(
+		m_context.getDevice(), 
+		m_swapchain.getExtent(), 
+		m_offscreenColorTexture.getImage().numSamples, 
+		"Offscreen Depth Buffer");
 }
 
 void Application::resetOffscreenRender()
@@ -452,18 +382,17 @@ void Application::resetOffscreenRender()
 	m_offscreenFramebuffer.cleanup();
 
 	// Destroy attachments
-	m_offscreenColorImage.cleanup(m_context.getDevice().getLogical());
+	m_offscreenColorTexture.cleanup();
 	m_offscreenDepthBuffer.cleanup();
-	vkDestroySampler(m_context.getDevice().getLogical(), m_offscreenSampler, nullptr);
 
-	// Reset color image, depth buffer, and sampler
+	// Reset texture and depth buffer
 	setupOffscreenRender();
 
 	// Update descriptor sets
 	for (auto& set : m_postDescriptorSets)
 	{
 		// Update post set
-		set.addImageWrite(m_offscreenColorImage.view, m_offscreenSampler, 0);
+		set.addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
 		set.update(m_context.getDevice());
 	}
 
@@ -594,9 +523,8 @@ void Application::cleanup()
 		renderPass.cleanup(m_context.getDevice());
 
 	// Offscreen stuff
-	m_offscreenColorImage.cleanup(m_context.getDevice().getLogical());
+	m_offscreenColorTexture.cleanup();
 	m_offscreenDepthBuffer.cleanup();
-	vkDestroySampler(m_context.getDevice().getLogical(), m_offscreenSampler, nullptr);
 
 	// Swapchain
 	m_swapchain.cleanup();
