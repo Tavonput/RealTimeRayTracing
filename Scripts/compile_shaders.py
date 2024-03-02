@@ -49,6 +49,18 @@ def compile_shaders(vulkan_version) -> None:
     frag_bin = "../Bin/Shaders/lighting_frag.spv"
     subprocess.run([executable, frag_src, "-o", frag_bin])
 
+    # Vertex shader - Post
+    print("Compiling vertex shader")
+    vert_src = "../RayTrace/Src/Shaders/post.vert"
+    vert_bin = "../Bin/Shaders/post_vert.spv"
+    subprocess.run([executable, vert_src, "-o", vert_bin])
+    
+    # Fragment shader - Post
+    print("Compiling fragment shader")
+    frag_src = "../RayTrace/Src/Shaders/post.frag"
+    frag_bin = "../Bin/Shaders/post_frag.spv"
+    subprocess.run([executable, frag_src, "-o", frag_bin])
+
     print("Compilation finished")
 
 if __name__ == "__main__":

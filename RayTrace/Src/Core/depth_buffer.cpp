@@ -2,11 +2,12 @@
 
 #include "depth_buffer.h"
 
-DepthBuffer::DepthBuffer(const Device& device, VkExtent2D& extent, VkSampleCountFlagBits numSamples)
+DepthBuffer::DepthBuffer(const Device& device, VkExtent2D extent, VkSampleCountFlagBits numSamples, const std::string name)
 {
-	APP_LOG_INFO("Creating depth buffer");
+	APP_LOG_INFO("Creating depth buffer ({})", name);
 
 	m_device = &device;
+	m_name = name;
 
 	// Find format
 	format = m_device->findSupportedFormat(
@@ -26,6 +27,7 @@ DepthBuffer::DepthBuffer(const Device& device, VkExtent2D& extent, VkSampleCount
 	imgCreateInfo.usage      = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	imgCreateInfo.device     = m_device;
+	imgCreateInfo.name       = name.c_str();
 
 	image = Image::CreateImage(imgCreateInfo);
 
@@ -42,7 +44,7 @@ DepthBuffer::DepthBuffer(const Device& device, VkExtent2D& extent, VkSampleCount
 
 void DepthBuffer::cleanup()
 {
-	APP_LOG_INFO("Destroying depth buffer");
+	APP_LOG_INFO("Destroying depth buffer ({})", m_name);
 
 	image.cleanup(m_device->getLogical());
 }

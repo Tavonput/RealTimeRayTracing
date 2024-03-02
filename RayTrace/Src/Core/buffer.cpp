@@ -10,7 +10,8 @@ Buffer Buffer::CreateVertexBuffer(CreateInfo& info)
         info.dataSize,
         info.dataCount,
         *info.device,
-        *info.commandSystem);
+        *info.commandSystem,
+        info.name);
 }
 
 Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
@@ -21,11 +22,14 @@ Buffer Buffer::CreateIndexBuffer(CreateInfo& info)
         info.dataSize,
         info.dataCount,
         *info.device,
-        *info.commandSystem);
+        *info.commandSystem,
+        info.name);
 }
 
 Buffer Buffer::CreateUniformBuffer(CreateInfo& info)
 {
+    APP_LOG_INFO("Creating buffer ({})", info.name);
+
     VkBuffer buffer;
     VkDeviceMemory memory;
 
@@ -37,7 +41,7 @@ Buffer Buffer::CreateUniformBuffer(CreateInfo& info)
         *info.device);
 
     // Create custom buffer and map memory
-    auto uniformBuffer = Buffer(*info.device, buffer, memory, info.dataSize, 0);
+    auto uniformBuffer = Buffer(*info.device, buffer, memory, info.dataSize, 0, info.name);
     uniformBuffer.mapMemory();
 
     return uniformBuffer;
@@ -51,7 +55,8 @@ Buffer Buffer::CreateStorageBuffer(CreateInfo& info)
         info.dataSize,
         info.dataCount,
         *info.device,
-        *info.commandSystem);
+        *info.commandSystem,
+        info.name);
 }
 
 VkDeviceAddress Buffer::getDeviceAddress() const
@@ -65,7 +70,7 @@ VkDeviceAddress Buffer::getDeviceAddress() const
 
 void Buffer::cleanup()
 {
-    APP_LOG_INFO("Destroying buffer");
+    APP_LOG_INFO("Destroying buffer ({})", m_name);
 
     vkDestroyBuffer(m_device->getLogical(), m_buffer, nullptr);
     vkFreeMemory(m_device->getLogical(), m_memory, nullptr);
@@ -155,14 +160,16 @@ Buffer::Buffer(
     const VkDeviceSize dataSize,
     const uint32_t dataCount,
     const Device& device,
-    const CommandSystem& commandPool)
+    const CommandSystem& commandPool,
+    const std::string name)
 {
     m_device = &device;
+    m_name = name;
 
     m_size = dataSize;
     m_count = dataCount;
 
-    APP_LOG_INFO("Creating buffer");
+    APP_LOG_INFO("Creating buffer ({})", name);
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;

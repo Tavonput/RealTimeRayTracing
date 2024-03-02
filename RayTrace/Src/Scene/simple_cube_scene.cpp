@@ -17,33 +17,46 @@ void SimpleCubeScene::onLoad(ModelLoader& modelLoader)
 void SimpleCubeScene::onUpdate(Renderer& renderer)
 {
 	renderer.beginFrame();
-	renderer.beginRenderPass(RenderPass::MAIN);
 
-	// Bind common resources
-	renderer.bindVertexBuffer(m_cubeModel.getVertexBuffer());
-	renderer.bindIndexBuffer(m_cubeModel.getIndexBuffer());
-	renderer.bindDescriptorSets();
-	
-	// Draw main cube
-	renderer.bindPipeline(Pipeline::LIGHTING);
+	// Offscreen pass
+	{
+		renderer.beginRenderPass(RenderPass::MAIN);
 
-	renderer.pushConstants.model = m_mainCube.transform;
-	renderer.pushConstants.objectID = m_mainCube.objectID;
-	renderer.bindPushConstants();
+		// Bind buffers
+		renderer.bindVertexBuffer(m_cubeModel.getVertexBuffer());
+		renderer.bindIndexBuffer(m_cubeModel.getIndexBuffer());
 
-	renderer.drawIndexed();
+		// Draw main cube
+		renderer.bindPipeline(Pipeline::LIGHTING);
+		renderer.bindDescriptorSets();
 
-	// Draw light cube
-	renderer.bindPipeline(Pipeline::FLAT);
+		renderer.pushConstants.model = m_mainCube.transform;
+		renderer.pushConstants.objectID = m_mainCube.objectID;
+		renderer.bindPushConstants();
+		renderer.drawIndexed();
 
-	updateLightCube(renderer);
-	renderer.bindPushConstants();
 
-	renderer.drawIndexed();
+		// Draw light cube
+		renderer.bindPipeline(Pipeline::FLAT);
+		updateLightCube(renderer);
+		renderer.bindPushConstants();
+		renderer.drawIndexed();
 
-	renderer.drawUI();
-	
-	renderer.endRenderPass();
+		renderer.endRenderPass();
+	}
+
+	// Post pass
+	{
+		renderer.beginRenderPass(RenderPass::POST);
+
+		renderer.bindPipeline(Pipeline::POST);
+		renderer.bindDescriptorSets();
+		renderer.drawVertex();
+		renderer.drawUI();
+
+		renderer.endRenderPass();
+	}
+
 	renderer.submit();
 	renderer.endFrame();
 }

@@ -11,7 +11,7 @@ RenderPass::Builder::Builder(const Device& device)
 	m_device = &device;
 }
 
-RenderPass RenderPass::Builder::buildPass()
+RenderPass RenderPass::Builder::buildPass(const std::string name)
 {
 	// Subpass description
 	VkSubpassDescription subpass{};
@@ -26,8 +26,8 @@ RenderPass RenderPass::Builder::buildPass()
 	dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass    = 0;
 	dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	dependency.srcAccessMask = 0;
 	dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependency.srcAccessMask = 0;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 	// Create render pass
@@ -47,9 +47,9 @@ RenderPass RenderPass::Builder::buildPass()
 		throw;
 	}
 
-	APP_LOG_INFO("Render pass build successful");
+	APP_LOG_INFO("Render pass build successful ({})", name);
 
-	return RenderPass(renderPass, m_clearValues);
+	return RenderPass(renderPass, m_clearValues, name);
 }
 
 std::vector<VkClearValue> RenderPass::Builder::getClearValues()
@@ -79,7 +79,7 @@ void RenderPass::Builder::reset()
 	m_clearValues = std::vector<VkClearValue>();
 }
 
-void RenderPass::Builder::addColorAttachment(VkFormat format, VkSampleCountFlagBits numSamples, VkImageLayout initialLayout, VkClearValue clearValue, bool present)
+void RenderPass::Builder::addColorAttachment(VkFormat format, VkSampleCountFlagBits numSamples, VkImageLayout initialLayout, VkImageLayout finalLayout, VkClearValue clearValue, bool present)
 {
 	// User is using a color attachment
 	if (!m_usingColor)
@@ -94,7 +94,7 @@ void RenderPass::Builder::addColorAttachment(VkFormat format, VkSampleCountFlagB
 	colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout  = initialLayout;
-	colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	colorAttachment.finalLayout    = finalLayout;
 
 	if (present)
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -181,7 +181,7 @@ void RenderPass::Builder::addResolveAttachment(VkFormat format, VkImageLayout in
 
 void RenderPass::cleanup(const Device& device)
 {
-	APP_LOG_INFO("Destroying render passes");
+	APP_LOG_INFO("Destroying render pass ({})", name);
 
 	vkDestroyRenderPass(device.getLogical(), renderPass, nullptr);
 }
