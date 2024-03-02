@@ -2,6 +2,8 @@
 
 #include "Application/logging.h"
 
+#include "Utils/stb_image_usage.h"
+
 #include "device.h"
 #include "command.h"
 #include "image.h"

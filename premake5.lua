@@ -49,7 +49,8 @@ project "RayTrace"
 		"Vendor/spdlog/include",
 		"Vendor/tinyobjloader",
 		"Vendor/ImGui/Include",
-		"Vendor/NRD/Include"
+		"Vendor/NRD/Include",
+		"Vendor/stbimage"
 	}
 
 	-- Libraries
