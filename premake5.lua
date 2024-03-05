@@ -10,6 +10,9 @@ workspace "RayTrace"
 		"Dist"     -- No debugging or logging. Optimization turned on
 	}
 
+	-- Enable multi-processing for compilation
+	flags "MultiProcessorCompile"
+
 -- This is for the output directory. Should look something like "Debug-x86_64"
 outputdir = "%{cfg.buildcfg}-%{cfg.architecture}"
 
@@ -49,7 +52,8 @@ project "RayTrace"
 		"Vendor/spdlog/include",
 		"Vendor/tinyobjloader",
 		"Vendor/ImGui/Include",
-		"Vendor/NRD/Include"
+		"Vendor/NRD/Include",
+		"Vendor/stbimage"
 	}
 
 	-- Libraries

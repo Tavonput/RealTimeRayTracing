@@ -5,16 +5,17 @@
 int main()
 {
 	// Application settings
-	Application::CreateInfo settings{};
+	Application::Settings settings{};
 	settings.windowWidth    = 800;
 	settings.windowHeight   = 600;
 	settings.framesInFlight = 3;
 	settings.vSync          = true;
+	settings.cpuRaytracing  = false;
 
 	// Initialize application
 	Application app;
 	app.init(settings);
-	//app.initImgui(); //***Changes
+
 	// Run application
 	try
 	{

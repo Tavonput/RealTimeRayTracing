@@ -11,9 +11,9 @@ Pipeline::Builder::Builder(const Device& device)
 	m_device = &device;
 }
 
-Pipeline Pipeline::Builder::buildPipeline()
+Pipeline Pipeline::Builder::buildPipeline(Pipeline::PipelineType type, const std::string name)
 {
-	APP_LOG_INFO("Building pipeline");
+	APP_LOG_INFO("Building pipeline ({})", name);
 
 	// Vertex buffer
 	auto bindingDescription    = Vertex::getBindingDescription();
@@ -25,11 +25,20 @@ Pipeline Pipeline::Builder::buildPipeline()
 	m_vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 	m_vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 
+	// Go buffer-less if post
+	if (type == Pipeline::POST)
+	{
+		m_vertexInputInfo.vertexBindingDescriptionCount   = 0;
+		m_vertexInputInfo.pVertexBindingDescriptions      = nullptr;
+		m_vertexInputInfo.vertexAttributeDescriptionCount = 0;
+		m_vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+	}
+
 	// Build layout
 	VkPipelineLayout layout;
 	if (vkCreatePipelineLayout(m_device->getLogical(), &m_pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
 	{
-		APP_LOG_CRITICAL("Failed to create pipeline layout");
+		APP_LOG_CRITICAL("Failed to create pipeline layout ({})", name);
 		throw;
 	}
 	m_pipelineInfo.layout = layout;
@@ -38,11 +47,11 @@ Pipeline Pipeline::Builder::buildPipeline()
 	VkPipeline pipeline;
 	if (vkCreateGraphicsPipelines(m_device->getLogical(), VK_NULL_HANDLE, 1, &m_pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 	{
-		APP_LOG_CRITICAL("Failed to create pipeline");
+		APP_LOG_CRITICAL("Failed to create pipeline ({})", name);
 		throw;
 	}
 
-	return Pipeline(pipeline, layout);
+	return Pipeline(pipeline, layout, name);
 }
 
 void Pipeline::Builder::reset()
@@ -125,15 +134,8 @@ void Pipeline::Builder::addGraphicsBase()
 	m_dynamicState.dynamicStateCount = static_cast<uint32_t>(m_dynamicStates.size());
 	m_dynamicState.pDynamicStates    = m_dynamicStates.data();
 
-	// Push constants
-	m_pushConstantRange.offset     = 0;
-	m_pushConstantRange.size       = sizeof(MeshPushConstants);
-	m_pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
 	// Pipeline layout
-	m_pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	m_pipelineLayoutInfo.pPushConstantRanges    = &m_pushConstantRange;
-	m_pipelineLayoutInfo.pushConstantRangeCount = 1;
+	m_pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 	m_pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	m_pipelineInfo.pInputAssemblyState = &m_inputAssembly;
@@ -165,6 +167,16 @@ void Pipeline::Builder::linkDescriptorSetLayout(DescriptorSetLayout& layout)
 	m_pipelineLayoutInfo.pSetLayouts    = &layout.layout;
 }
 
+void Pipeline::Builder::linkPushConstants(uint32_t size)
+{
+	m_pushConstantRange.offset     = 0;
+	m_pushConstantRange.size       = size;
+	m_pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	m_pipelineLayoutInfo.pPushConstantRanges    = &m_pushConstantRange;
+	m_pipelineLayoutInfo.pushConstantRangeCount = 1;
+}
+
 void Pipeline::Builder::enableMultisampling(VkSampleCountFlagBits sampleCount)
 {
 	m_multisampling.sampleShadingEnable  = VK_TRUE;
@@ -178,7 +190,7 @@ void Pipeline::Builder::enableMultisampling(VkSampleCountFlagBits sampleCount)
 
 void Pipeline::cleanup(const Device& device)
 {
-	APP_LOG_INFO("Destroying pipeline");
+	APP_LOG_INFO("Destroying pipeline ({})", m_name);
 
 	vkDestroyPipeline(device.getLogical(), pipeline, nullptr);
 	vkDestroyPipelineLayout(device.getLogical(), layout, nullptr);

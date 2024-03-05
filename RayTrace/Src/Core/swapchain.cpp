@@ -4,49 +4,20 @@
 
 void Swapchain::init(Swapchain::CreateInfo& createInfo)
 {
-	m_device  = createInfo.device;
-	m_window  = createInfo.window;
-	m_surface = createInfo.surface;
-	m_vSync   = createInfo.vSync;
+	m_device      = createInfo.device;
+	m_window      = createInfo.window;
+	m_surface     = createInfo.surface;
+	m_vSync       = createInfo.vSync;
+	m_msaaEnabled = createInfo.msaa;
 
 	setupSwapchain();
 	setupImageViews();
 	setupSyncObjects(createInfo.framesInFlight);
 
-	setupMSAA();
-	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount);
-}
+	if (m_msaaEnabled)
+		setupMSAA();
 
-void Swapchain::setupFramebuffers(const VkRenderPass& renderPass)
-{
-	m_renderPass = &renderPass;
-	m_framebuffers.resize(m_images.size());
-
-	// Create a framebuffer for each image view
-	for (size_t i = 0; i < m_images.size(); i++)
-	{
-		// Attachments
-		std::array<VkImageView, 3> attachments = {
-			m_MSAAImage.view,
-			m_depthBuffer.image.view,
-			m_images[i].view,
-		};
-
-		VkFramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass      = renderPass;
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		framebufferInfo.pAttachments    = attachments.data();
-		framebufferInfo.width           = m_extent.width;
-		framebufferInfo.height          = m_extent.height;
-		framebufferInfo.layers          = 1;
-
-		if (vkCreateFramebuffer(m_device->getLogical(), &framebufferInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS)
-		{
-			APP_LOG_CRITICAL("Failed to create framebuffers");
-			throw;
-		}
-	}
+	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount, "Swapchain Depth Buffer");
 }
 
 void Swapchain::onWindowResize(WindowResizeEvent event)
@@ -77,10 +48,10 @@ void Swapchain::recreateSwapchain()
 	setupSwapchain();
 	setupImageViews();
 
-	setupMSAA();
-	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount);
+	if (m_msaaEnabled)
+		setupMSAA();
 
-	setupFramebuffers(*m_renderPass);
+	m_depthBuffer = DepthBuffer(*m_device, m_extent, m_MSAASampleCount, "Swapchain Depth Buffer");
 }
 
 uint32_t Swapchain::acquireImage(uint32_t& frameIndex)
@@ -183,11 +154,6 @@ VkExtent2D Swapchain::getExtent()
 	return m_extent;
 }
 
-VkFramebuffer Swapchain::getFramebuffer(uint32_t index)
-{
-	return m_framebuffers[index];
-}
-
 VkSampleCountFlagBits Swapchain::getMSAASampleCount()
 {
 	return m_MSAASampleCount;
@@ -196,10 +162,6 @@ VkSampleCountFlagBits Swapchain::getMSAASampleCount()
 void Swapchain::cleanup()
 {
 	APP_LOG_INFO("Destroying swapchain");
-
-	// Framebuffers
-	for (auto framebuffer : m_framebuffers)
-		vkDestroyFramebuffer(m_device->getLogical(), framebuffer, nullptr);
 
 	// Manually cleanup image views
 	for (auto& image : m_images)
@@ -212,7 +174,8 @@ void Swapchain::cleanup()
 	m_depthBuffer.cleanup();
 
 	// MSAA
-	m_MSAAImage.cleanup(m_device->getLogical());
+	if (m_msaaEnabled)
+		m_MSAAImage.cleanup(m_device->getLogical());
 
 	// Don't destroy syncronization object during recreation
 	if (m_recreate)
@@ -349,6 +312,7 @@ void Swapchain::setupMSAA()
 	imgCreateInfo.usage      = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	imgCreateInfo.device     = m_device;
+	imgCreateInfo.name       = "Swapchain MSAA Image";
 
 	m_MSAAImage = Image::CreateImage(imgCreateInfo);
 

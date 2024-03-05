@@ -13,8 +13,9 @@ public:
 
 	enum PipelineType
 	{
-		LIGHTING,
-		FLAT
+		LIGHTING = 0,
+		FLAT = 1,
+		POST = 2
 	};
 
 	// Builder Class
@@ -23,7 +24,7 @@ public:
 	public:
 		Builder(const Device& device);
 
-		Pipeline buildPipeline();
+		Pipeline buildPipeline(Pipeline::PipelineType type, const std::string name);
 		void reset();
 
 		void addGraphicsBase();
@@ -31,9 +32,11 @@ public:
 		void linkRenderPass(RenderPass& pass);
 		void linkShaders(RasterShaderSet& shaders);
 		void linkDescriptorSetLayout(DescriptorSetLayout& layout);
+		void linkPushConstants(uint32_t size);
 
 		void enableMultisampling(VkSampleCountFlagBits sampleCount);
 		void disableFaceCulling() { m_rasterizer.cullMode = VK_CULL_MODE_NONE; }
+		void disableDepthTesting() { m_depthStencil.depthTestEnable = VK_FALSE; }
 
 	private:
 		const Device* m_device;
@@ -60,8 +63,11 @@ public:
 	VkPipeline       pipeline = VK_NULL_HANDLE;
 	VkPipelineLayout layout   = VK_NULL_HANDLE;
 
-	Pipeline(VkPipeline _pipeline, VkPipelineLayout _layout)
-		: pipeline(_pipeline), layout(_layout) {}
+	Pipeline(VkPipeline _pipeline, VkPipelineLayout _layout, const std::string name)
+		: pipeline(_pipeline), layout(_layout), m_name(name) {}
 
 	void cleanup(const Device& device);
+
+private:
+	std::string m_name = "";
 };

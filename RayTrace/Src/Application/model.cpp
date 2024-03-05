@@ -15,7 +15,7 @@ Model::Instance Model::createInstance()
 
 void Model::cleanup()
 {
-	APP_LOG_INFO("Destroying model");
+	APP_LOG_INFO("Destroying model ({})", m_index);
 
 	m_vertexBuffer.cleanup();
 	m_indexBuffer.cleanup();
@@ -154,7 +154,8 @@ Model ModelLoader::loadModel(const std::string& filename)
 	}
 
 	Model::CreateInfo modelInfo{};
-	modelInfo.device = m_device;
+	modelInfo.device     = m_device;
+	modelInfo.modelIndex = m_modelCount;
 
 	uint32_t numIndices  = static_cast<uint32_t>(loader.indices.size());
 	uint32_t numVertices = static_cast<uint32_t>(loader.vertices.size());
@@ -164,24 +165,40 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.commandSystem = m_commandSystem;
 
 	// Create vertex buffer
+	char vertexName[128];
+	sprintf(vertexName, "Vertex Buffer Model %d", m_modelCount);
+
+	createInfo.name        = vertexName;
 	createInfo.data        = loader.vertices.data();
 	createInfo.dataSize    = sizeof(Vertex) * numVertices;
 	createInfo.dataCount   = numVertices;
 	modelInfo.vertexBuffer = Buffer::CreateVertexBuffer(createInfo);
 
 	// Create index buffer
+	char indexName[128];
+	sprintf(indexName, "Index Buffer Model %d", m_modelCount);
+
+	createInfo.name       = indexName;
 	createInfo.data       = loader.indices.data();
 	createInfo.dataSize   = sizeof(uint32_t) * numIndices;
 	createInfo.dataCount  = numIndices;
 	modelInfo.indexBuffer = Buffer::CreateIndexBuffer(createInfo);
 
 	// Create material buffer
+	char materialName[128];
+	sprintf(materialName, "Material Storage Buffer Model %d", m_modelCount);
+
+	createInfo.name          = materialName;
 	createInfo.data          = loader.materials.data();
 	createInfo.dataSize      = sizeof(Material) * loader.materials.size();
 	createInfo.dataCount     = static_cast<uint32_t>(loader.materials.size());
 	modelInfo.materialBuffer = Buffer::CreateStorageBuffer(createInfo);
 
 	// Create material index buffer
+	char materialIndexName[128];
+	sprintf(materialIndexName, "Material Index Storage Buffer Model %d", m_modelCount);
+
+	createInfo.name                = materialIndexName;
 	createInfo.data               = loader.matIndex.data();
 	createInfo.dataSize           = sizeof(int32_t) * loader.matIndex.size();
 	createInfo.dataCount          = static_cast<uint32_t>(loader.matIndex.size());
@@ -192,6 +209,8 @@ Model ModelLoader::loadModel(const std::string& filename)
 	desc.materialAddress      = modelInfo.materialBuffer.getDeviceAddress();
 	desc.materialIndexAddress = modelInfo.materialIndexBuffer.getDeviceAddress();
 	m_materialDescriptions.emplace_back(desc);
+
+	m_modelCount++;
 
 	return Model(modelInfo);
 }

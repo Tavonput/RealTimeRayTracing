@@ -73,12 +73,17 @@ void Renderer::beginRenderPass(RenderPass::PassType pass)
 {
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	beginInfo.renderPass        = m_renderPasses[pass].renderPass;
-	beginInfo.framebuffer       = m_swapchain->getFramebuffer(m_imageIndex);
 	beginInfo.renderArea.offset = { 0, 0 };
 	beginInfo.renderArea.extent = m_swapchain->getExtent();
+	beginInfo.renderPass        = m_renderPasses[pass].renderPass;
 	beginInfo.clearValueCount   = static_cast<uint32_t>(m_renderPasses[pass].clearValues.size());
 	beginInfo.pClearValues      = m_renderPasses[pass].clearValues.data();
+
+	switch (pass)
+	{
+		case RenderPass::MAIN: beginInfo.framebuffer = m_offScreenFramebuffer->get(); break;
+		case RenderPass::POST: beginInfo.framebuffer = m_postFramebuffers[m_imageIndex].get(); break;
+	}
 
 	vkCmdBeginRenderPass(m_commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -115,13 +120,26 @@ void Renderer::bindIndexBuffer(Buffer& indexBuffer)
 
 void Renderer::bindDescriptorSets()
 {
-	vkCmdBindDescriptorSets(
-		m_commandBuffer, 
-		VK_PIPELINE_BIND_POINT_GRAPHICS, 
-		m_pipelines[m_pipelineIndex].layout, 
-		0, 1, 
-		&m_descriptorSets[m_frameIndex].getSet(), 
-		0, nullptr);
+	if (m_pipelineIndex == Pipeline::POST)
+	{
+		vkCmdBindDescriptorSets(
+			m_commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelines[m_pipelineIndex].layout,
+			0, 1,
+			&m_postDescriptorSets[m_frameIndex].getSet(),
+			0, nullptr);
+	}
+	else
+	{
+		vkCmdBindDescriptorSets(
+			m_commandBuffer, 
+			VK_PIPELINE_BIND_POINT_GRAPHICS, 
+			m_pipelines[m_pipelineIndex].layout, 
+			0, 1, 
+			&m_offscreenDescriptorSets[m_frameIndex].getSet(), 
+			0, nullptr);
+	}
 }
 
 void Renderer::bindPushConstants()
@@ -137,7 +155,10 @@ void Renderer::bindPushConstants()
 
 void Renderer::drawVertex()
 {
-	vkCmdDraw(m_commandBuffer, m_vertexBuffer.getCount(), 1, 0, 0);
+	if (m_passIndex == RenderPass::POST)
+		vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
+	else
+		vkCmdDraw(m_commandBuffer, m_vertexBuffer.getCount(), 1, 0, 0);
 }
 
 void Renderer::drawIndexed()

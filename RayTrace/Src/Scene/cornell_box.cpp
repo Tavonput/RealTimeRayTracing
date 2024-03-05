@@ -20,34 +20,49 @@ void CornellBoxScene::onLoad(ModelLoader& modelLoader)
 void CornellBoxScene::onUpdate(Renderer& renderer)
 {
 	renderer.beginFrame();
-	renderer.beginRenderPass(RenderPass::MAIN);
 
-	renderer.bindPipeline(Pipeline::LIGHTING);
-	renderer.bindVertexBuffer(m_cornellBoxModel.getVertexBuffer());
-	renderer.bindIndexBuffer(m_cornellBoxModel.getIndexBuffer());
-	renderer.bindDescriptorSets();
+	// Offscreen pass
+	{
+		renderer.beginRenderPass(RenderPass::MAIN);
 
-	// Set light UBO
-	renderer.ubo.lightColor     = m_lightColor;
-	renderer.ubo.lightPosition  = m_lightPosition;
-	renderer.ubo.lightIntensity = m_lightIntensity;
+		renderer.bindPipeline(Pipeline::LIGHTING);
+		renderer.bindVertexBuffer(m_cornellBoxModel.getVertexBuffer());
+		renderer.bindIndexBuffer(m_cornellBoxModel.getIndexBuffer());
+		renderer.bindDescriptorSets();
 
-	// Set push constant
-	renderer.pushConstants.model    = m_cornellBox.transform;
-	renderer.pushConstants.objectID = m_cornellBox.objectID;
-	renderer.bindPushConstants();
+		// Set light UBO
+		renderer.ubo.lightColor     = m_lightColor;
+		renderer.ubo.lightPosition  = m_lightPosition;
+		renderer.ubo.lightIntensity = m_lightIntensity;
 
-	renderer.drawIndexed();
+		// Set push constant
+		renderer.pushConstants.model    = m_cornellBox.transform;
+		renderer.pushConstants.objectID = m_cornellBox.objectID;
+		renderer.bindPushConstants();
 
-	 // Visualize the light position
-	 // glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), m_lightPosition);
-	 // renderer.pushConstants.model = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
-	 // renderer.bindPushConstants();
-	 // renderer.drawIndexed();
+		renderer.drawIndexed();
 
-	renderer.drawUI();
+		// Visualize the light position
+		glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), m_lightPosition);
+		renderer.pushConstants.model = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+		renderer.bindPushConstants();
+		renderer.drawIndexed();
 
-	renderer.endRenderPass();
+		renderer.endRenderPass();
+	}
+
+	// Post pass
+	{
+		renderer.beginRenderPass(RenderPass::POST);
+
+		renderer.bindPipeline(Pipeline::POST);
+		renderer.bindDescriptorSets();
+		renderer.drawVertex();
+		renderer.drawUI();
+
+		renderer.endRenderPass();
+	}
+
 	renderer.submit();
 	renderer.endFrame();
 }

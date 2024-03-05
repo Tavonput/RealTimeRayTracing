@@ -70,9 +70,5 @@ void main()
 	vec3 color     = vec3(0.0);
 	color += computeLighting(material, norm, viewDir, lightDir);
 
-	// Gamma correction
-	float gamma = 2.2;
-	color = pow(color, vec3(1.0 / gamma));
-
 	outColor = vec4(color, 1.0);
 }

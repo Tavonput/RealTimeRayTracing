@@ -12,6 +12,7 @@
 #include "pipeline.h"
 #include "rendering_structures.h"
 #include "descriptor.h"
+#include "framebuffer.h"
 
 
 class Renderer
@@ -25,9 +26,13 @@ public:
 		RenderPass*    pRenderPasses;
 		Pipeline*      pPipelines;
 		Buffer*        pUniformBuffers;
-		DescriptorSet* pDescriptorSets;
+		DescriptorSet* pOffscreenDescriptorSets;
+		DescriptorSet* pPostDescriptorSets;
 		Camera*        pCamera;
 		Gui*           pGui;
+
+		Framebuffer* pPostFramebuffers;
+		Framebuffer* pOffscreenFramebuffer;
 
 		uint32_t framesInFlight = 2;
 	};
@@ -39,15 +44,18 @@ public:
 	float aspectRatio = 0.0f;
 
 	Renderer(Renderer::CreateInfo info)
-		: m_swapchain     (info.pSwapchain),
-		  m_commandSystem (info.pCommandSystem),
-		  m_renderPasses  (info.pRenderPasses),
-		  m_pipelines     (info.pPipelines),
-		  m_uniformBuffers(info.pUniformBuffers),
-		  m_descriptorSets(info.pDescriptorSets),
-		  m_camera        (info.pCamera),
-		  m_framesInFlight(info.framesInFlight),
-          m_gui           (info.pGui)
+		: m_swapchain              (info.pSwapchain),
+		  m_commandSystem          (info.pCommandSystem),
+		  m_renderPasses           (info.pRenderPasses),
+		  m_pipelines              (info.pPipelines),
+		  m_uniformBuffers         (info.pUniformBuffers),
+		  m_offscreenDescriptorSets(info.pOffscreenDescriptorSets),
+		  m_postDescriptorSets     (info.pPostDescriptorSets),
+		  m_camera                 (info.pCamera),
+		  m_framesInFlight         (info.framesInFlight),
+          m_gui                    (info.pGui),
+		  m_postFramebuffers       (info.pPostFramebuffers),
+		  m_offScreenFramebuffer   (info.pOffscreenFramebuffer)
 	{}
 
 	void beginFrame();
@@ -68,17 +76,21 @@ public:
 	void drawUI();
 
 private:
-	Swapchain*     m_swapchain      = nullptr;
-	CommandSystem* m_commandSystem  = nullptr;
-	RenderPass*    m_renderPasses   = nullptr;
-	Pipeline*      m_pipelines      = nullptr;
-	Buffer*        m_uniformBuffers = nullptr;
-	DescriptorSet* m_descriptorSets = nullptr;
-	Camera*        m_camera         = nullptr;
-	Gui*           m_gui            = nullptr;
+	Swapchain*     m_swapchain               = nullptr;
+	CommandSystem* m_commandSystem           = nullptr;
+	RenderPass*    m_renderPasses            = nullptr;
+	Pipeline*      m_pipelines               = nullptr;
+	Buffer*        m_uniformBuffers          = nullptr;
+	DescriptorSet* m_offscreenDescriptorSets = nullptr;
+	DescriptorSet* m_postDescriptorSets      = nullptr;
+	Camera*        m_camera                  = nullptr;
+	Gui*           m_gui                     = nullptr;
 
 	RenderPass::PassType   m_passIndex     = RenderPass::MAIN;
 	Pipeline::PipelineType m_pipelineIndex = Pipeline::LIGHTING;
+
+	Framebuffer* m_postFramebuffers     = nullptr;
+	Framebuffer* m_offScreenFramebuffer = nullptr;
 
 	uint32_t m_frameIndex     = 0;
 	uint32_t m_imageIndex     = 0;
