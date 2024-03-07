@@ -14,27 +14,18 @@ namespace CoreTest
 	TEST_CLASS(RenderPassTest)
 	{
 	public:
-		TEST_METHOD_INITIALIZE(Initialize)
-		{
-			m_window.init(100, 100);
-			m_context.init(m_window);
-		}
-
-		TEST_METHOD_CLEANUP(Cleanup)
-		{
-			m_window.cleanup();
-			m_context.cleanup();
-		}
 		TEST_METHOD(BuilderCreation)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			Assert::IsNotNull(builder.m_device);
 		}
 
 		TEST_METHOD(AddOneColorAttachment)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addColorAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -49,7 +40,8 @@ namespace CoreTest
 
 		TEST_METHOD(AddMultipleColorAttachments)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addColorAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -72,7 +64,8 @@ namespace CoreTest
 
 		TEST_METHOD(AddOneDepthAttachment)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addDepthAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -85,7 +78,8 @@ namespace CoreTest
 
 		TEST_METHOD(AddOneResolveAttachment)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addResolveAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -97,7 +91,8 @@ namespace CoreTest
 
 		TEST_METHOD(AddMixtureOfAttachments)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addColorAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -133,7 +128,8 @@ namespace CoreTest
 
 		TEST_METHOD(ResetBuilder)
 		{
-			RenderPass::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			RenderPass::Builder builder(dummyDevice);
 
 			builder.addColorAttachment(
 				VK_FORMAT_R8G8B8_UNORM,
@@ -146,10 +142,6 @@ namespace CoreTest
 
 			Assert::IsFalse(builder.m_usingColor);
 		}
-
-	private:
-		Window        m_window;
-		SystemContext m_context;
 	};
 
 	// ---------------------------------------------------------------------------------------------------------
@@ -157,31 +149,16 @@ namespace CoreTest
 	//
 	TEST_CLASS(PipelineTest)
 	{
-		TEST_METHOD_INITIALIZE(Initialize)
-		{
-			m_window.init(100, 100);
-			m_context.init(m_window);
-		}
-
-		TEST_METHOD_CLEANUP(Cleanup)
-		{
-			m_window.cleanup();
-			m_context.cleanup();
-		}
-
 		TEST_METHOD(EnableMultiSampling)
 		{
-			Pipeline::Builder builder(m_context.getDevice());
+			Device dummyDevice;
+			Pipeline::Builder builder(dummyDevice);
 
 			builder.addGraphicsBase();
 			builder.enableMultisampling(VK_SAMPLE_COUNT_4_BIT);
 
 			Assert::IsTrue(builder.m_multisampling.rasterizationSamples & VK_SAMPLE_COUNT_4_BIT);
 		}
-
-	private:
-		Window        m_window;
-		SystemContext m_context;
 	};
 
 	// ---------------------------------------------------------------------------------------------------------
@@ -210,11 +187,11 @@ namespace CoreTest
 			};
 
 			Buffer::CreateInfo info;
-			info.device        = &m_context.getDevice();
+			info.device = &m_context.getDevice();
 			info.commandSystem = &m_commandSystem;
-			info.data          = data.data();
-			info.dataSize      = sizeof(uint32_t) * data.size();
-			info.dataCount     = static_cast<uint32_t>(data.size());
+			info.data = data.data();
+			info.dataSize = sizeof(uint32_t) * data.size();
+			info.dataCount = static_cast<uint32_t>(data.size());
 
 			Buffer buffer = Buffer::CreateIndexBuffer(info);
 
@@ -235,19 +212,6 @@ namespace CoreTest
 	TEST_CLASS(DescriptorSetTest)
 	{
 	public:
-		TEST_METHOD_INITIALIZE(Initialize)
-		{
-			m_window.init(100, 100);
-			m_context.init(m_window);
-			m_commandSystem.init(m_context.getDevice(), 2);
-		}
-
-		TEST_METHOD_CLEANUP(Cleanup)
-		{
-			m_commandSystem.cleanup();
-			m_context.cleanup();
-			m_window.cleanup();
-		}
 		TEST_METHOD(DifferentBufferWrites)
 		{
 			DescriptorSet dummySet(VK_NULL_HANDLE, VK_NULL_HANDLE);
@@ -259,14 +223,9 @@ namespace CoreTest
 			Assert::IsTrue(dummySet.m_descriptorWrites[1].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
 			Assert::ExpectException<std::exception>([&dummySet]
-			{
-				dummySet.addBufferWrite(Buffer(), BufferType::VERTEX, 0, 0);
-			});
+				{
+					dummySet.addBufferWrite(Buffer(), BufferType::VERTEX, 0, 0);
+				});
 		}
-
-	private:
-		Window        m_window;
-		SystemContext m_context;
-		CommandSystem m_commandSystem;
 	};
 }
