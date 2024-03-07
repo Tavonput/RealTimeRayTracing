@@ -81,6 +81,33 @@ void Camera::onMouseMove(MouseMoveEvent event)
 	m_mousePos.y = static_cast<float>(event.yPos);
 }
 
+void Camera::updatePosition() { // Updates camera position according to 
+	if (m_wKey) APP_LOG_INFO("W Key Down");
+	if (m_aKey) APP_LOG_INFO("A Key Down");
+	if (m_sKey) APP_LOG_INFO("S Key Down");
+	if (m_dKey) APP_LOG_INFO("D Key Down");
+
+
+	
+}
+
+void Camera::onKeyPress(KeyPressEvent event)
+{
+	if      (event.key == GLFW_KEY_W) m_wKey = true;
+	else if (event.key == GLFW_KEY_A) m_aKey = true;
+	else if (event.key == GLFW_KEY_S) m_sKey = true;
+	else if (event.key == GLFW_KEY_D) m_dKey = true;
+}
+
+void Camera::onKeyRelease(KeyReleaseEvent event)
+{
+	if      (event.key == GLFW_KEY_W) m_wKey = false;
+	else if (event.key == GLFW_KEY_A) m_aKey = false;
+	else if (event.key == GLFW_KEY_S) m_sKey = false;
+	else if (event.key == GLFW_KEY_D) m_dKey = false;
+}
+
+
 void Camera::orbit(float deltaX, float deltaY)
 {
 	// Find the scaling factor for rotation speed

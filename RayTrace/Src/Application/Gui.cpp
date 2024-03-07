@@ -15,7 +15,7 @@ void Gui::init(ImGui_ImplVulkan_InitInfo init_info, Window& m_window) {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-	// io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows ***Causes memory crash. Needs further configuration
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows ***Causes memory crash. Needs further configuration
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForVulkan(m_window.getWindowGLFW(), true);
 	ImGui_ImplVulkan_Init(&init_info);

@@ -75,7 +75,7 @@ private:
 	std::vector<Buffer>        m_uniformBuffers;
 	Buffer                     m_materialDescriptionBuffer;
 
-	// Scenes
+  // Scenes
 	CornellBoxScene m_scene;
 	// SimpleCubeScene m_scene;
 

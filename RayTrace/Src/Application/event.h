@@ -10,7 +10,8 @@ enum class EventType
 {
 	NONE = 0,
 	WINDOW_RESIZE, WINDOW_MINIMIZED,
-	MOUSE_CLICK, MOUSE_RELEASE, MOUSE_MOVE
+	MOUSE_CLICK, MOUSE_RELEASE, MOUSE_MOVE,
+	KEY_PRESS, KEY_RELEASE
 };
 
 class Event
@@ -98,4 +99,34 @@ public:
 
 	MouseMoveEvent(int _xPos, int _yPos)
 		: xPos(_xPos), yPos(_yPos) {}
+};
+
+// --------------------------------------------------------------------------
+// Keyboard
+//
+
+class KeyPressEvent : public Event
+{
+public: 
+	int key;
+	int mods;
+
+	virtual EventType getType() const override { return EventType::KEY_PRESS;  }
+	virtual std::string eventString() const override;
+
+	KeyPressEvent(int _key, int _mods) 
+		: key(_key), mods(_mods) {}
+};
+
+class KeyReleaseEvent : public Event
+{
+public:
+	int key;
+	int mods;
+
+	virtual EventType getType() const override { return EventType::KEY_RELEASE;  }
+	virtual std::string eventString() const override;
+
+	KeyReleaseEvent(int _key, int _mods)
+		: key(_key), mods(_mods) {}
 };

@@ -135,7 +135,8 @@ void Application::run()
 
 		if (m_window.isWindowMinimized())
 			continue;
-
+		
+		m_camera.updatePosition();
 		m_scene.onUpdate(renderer);
 	}
 
@@ -479,6 +480,24 @@ void Application::pollEvents()
 				// APP_LOG_TRACE(mouseMoveEvent->eventString());
 
 				m_camera.onMouseMove(*mouseMoveEvent);
+				break;
+			}
+
+			case EventType::KEY_PRESS:
+			{
+				auto keyPressEvent = dynamic_cast<KeyPressEvent*>(event.get());
+				APP_LOG_TRACE(keyPressEvent->eventString());
+
+				m_camera.onKeyPress(*keyPressEvent);
+				break;
+			}
+
+			case EventType::KEY_RELEASE:
+			{
+				auto keyReleaseEvent = dynamic_cast<KeyReleaseEvent*>(event.get());
+				APP_LOG_TRACE(keyReleaseEvent->eventString());
+
+				m_camera.onKeyRelease(*keyReleaseEvent);
 				break;
 			}
 		}
