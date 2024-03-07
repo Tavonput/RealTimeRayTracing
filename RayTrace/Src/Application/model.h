@@ -115,6 +115,8 @@ private:
 
 	std::vector<MaterialDescription> m_materialDescriptions;
 
+	uint32_t m_modelCount = 0;
+
 	const Device*        m_device        = nullptr;
 	const CommandSystem* m_commandSystem = nullptr;
 };

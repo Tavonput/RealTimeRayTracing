@@ -23,6 +23,7 @@ public:
 		uint32_t             dataCount     = 0;
 		const Device*        device        = nullptr;
 		const CommandSystem* commandSystem = nullptr;
+		const char*          name          = "";
 	};
 
 	Buffer() {}
@@ -59,6 +60,7 @@ public:
 
 private:
 	const Device* m_device = nullptr;
+	std::string   m_name = "";
 
 	VkBuffer       m_buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_memory = VK_NULL_HANDLE;
@@ -75,21 +77,24 @@ private:
 		const VkDeviceSize    dataSize,
 		const uint32_t        dataCount,
 		const Device&         device,
-		const CommandSystem&  commandSystem);
+		const CommandSystem&  commandSystem,
+		const std::string     name);
 
 	// Custom buffer
 	Buffer(
-		const Device&  device,
-		VkBuffer       buffer,
-		VkDeviceMemory memory,
-		VkDeviceSize   size,
-		uint32_t       count)
+		const Device&     device,
+		VkBuffer          buffer,
+		VkDeviceMemory    memory,
+		VkDeviceSize      size,
+		uint32_t          count,
+		std::string       name)
 		:
 		m_device(&device),
 		m_buffer(buffer),
 		m_memory(memory),
 		m_size  (size),
-		m_count (count) 
+		m_count (count),
+		m_name  (name)
 	{}
 
 	void mapMemory();

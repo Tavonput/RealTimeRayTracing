@@ -4,7 +4,10 @@
 
 Image Image::CreateImage(CreateInfo& createInfo)
 {
+    APP_LOG_INFO("Create image ({})", createInfo.name);
+
     Image image;
+    image.m_name = createInfo.name;
 
     // Create image
     VkImageCreateInfo imageInfo{};
@@ -26,7 +29,10 @@ Image Image::CreateImage(CreateInfo& createInfo)
         imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     if (vkCreateImage(createInfo.device->getLogical(), &imageInfo, nullptr, &image.image) != VK_SUCCESS)
-        throw std::runtime_error("failed to create image!");
+    {
+        APP_LOG_CRITICAL("Failed to create image ({})", createInfo.name);
+        throw;
+    }
 
     // Allocate memory
     VkMemoryRequirements memRequirements;
@@ -38,10 +44,16 @@ Image Image::CreateImage(CreateInfo& createInfo)
     allocInfo.memoryTypeIndex = Device::findMemoryType(memRequirements.memoryTypeBits, createInfo.properties, createInfo.device->getPhysical());
 
     if (vkAllocateMemory(createInfo.device->getLogical(), &allocInfo, nullptr, &image.memory) != VK_SUCCESS)
-        throw std::runtime_error("failed to allocate image memory!");
+    {
+        APP_LOG_CRITICAL("Failed allocate image memory ({})", createInfo.name);
+        throw;
+    }
 
     // Bind image memory
     vkBindImageMemory(createInfo.device->getLogical(), image.image, image.memory, 0);
+
+    image.format = createInfo.format;
+    image.numSamples = createInfo.numSamples;
 
     return image;
 }
@@ -79,6 +91,8 @@ void Image::SetupImageView(Image& image, ImageViewSetupInfo& info)
 
 void Image::cleanup(const VkDevice& device)
 {
+    APP_LOG_INFO("Destroying image ({})", m_name);
+
     if (image != VK_NULL_HANDLE)
         vkDestroyImage(device, image, nullptr);
 

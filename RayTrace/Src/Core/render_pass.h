@@ -10,7 +10,8 @@ public:
 	// All render passes
 	enum PassType
 	{
-		MAIN
+		MAIN = 0,
+		POST = 1
 	};
 
 	// Builder Class
@@ -19,7 +20,7 @@ public:
 	public:
 		Builder(const Device& device);
 
-		RenderPass buildPass();
+		RenderPass buildPass(const std::string name);
 		std::vector<VkClearValue> getClearValues();
 		void reset();
 
@@ -27,6 +28,7 @@ public:
 			VkFormat format,
 			VkSampleCountFlagBits numSamples,
 			VkImageLayout initialLayout,
+			VkImageLayout finalLayout,
 			VkClearValue clearValue,
 			bool present = false);
 
@@ -67,8 +69,10 @@ public:
 	VkRenderPass              renderPass;
 	std::vector<VkClearValue> clearValues;
 
-	RenderPass(VkRenderPass _renderPass, std::vector<VkClearValue> _clearValues)
-		: renderPass(_renderPass), clearValues(_clearValues) {}
+	std::string name = "";
+
+	RenderPass(VkRenderPass _renderPass, std::vector<VkClearValue> _clearValues, const std::string _name)
+		: renderPass(_renderPass), clearValues(_clearValues), name(_name) {}
 
 	void cleanup(const Device& device);
 };

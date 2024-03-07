@@ -11,15 +11,17 @@ public:
 	Image    image;
 	VkFormat format = VK_FORMAT_UNDEFINED;
 
-	DepthBuffer() {}
+	DepthBuffer() = default;
 
 	DepthBuffer(
 		const Device& device,
-		VkExtent2D& extent,
-		VkSampleCountFlagBits numSamples);
+		VkExtent2D extent,
+		VkSampleCountFlagBits numSamples,
+		const std::string name);
 
 	void cleanup();
 
 private:
 	const Device* m_device = nullptr;
+	std::string   m_name = "";
 };

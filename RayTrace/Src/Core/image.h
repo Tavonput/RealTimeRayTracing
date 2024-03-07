@@ -9,6 +9,11 @@ public:
 	VkImageView    view   = VK_NULL_HANDLE;
 	VkDeviceMemory memory = VK_NULL_HANDLE;
 
+	VkFormat              format     = VK_FORMAT_UNDEFINED;
+	VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	std::string m_name = "";
+
 	struct CreateInfo
 	{
 		uint32_t              width      = 0;
@@ -21,6 +26,7 @@ public:
 		VkImageUsageFlags     usage      = 0;
 		VkMemoryPropertyFlags properties = 0;
 		const Device*         device     = nullptr;
+		const char*           name       = "";
 	};
 
 	struct ImageViewSetupInfo

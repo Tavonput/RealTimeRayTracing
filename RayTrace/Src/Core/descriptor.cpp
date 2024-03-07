@@ -5,9 +5,9 @@
 // Descriptor Set Layout
 //
 
-DescriptorSetLayout DescriptorSetLayout::Builder::buildLayout()
+DescriptorSetLayout DescriptorSetLayout::Builder::buildLayout(const std::string name)
 {
-	APP_LOG_INFO("Building descriptor set layout");
+	APP_LOG_INFO("Building descriptor set layout ({})", name);
 
 	VkDescriptorSetLayoutCreateInfo info{};
 	info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -17,15 +17,20 @@ DescriptorSetLayout DescriptorSetLayout::Builder::buildLayout()
 	VkDescriptorSetLayout layout;
 	if (vkCreateDescriptorSetLayout(m_device->getLogical(), &info, nullptr, &layout) != VK_SUCCESS)
 	{
-		APP_LOG_CRITICAL("Failed to create descriptor set layout");
-		throw;
+		APP_LOG_CRITICAL("Failed to create descriptor set layout ({})", name);
+		throw std::exception();
 	};
 
-	return DescriptorSetLayout(layout, m_bindings, static_cast<uint32_t>(m_bindings.size()));
+	return DescriptorSetLayout(layout, m_bindings, static_cast<uint32_t>(m_bindings.size()), name);
+}
+
+void DescriptorSetLayout::Builder::reset()
+{
+	m_bindings = std::vector<VkDescriptorSetLayoutBinding>{};
 }
 
 void DescriptorSetLayout::Builder::addBinding(
-	SceneBinding       binding, 
+	uint32_t           binding, 
 	VkDescriptorType   descriptorType, 
 	uint32_t           descriptorCount, 
 	VkShaderStageFlags stageFlags, 
@@ -43,7 +48,7 @@ void DescriptorSetLayout::Builder::addBinding(
 
 void DescriptorSetLayout::cleanup(const Device& device)
 {
-	APP_LOG_INFO("Destroying descriptor set layout");
+	APP_LOG_INFO("Destroying descriptor set layout ({})", m_name);
 
 	vkDestroyDescriptorSetLayout(device.getLogical(), layout, nullptr);
 }
@@ -52,7 +57,7 @@ void DescriptorSetLayout::cleanup(const Device& device)
 // Descriptor Set
 //
 
-void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, SceneBinding binding)
+void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, uint32_t binding)
 {
 	// Write info
 	VkDescriptorBufferInfo bufferInfo{};
@@ -83,19 +88,55 @@ void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize 
 
 	default:
 		APP_LOG_CRITICAL("Invalid buffer type for descriptor set");
-		throw;
+		throw std::exception();
 	}
 
 	m_descriptorWrites.emplace_back(descriptorWrite);
 }
 
+void DescriptorSet::addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding)
+{
+	m_writeImageInfos.push_back(imageInfo);
+
+	// Descriptor write
+	VkWriteDescriptorSet descriptorWrite{};
+	descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet          = m_set;
+	descriptorWrite.dstBinding      = binding;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.descriptorCount = 1;
+
+	m_descriptorWrites.push_back(descriptorWrite);
+}
+
 void DescriptorSet::update(const Device& device)
 {
-	// Setup buffer infos for each write
+	// Setup infos for each write
+	uint32_t bufferCounter = 0;
+	uint32_t imageCounter  = 0;
 	for (uint32_t i = 0; i < m_descriptorWrites.size(); i++)
-		m_descriptorWrites[i].pBufferInfo = &m_writeBufferInfos[i];
+	{
+		// Figure out if we have an image or a buffer
+		if (m_descriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+		{
+			m_descriptorWrites[i].pImageInfo = &m_writeImageInfos[imageCounter];
+			imageCounter++;
+		}
+		else
+		{
+			m_descriptorWrites[i].pBufferInfo = &m_writeBufferInfos[bufferCounter];
+			bufferCounter++;
+		}
+	}
 
+	// Update
 	vkUpdateDescriptorSets(device.getLogical(), static_cast<uint32_t>(m_descriptorWrites.size()), m_descriptorWrites.data(), 0, nullptr);
+
+	// Reset writes
+	m_descriptorWrites = std::vector<VkWriteDescriptorSet>{};
+	m_writeBufferInfos = std::vector<VkDescriptorBufferInfo>{};
+	m_writeImageInfos  = std::vector<VkDescriptorImageInfo>{};
 }
 
 VkDescriptorSet& DescriptorSet::getSet()
@@ -114,22 +155,20 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 	m_device = &device;
 
 	// Pool sizes
-	// TODO: Figure out the correct pool sizes depending on the layouts
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};  //***Used to be 1
+	std::array<VkDescriptorPoolSize, 3> poolSizes{};
+
 	poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = framesInFlight;
-
-	//***Changes
-	//poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//poolSizes[1].descriptorCount = framesInFlight * 2;
 
 	poolSizes[1].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	poolSizes[1].descriptorCount = framesInFlight;
 
+	poolSizes[2].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[2].descriptorCount = framesInFlight;
+
 	// Descriptor pool creation
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; //***Change
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes    = poolSizes.data();
 	poolInfo.maxSets       = setsPerFrame * framesInFlight;
@@ -137,7 +176,7 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 	if (vkCreateDescriptorPool(m_device->getLogical(), &poolInfo, nullptr, &m_pool) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create descriptor pool");
-		throw;
+		throw std::exception();
 	}
 
 	std::array<VkDescriptorPoolSize, 1> imguiPoolSizes = {}; //Might need adjustment later as GUI advances. 
@@ -154,7 +193,7 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 	if (vkCreateDescriptorPool(m_device->getLogical(), &imguiPoolInfo, nullptr, &m_imguiDescPool) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create ImGui descriptor pool");
-		throw;
+		throw std::exception();
 	}
 
 	APP_LOG_INFO("Descriptor pool initialization successful");
@@ -172,7 +211,7 @@ DescriptorSet DescriptorPool::allocateDescriptorSet(DescriptorSetLayout& layout)
 	if (vkAllocateDescriptorSets(m_device->getLogical(), &allocInfo, &set) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to allocate descriptor set");
-		throw;
+		throw std::exception();
 	}
 
 	return DescriptorSet(set, &layout);
