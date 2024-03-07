@@ -22,6 +22,7 @@ void Window::init(uint32_t width, uint32_t height)
 	glfwSetFramebufferSizeCallback(m_window, &framebufferResizeCallback);
 	glfwSetMouseButtonCallback(m_window, &mouseButtonCallback);
 	glfwSetCursorPosCallback(m_window, &cursorPositionCallback);
+	glfwSetKeyCallback(m_window, &keyCallback);
 
 	APP_LOG_INFO("GLFW initialization successful");
 }
@@ -79,6 +80,17 @@ void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int
 void Window::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	EventDispatcher::GetEventQueue().push_back(std::make_unique<MouseMoveEvent>(static_cast<int>(xpos), static_cast<int>(ypos)));
+}
+
+void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	std::vector<int> keys = { GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D }; // Keys to care about
+	for (int i = 0; i < keys.size(); i++) //Loops through keys to find match
+	{
+		if (key == keys[i] && action == GLFW_PRESS) // Key press
+			EventDispatcher::GetEventQueue().push_back(std::make_unique<KeyPressEvent>(key, mods));
+		else if (key == keys[i] && action == GLFW_RELEASE) // Key release
+			EventDispatcher::GetEventQueue().push_back(std::make_unique<KeyReleaseEvent>(key, mods));
+	}
 }
 
 void Window::cleanup()

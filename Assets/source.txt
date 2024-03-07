@@ -1,2 +1,52 @@
-Cube - https://casual-effects.com/data/index.html (Modified)
-Cornell Box - https://casual-effects.com/data/index.html
+VkInstance: Connection between Vulkan library and application. API context
+
+VkPhysicalDevice: Information about GPUs available
+
+VkDevice: The GPU driver that allows communication with the GPU
+
+Queue family: Set of queues and what their properties are. A queue will support certain commands
+depending on the queue family it originates from. A queue is where commands are submitted for 
+execution on the GPU. 
+
+VkQueue: A queue is where commands are submitted for execution, in this case the graphics queue. 
+Different queues can be executed in parallel. 
+
+VkDescriptorPool: A pool of descriptors from which descriptor sets can be allocated.
+
+	Descriptors are like a pointer to a resource, such as a buffer or an image.
+	
+	Descriptor sets are allocated in GPU VRAM, and a descriptor set are multitple 
+	descriptors bound together
+
+VkRenderPass: Magic. Only exists in Vulkan. Allows the driver to know more about the images
+being rendered. 
+
+VkImage: Contains pixel data. Preferably stored on GPU
+
+	Image Count: # of Images within the swapchain ??
+
+VkSampleCountFlagBits: Number of sample points within a pixel that can be used for anti-aliasing. 
+
+
+VkDescriptorPoolCreateInfo struct
+
+	flags: VkDescriptorPoolCreateFlagBits -> bitmask specifying supported operations on a descriptor pool
+
+	maxsets: maximum number of descriptor sets that can be allocated in a descriptor pool
+
+	poolsizecounts: number of elements in the pPoolSizes
+
+	pPoolSizes: pointer to an array of VkDescriptorPoolSize structs
+
+		VkDescriptorPoolSize: 
+			
+			type: type of descriptor
+
+			descriptorCount: Number of bytes to allocate for type of descriptor
+
+
+
+
+
+
+

@@ -31,6 +31,8 @@ public:
 	const glm::vec3 getPosition() const { return m_eye; }
 	const float getFov() const { return m_fov; }
 
+	void updatePosition();
+
 	void setWindowSize(uint32_t width, uint32_t height);
 
 	// Callbacks
@@ -38,6 +40,8 @@ public:
 	void onMouseClick(MouseClickEvent event);
 	void onMouseRelease(MouseReleaseEvent event);
 	void onMouseMove(MouseMoveEvent event);
+	void onKeyPress(KeyPressEvent event);
+	void onKeyRelease(KeyReleaseEvent event);
 
 private:
 	glm::vec3 m_eye      = { 0.0f, 0.0f, -1.0f };
@@ -60,6 +64,10 @@ private:
 	bool m_leftMouse     = false;
 	bool m_rightMouse    = false;
 	bool m_shift         = false;
+	bool m_wKey          = false;
+	bool m_aKey          = false;
+	bool m_sKey          = false;
+	bool m_dKey          = false;
 	glm::vec2 m_mousePos = { 0.0f, 0.0f };
 
 	void updateViewMatrix() { m_view = glm::lookAt(m_eye, m_center, m_up); }

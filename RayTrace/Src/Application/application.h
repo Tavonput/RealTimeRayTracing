@@ -60,7 +60,7 @@ private:
 
 	Camera m_camera;
 
-	uint32_t m_framesInFlight = 2;
+	uint32_t m_framesInFlight = 2; // # frames being rendered at once
 
 	CornellBoxScene m_scene;
 	// SimpleCubeScene m_scene;
