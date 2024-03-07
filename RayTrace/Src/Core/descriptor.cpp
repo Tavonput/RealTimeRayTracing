@@ -18,7 +18,7 @@ DescriptorSetLayout DescriptorSetLayout::Builder::buildLayout(const std::string 
 	if (vkCreateDescriptorSetLayout(m_device->getLogical(), &info, nullptr, &layout) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create descriptor set layout ({})", name);
-		throw;
+		throw std::exception();
 	};
 
 	return DescriptorSetLayout(layout, m_bindings, static_cast<uint32_t>(m_bindings.size()), name);
@@ -88,7 +88,7 @@ void DescriptorSet::addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize 
 
 	default:
 		APP_LOG_CRITICAL("Invalid buffer type for descriptor set");
-		throw;
+		throw std::exception();
 	}
 
 	m_descriptorWrites.emplace_back(descriptorWrite);
@@ -176,7 +176,7 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 	if (vkCreateDescriptorPool(m_device->getLogical(), &poolInfo, nullptr, &m_pool) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create descriptor pool");
-		throw;
+		throw std::exception();
 	}
 
 	std::array<VkDescriptorPoolSize, 1> imguiPoolSizes = {}; //Might need adjustment later as GUI advances. 
@@ -193,7 +193,7 @@ void DescriptorPool::init(const Device& device, uint32_t framesInFlight, uint32_
 	if (vkCreateDescriptorPool(m_device->getLogical(), &imguiPoolInfo, nullptr, &m_imguiDescPool) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create ImGui descriptor pool");
-		throw;
+		throw std::exception();
 	}
 
 	APP_LOG_INFO("Descriptor pool initialization successful");
@@ -211,7 +211,7 @@ DescriptorSet DescriptorPool::allocateDescriptorSet(DescriptorSetLayout& layout)
 	if (vkAllocateDescriptorSets(m_device->getLogical(), &allocInfo, &set) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to allocate descriptor set");
-		throw;
+		throw std::exception();
 	}
 
 	return DescriptorSet(set, &layout);
