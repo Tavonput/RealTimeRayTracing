@@ -39,7 +39,8 @@ namespace ApplicationTest
 			Assert::IsTrue(camera.m_width == event->width);
 			Assert::IsTrue(camera.m_height == event->height);
 		} 
-		// White-box Test: Verifies Camera::onMouseMove updates mouse position correctly when no buttons are pressed.
+
+		// White-box Test: This test provides Coverage by verifying the camera's mouse position update mechanism. 
 		// Method being tested:
 		/*void Camera::onMouseMove(MouseMoveEvent event)
 		{
@@ -63,7 +64,14 @@ namespace ApplicationTest
 			Assert::AreEqual(50.0f, camera.m_mousePos.x);
 			Assert::AreEqual(50.0f, camera.m_mousePos.y);
 		}
-		//acceptance test
+
+		// Integration Test: MousePositionUpdatedOutOfBound
+		// This test case is designed to verify the integration between the Camera class and the event handling system
+		// The goal is to ensure that, when a MouseMoveEvent is out of bound
+		// Approach: Bottom-up testing is employed here:
+		// We first ensure that the individual units (Camera and event handling) work on their own.
+		// We then need to test their integration by simulating a mouse move event with an extreme values (so it out of bound).
+		// This allows us to test how well the Camera class handles unexpected input in coordination with the event system.
 		TEST_METHOD(MousePositionUpdatedOutOfBound)
 		{	
 			Camera camera;
@@ -72,8 +80,7 @@ namespace ApplicationTest
 			MouseMoveEvent moveEvent(100000, 100000); 
 			camera.onMouseMove(moveEvent);
 
-			Assert::IsTrue(camera.m_mousePos.x <= 100);
-			Assert::IsTrue(camera.m_mousePos.y <= 100);
+			Assert::IsTrue(camera.m_mousePos.x && camera.m_mousePos.y <= 100);
 		}
 
 		//acceptance test
