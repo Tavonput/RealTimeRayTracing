@@ -7,6 +7,12 @@
 #include "logging.h"
 #include "event.h"
 
+enum class CameraMode
+{
+	NONE = 0,
+	FLY, STATIONARY
+};
+
 class Camera
 {
 public:
@@ -32,6 +38,9 @@ public:
 	const float getFov() const { return m_fov; }
 
 	void updatePosition();
+	void resetPosition();
+	void flyMode();
+
 
 	void setWindowSize(uint32_t width, uint32_t height);
 
@@ -59,6 +68,8 @@ private:
 
 	uint32_t m_width  = 0;
 	uint32_t m_height = 0;
+
+	CameraMode m_cameraMode;
 
 	// Input state
 	bool m_leftMouse     = false;

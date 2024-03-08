@@ -91,6 +91,16 @@ void Camera::updatePosition() { // Updates camera position according to
 	
 }
 
+void Camera::resetPosition()
+{
+	m_eye = { 0.0f, 0.0f, 0.0f };
+}
+
+void Camera::flyMode()
+{
+	m_cameraMode = CameraMode::FLY;
+}
+
 void Camera::onKeyPress(KeyPressEvent event)
 {
 	if      (event.key == GLFW_KEY_W) m_wKey = true;

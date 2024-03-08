@@ -8,7 +8,7 @@ int main()
 	Application::Settings settings{};
 	settings.windowWidth    = 800;
 	settings.windowHeight   = 600;
-	settings.framesInFlight = 3;
+	settings.framesInFlight = 2;
 	settings.vSync          = true;
 	settings.cpuRaytracing  = false;
 

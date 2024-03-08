@@ -59,7 +59,7 @@ std::string KeyPressEvent::eventString() const
 std::string KeyReleaseEvent::eventString() const
 {
 	std::string keyStr;
-	if (key == GLFW_KEY_W)  keyStr = "W";
+	if      (key == GLFW_KEY_W)  keyStr = "W";
 	else if (key == GLFW_KEY_A)  keyStr = "A";
 	else if (key == GLFW_KEY_S)  keyStr = "S";
 	else if (key == GLFW_KEY_D)  keyStr = "D";
