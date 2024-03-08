@@ -39,7 +39,91 @@ namespace ApplicationTest
 			Assert::IsTrue(camera.m_width == event->width);
 			Assert::IsTrue(camera.m_height == event->height);
 		} 
+		// White-box Test: Verifies Camera::onMouseMove updates mouse position correctly when no buttons are pressed.
+		// Method being tested:
+		/*void Camera::onMouseMove(MouseMoveEvent event)
+		{
+			if (!m_leftMouse && !m_rightMouse)
+			{
+				// No action, just update the mouse position
+				m_mousePos.x = static_cast<float>(event.xPos);
+				m_mousePos.y = static_cast<float>(event.yPos);
+				return;
+			}
+		}
+		*/
+		TEST_METHOD(mousePositionUpdate)
+		{
+			Camera camera;
+			camera.init(m_cameraInfo);
 
+			MouseMoveEvent moveEvent(50, 50); 
+			camera.onMouseMove(moveEvent);
+
+			Assert::AreEqual(50.0f, camera.m_mousePos.x);
+			Assert::AreEqual(50.0f, camera.m_mousePos.y);
+		}
+		//acceptance test
+		TEST_METHOD(MousePositionUpdatedOutOfBound)
+		{	
+			Camera camera;
+			camera.init(m_cameraInfo);
+
+			MouseMoveEvent moveEvent(100000, 100000); 
+			camera.onMouseMove(moveEvent);
+
+			Assert::IsTrue(camera.m_mousePos.x <= 100);
+			Assert::IsTrue(camera.m_mousePos.y <= 100);
+		}
+
+		//acceptance test
+		TEST_METHOD(CameraInitialization)
+		{
+			Camera camera;
+			Camera::CreateInfo infotest{};
+			infotest.position = glm::vec3(0.0f, 0.0f, 0.0f);
+			infotest.windowHeight = 100;
+			infotest.windowWidth = 100;
+			camera.init(infotest);
+
+			Assert::IsTrue(camera.getPosition() == infotest.position);
+			Assert::IsTrue(camera.m_width == infotest.windowWidth);
+			Assert::IsTrue(camera.m_height == infotest.windowHeight);
+
+		}
+		//acceptance test
+		TEST_METHOD(CameraOnMouseClick)
+		{
+			Camera camera;
+		
+			MouseClickEvent leftClick(GLFW_MOUSE_BUTTON_LEFT, 0);
+			camera.onMouseClick(leftClick);
+
+			Assert::IsTrue(camera.m_leftMouse);
+
+			MouseClickEvent rightClick(GLFW_MOUSE_BUTTON_RIGHT, 0);
+			camera.onMouseClick(rightClick);
+
+			Assert::IsTrue(camera.m_rightMouse);
+		}
+
+		//acceptance test
+		TEST_METHOD(CameraOnMouseRelease)
+		{
+			Camera camera;
+			camera.m_leftMouse = true;
+			camera.m_rightMouse = true;
+
+			MouseReleaseEvent leftReleaseEvent(GLFW_MOUSE_BUTTON_LEFT, 0);
+			camera.onMouseRelease(leftReleaseEvent);
+
+			Assert::IsFalse(camera.m_leftMouse);
+
+			MouseReleaseEvent rightReleaseEvent(GLFW_MOUSE_BUTTON_RIGHT, 0);
+			camera.onMouseRelease(rightReleaseEvent);
+
+			Assert::IsFalse(camera.m_rightMouse);
+		}
 	private:
 		Camera::CreateInfo m_cameraInfo;
 	};
@@ -57,5 +141,68 @@ namespace ApplicationTest
 			queue.push_back(std::make_unique<WindowResizeEvent>(100, 100));
 			Assert::IsTrue(queue[0]->getType() == EventType::WINDOW_RESIZE);
 		}
+
+		//acceptance test
+		TEST_METHOD(MouseReleaseEventString_LeftButtonNoShift)
+		{
+			MouseReleaseEvent event(GLFW_MOUSE_BUTTON_LEFT, 0);
+			std::string expected = "Mouse Release - LEFT, mod: NONE";
+			Assert::AreEqual(expected, event.eventString());
+		}
+
+		//acceptance test
+		TEST_METHOD(MouseReleaseEventString_RightButtonWithShift)
+		{
+			MouseReleaseEvent event(GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOD_SHIFT);
+			std::string expected = "Mouse Release - RIGHT, mod: SHIFT";
+			Assert::AreEqual(expected, event.eventString());
+		}
+
+		//acceptance test
+		TEST_METHOD(MouseClickEvent_LeftClickWithShiftModifier)
+		{
+			MouseClickEvent event(GLFW_MOUSE_BUTTON_LEFT, GLFW_MOD_SHIFT);
+			std::string expectedOutput = "Mouse Click - LEFT, mod: SHIFT";
+			Assert::AreEqual(expectedOutput, event.eventString());
+		}
+
+		//acceptance test
+		TEST_METHOD(MouseClickEvent_RightClickWithoutModifiers)
+		{
+			MouseClickEvent event(GLFW_MOUSE_BUTTON_RIGHT, 0);
+			std::string expectedOutput = "Mouse Click - RIGHT, mod: NONE";
+			Assert::AreEqual(expectedOutput, event.eventString());
+		}
+
+		//acceptance test
+		TEST_METHOD(WindowMinimizedEventString)
+		{
+			WindowMinimizedEvent event;
+			std::string expected = "Window Minimized";
+			Assert::AreEqual(expected, event.eventString());
+		}
+
+		//acceptance test
+		TEST_METHOD(MouseMoveEventString)
+		{
+			MouseMoveEvent event(300, 400);
+			std::string expected = "Mouse Move - x:300, y:400";
+			Assert::AreEqual(expected, event.eventString());
+		}
+	};
+	// ---------------------------------------------------------------------------------------------------------
+	// model
+	//
+	TEST_CLASS(ModelTest)
+	{
+	public:
+		//acceptance test
+		TEST_METHOD(testingDef)
+		{
+			Model::Instance test;
+			Assert::IsTrue(test.transform == glm::mat4(1.0f));
+			Assert::IsTrue(test.objectID == 0);
+		}
+
 	};
 }
