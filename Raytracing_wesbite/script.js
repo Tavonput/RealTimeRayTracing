@@ -8,25 +8,25 @@ document.querySelector('.slider').addEventListener('input', (e) => {
 })
 
 // function to toggle dark mode
-function toggleDarkMode() {
-  var element = document.body;
-  var themeToggleImg = document.getElementById('theme-toggle');
-  element.classList.toggle("dark-mode");
-
-  if (element.classList.contains("dark-mode")) {
-      themeToggleImg.src = 'image\sun.png'; // path to your sun image
-      themeToggleImg.alt = 'Toggle Light Mode';
+document.getElementById('mode-slider').addEventListener('change', function(e) {
+  if (e.target.checked) {
+    document.body.classList.add('dark-mode');
   } else {
-      themeToggleImg.src = 'image\moon.png'; // path to your moon image
-      themeToggleImg.alt = 'Toggle Dark Mode';
-  }
-}
-
-// checking for the saved user preference
-document.addEventListener('DOMContentLoaded', (event) => {
-  if(localStorage.getItem('darkMode') === 'enabled') {
-      document.body.classList.add('dark-mode');
+    document.body.classList.remove('dark-mode');
   }
 });
+
+// If you want to save the user's preference
+window.addEventListener('load', function() {
+  var modeSlider = document.getElementById('mode-slider');
+  var isDarkMode = localStorage.getItem('darkMode') === 'true';
+  modeSlider.checked = isDarkMode;
+  document.body.classList.toggle('dark-mode', isDarkMode);
+});
+
+document.getElementById('mode-slider').addEventListener('change', function(e) {
+  localStorage.setItem('darkMode', e.target.checked);
+});
+
 
 
