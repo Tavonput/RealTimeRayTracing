@@ -40,6 +40,10 @@ void Gui::renderUI(VkCommandBuffer m_commandBuffer)
 	return;
 }
 
+void Gui::changeRenderMethod()
+{
+}
+
 
 
 void Gui::cleanup() 

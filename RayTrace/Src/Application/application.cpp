@@ -13,7 +13,7 @@ void Application::init(Application::Settings& settings)
 	// CPU Raytracing
 	if (m_settings.cpuRaytracing)
 	{
-		m_cpuRaytracer.init();
+		m_cpuRaytracer.init(settings.windowWidth,settings.windowHeight);
 		return;
 	}
 

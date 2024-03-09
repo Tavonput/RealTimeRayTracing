@@ -29,7 +29,16 @@
             <li><a href="#about">About</a></li> <!-- Link to the About section -->
             <li><a href="#features">Features</a></li> <!-- Link to the Features section -->
             <li><a href="#demo">Demo</a></li> <!-- Link to the Demo section -->
-            <button onclick="toggleDarkMode()">Toggle Dark Mode</button> <!-- dark mode button -->
+            <!-- Dark Mode Toggle Button -->
+            <div class="mode-slider-container">
+                <input type="checkbox" id="mode-slider" class="mode-slider-checkbox">
+                <label for="mode-slider" class="mode-slider-label">
+                    <img src="image/moon.png" class="mode-moon" alt="Moon">
+                    <img src="image/sun.png" class="mode-sun" alt="Sun">
+                    <span class="mode-slider-inner"></span>
+                    <span class="mode-slider-switch"></span>
+                </label>
+              </div>
         </ul>
     </nav>
     
@@ -77,7 +86,7 @@
     <!-- Demo section -->
     <section id="demo">
         <h2>Demo</h2>
-        <video width="1920" height="1080" controls>
+        <video width="10" height="1080" controls>
             <!-- path for video -->
             <source src="video/present.mp4" type="video/mp4">
           </video>
