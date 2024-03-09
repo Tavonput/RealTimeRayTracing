@@ -35,6 +35,7 @@ public:
 	void cleanup();
 	void beginUI();
 	void renderUI(VkCommandBuffer);
+	void changeRenderMethod();
 private:
 
 };
