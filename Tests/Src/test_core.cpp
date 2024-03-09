@@ -243,7 +243,7 @@ namespace CoreTest
 			m_context.cleanup();
 			m_window.cleanup();
 		}
-		TEST_METHOD(DescriptorPoolInit)
+		TEST_METHOD(DescriptorPoolInit) //Acceptance test
 		{
 			DescriptorPool dummyPool;
 			dummyPool.init(m_context.getDevice(), 2, 2);
@@ -253,7 +253,7 @@ namespace CoreTest
 
 
 		}
-		TEST_METHOD(GetImguiPool)
+		TEST_METHOD(GetImguiPool) //Acceptance test
 		{
 			DescriptorPool dummyPool;
 			dummyPool.init(m_context.getDevice(), 2, 2);
