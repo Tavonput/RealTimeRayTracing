@@ -228,4 +228,40 @@ namespace CoreTest
 				});
 		}
 	};
+	TEST_CLASS(DescriptorPoolTest)
+	{
+	public:
+		TEST_METHOD_INITIALIZE(Initialize)
+		{
+			m_window.init(100, 100);
+			m_context.init(m_window);
+			m_commandSystem.init(m_context.getDevice(), 2);
+		}
+		TEST_METHOD_CLEANUP(Cleanup)
+		{
+			m_commandSystem.cleanup();
+			m_context.cleanup();
+			m_window.cleanup();
+		}
+		TEST_METHOD(DescriptorPoolInit) //Acceptance test
+		{
+			DescriptorPool dummyPool;
+			dummyPool.init(m_context.getDevice(), 2, 2);
+			Assert::IsTrue(dummyPool.m_pool != VK_NULL_HANDLE);
+			Assert::IsTrue(dummyPool.m_imguiDescPool != VK_NULL_HANDLE);
+			
+
+
+		}
+		TEST_METHOD(GetImguiPool) //Acceptance test
+		{
+			DescriptorPool dummyPool;
+			dummyPool.init(m_context.getDevice(), 2, 2);
+			Assert::IsTrue(dummyPool.m_imguiDescPool == dummyPool.getImguiPool());
+		}
+	private:
+		Window        m_window;
+		SystemContext m_context;
+		CommandSystem m_commandSystem;
+	};
 }
