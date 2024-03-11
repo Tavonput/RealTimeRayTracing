@@ -82,10 +82,9 @@ public:
 		  m_device             (info.device),
 	      m_index              (info.modelIndex){}
 
-	Model::Instance createInstance();
-
 	Buffer& getVertexBuffer() { return m_vertexBuffer; }
 	Buffer& getIndexBuffer() { return m_indexBuffer; }
+	uint32_t getIndex() const { return m_index; }
 
 	void cleanup();
 
@@ -108,9 +107,11 @@ public:
 		: m_device(&device), m_commandSystem(&commandSystem) {}
 
 	Model loadModel(const std::string& filename);
+	Model::Instance createInstance(const Model& model);
 
-	std::vector<ModelInfo>& getModelInformation() { return m_modelInfos; }
-	std::vector<ObjectDescription>& getObjectDescriptions() { return m_objectDescriptions; }
+	const std::vector<ModelInfo>& getModelInformation() const { return m_modelInfos; }
+	const std::vector<ObjectDescription>& getObjectDescriptions() const { return m_objectDescriptions; }
+	const std::vector<Model::Instance>& getInstances() const { return m_instances; }
 
 private:
 	// Object loader
@@ -127,6 +128,7 @@ private:
 
 	std::vector<ModelInfo>         m_modelInfos;
 	std::vector<ObjectDescription> m_objectDescriptions;
+	std::vector<Model::Instance>   m_instances;
 
 	uint32_t m_modelCount = 0;
 

@@ -9,7 +9,7 @@ void CornellBoxScene::onLoad(ModelLoader& modelLoader)
 	m_cornellBoxModel = modelLoader.loadModel("../../../Assets/Cornell-Box/CornellBox-Original.obj");
 
 	// Cornell box instance
-	m_cornellBox = m_cornellBoxModel.createInstance();
+	m_cornellBox = modelLoader.createInstance(m_cornellBoxModel);
 
 	glm::mat4 transform = glm::mat4(1.0f);
 	transform = glm::translate(transform, glm::vec3(0.0f, -2.0f, 0.0f));

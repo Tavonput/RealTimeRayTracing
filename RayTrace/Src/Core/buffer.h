@@ -37,6 +37,7 @@ public:
 	static Buffer CreateStorageBuffer(CreateInfo& info);
 	static Buffer CreateScratchBuffer(CreateInfo& info);
 	static Buffer CreateAccelerationStructureBuffer(CreateInfo& info);
+	static Buffer CreateAccelerationStructureInstanceBuffer(CreateInfo& info);
 
 	const VkBuffer& getBuffer() const { return m_buffer; }
 	const uint32_t getCount() const { return m_count; }

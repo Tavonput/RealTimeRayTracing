@@ -7,10 +7,10 @@ void SimpleCubeScene::onLoad(ModelLoader& modelLoader)
 	m_cubeModel = modelLoader.loadModel("../../../Assets/Cube/cube.obj");
 
 	// Cube instances
-	m_mainCube = m_cubeModel.createInstance();
+	m_mainCube = modelLoader.createInstance(m_cubeModel);
 	m_mainCube.transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
 
-	m_lightCube = m_cubeModel.createInstance();
+	m_lightCube = modelLoader.createInstance(m_cubeModel);
 	m_lightCube.transform = glm::mat4(1.0f);
 }
 

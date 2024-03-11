@@ -8,11 +8,6 @@
 // Model
 //
 
-Model::Instance Model::createInstance()
-{
-	return Model::Instance(glm::mat4(1.0f), m_index);
-}
-
 void Model::cleanup()
 {
 	APP_LOG_INFO("Destroying model ({})", m_index);
@@ -220,4 +215,15 @@ Model ModelLoader::loadModel(const std::string& filename)
 	m_modelCount++;
 
 	return Model(modelInfo);
+}
+
+Model::Instance ModelLoader::createInstance(const Model& model)
+{
+	Model::Instance instance;
+	instance.transform = glm::mat4(1.0f);
+	instance.objectID  = model.getIndex();
+
+	m_instances.emplace_back(instance);
+
+	return instance;
 }

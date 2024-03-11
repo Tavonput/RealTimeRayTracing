@@ -93,6 +93,18 @@ Buffer Buffer::CreateAccelerationStructureBuffer(CreateInfo& info)
     return Buffer(*info.device, buffer, memory, info.dataSize, 0, info.name);
 }
 
+Buffer Buffer::CreateAccelerationStructureInstanceBuffer(CreateInfo& info)
+{
+    return Buffer(
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | info.flags,
+        info.data,
+        info.dataSize,
+        info.dataCount,
+        *info.device,
+        *info.commandSystem,
+        info.name);
+}
+
 VkDeviceAddress Buffer::getDeviceAddress() const
 {
     VkBufferDeviceAddressInfo info{};

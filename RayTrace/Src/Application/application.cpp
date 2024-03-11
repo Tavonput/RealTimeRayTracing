@@ -424,7 +424,7 @@ void Application::loadScene()
 
 	// Create acceleration structure
 	if (m_context.getDevice().isRtxEnabled())
-		m_accelerationStructure.init(loader.getModelInformation(), m_context.getDevice(), m_commandSystem);
+		m_accelerationStructure.init(loader.getModelInformation(), loader.getInstances(), m_context.getDevice(), m_commandSystem);
 }
 
 void Application::pollEvents()
