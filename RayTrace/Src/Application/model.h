@@ -28,10 +28,21 @@ struct Material
 	int32_t   textureID     = -1;
 };
 
-struct MaterialDescription
+struct ObjectDescription
 {
+	uint64_t vertexAddress;
+	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+};
+
+struct ModelInfo
+{
+	uint32_t id;
+	uint32_t vertexCount;
+	uint32_t indexCount;
+	uint64_t vertexAddress;
+	uint64_t indexAddress;
 };
 
 class Model
@@ -98,7 +109,8 @@ public:
 
 	Model loadModel(const std::string& filename);
 
-	std::vector<MaterialDescription>& getMaterialDescriptions() { return m_materialDescriptions; }
+	std::vector<ModelInfo>& getModelInformation() { return m_modelInfos; }
+	std::vector<ObjectDescription>& getObjectDescriptions() { return m_objectDescriptions; }
 
 private:
 	// Object loader
@@ -113,7 +125,8 @@ private:
 		void loadObj(const std::string& filename);
 	};
 
-	std::vector<MaterialDescription> m_materialDescriptions;
+	std::vector<ModelInfo>         m_modelInfos;
+	std::vector<ObjectDescription> m_objectDescriptions;
 
 	uint32_t m_modelCount = 0;
 

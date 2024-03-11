@@ -2,42 +2,16 @@
 
 #include "device.h"
 
-void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers)
+void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers, bool enableRaytracing)
 {
 	m_instanceLayers = instanceLayers;
+	m_enabledRaytracing = enableRaytracing;
 
 	pickPhysicalDevice(instance, surface);
 	createLogicalDevice();
-}
 
-const VkPhysicalDevice& Device::getPhysical() const
-{
-	return m_physical;
-}
-
-const VkDevice& Device::getLogical() const
-{
-	return m_logical;
-}
-
-const QueueFamilyIndices& Device::getIndices() const
-{
-	return m_indices;
-}
-
-const VkQueue& Device::getGraphicsQueue() const
-{
-	return m_graphicsQueue;
-}
-
-const VkQueue& Device::getPresentQueue() const
-{
-	return m_presentQueue;
-}
-
-const void Device::waitForGPU() const
-{
-	vkDeviceWaitIdle(m_logical);
+	if (m_enabledRaytracing)
+		loadDeviceExtensionsRayTrace(m_logical);
 }
 
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
@@ -128,7 +102,14 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 	APP_LOG_INFO("Choosing physical device");
 
 	// Extensions
-	m_deviceExtensions.push_back("VK_KHR_swapchain");
+	m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	if (m_enabledRaytracing)
+	{
+		m_deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	}
 
 	// Find GPUs
 	uint32_t deviceCount = 0;
@@ -163,6 +144,17 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 	// Set indices
 	m_indices = findQueueFamilies(m_physical, surface);
+
+	// Query for raytracing properties
+	if (m_enabledRaytracing)
+	{
+		m_rtxProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+		VkPhysicalDeviceProperties2 properties{};
+		properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		properties.pNext = &m_rtxProperties;
+		vkGetPhysicalDeviceProperties2(m_physical, &properties);
+	}
 }
 
 void Device::createLogicalDevice()
@@ -187,14 +179,23 @@ void Device::createLogicalDevice()
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	// Device features
+	// Buffer addresses
 	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceFeatures{};
-	bufferDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	bufferDeviceFeatures.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
 	bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
 
+	// Ray Tracing
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelFeatures{};
+	accelFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+	accelFeatures.pNext = &bufferDeviceFeatures;
+	if (m_enabledRaytracing)
+		accelFeatures.accelerationStructure = VK_TRUE;
+
+
+	// Device features
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext                      = &bufferDeviceFeatures;
+	deviceFeatures.pNext                      = &accelFeatures;
 	setDeviceFeatures(deviceFeatures);
 
 	// Device create

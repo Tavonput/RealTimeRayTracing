@@ -29,8 +29,6 @@ void Model::cleanup()
 
 void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 {
-	APP_LOG_INFO("Loading model: {}", filename);
-
 	tinyobj::ObjReader reader;
 
 	// Load model
@@ -141,6 +139,8 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 
 Model ModelLoader::loadModel(const std::string& filename)
 {
+	APP_LOG_INFO("Loading model {}", filename);
+
 	// Load model
 	ObjLoader loader;
 	loader.loadObj(filename);
@@ -164,6 +164,9 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.device        = m_device;
 	createInfo.commandSystem = m_commandSystem;
 
+	if (m_device->isRtxEnabled())
+		createInfo.flags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
 	// Create vertex buffer
 	char vertexName[128];
 	sprintf(vertexName, "Vertex Buffer Model %d", m_modelCount);
@@ -181,7 +184,7 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.name       = indexName;
 	createInfo.data       = loader.indices.data();
 	createInfo.dataSize   = sizeof(uint32_t) * numIndices;
-	createInfo.dataCount  = numIndices;
+	createInfo.dataCount  = numIndices;;
 	modelInfo.indexBuffer = Buffer::CreateIndexBuffer(createInfo);
 
 	// Create material buffer
@@ -198,18 +201,22 @@ Model ModelLoader::loadModel(const std::string& filename)
 	char materialIndexName[128];
 	sprintf(materialIndexName, "Material Index Storage Buffer Model %d", m_modelCount);
 
-	createInfo.name                = materialIndexName;
+	createInfo.name               = materialIndexName;
 	createInfo.data               = loader.matIndex.data();
 	createInfo.dataSize           = sizeof(int32_t) * loader.matIndex.size();
 	createInfo.dataCount          = static_cast<uint32_t>(loader.matIndex.size());
 	modelInfo.materialIndexBuffer = Buffer::CreateStorageBuffer(createInfo);
 
-	// Store material buffer addresses
-	MaterialDescription desc;
+	// Store buffer addresses
+	ObjectDescription desc;
+	desc.vertexAddress        = modelInfo.vertexBuffer.getDeviceAddress();
+	desc.indexAddress         = modelInfo.indexBuffer.getDeviceAddress();
 	desc.materialAddress      = modelInfo.materialBuffer.getDeviceAddress();
 	desc.materialIndexAddress = modelInfo.materialIndexBuffer.getDeviceAddress();
-	m_materialDescriptions.emplace_back(desc);
+	m_objectDescriptions.emplace_back(desc);
 
+	// Store model info
+	m_modelInfos.emplace_back(m_modelCount, numVertices, numIndices, desc.vertexAddress, desc.indexAddress);
 	m_modelCount++;
 
 	return Model(modelInfo);

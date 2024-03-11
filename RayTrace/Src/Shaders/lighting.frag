@@ -21,7 +21,7 @@ layout (buffer_reference) buffer MaterialBuffer { Material m[]; };
 layout (buffer_reference) buffer MatIndexBuffer { int i[]; };
 
 // Addresses to the material storage buffers
-layout (binding = 1) buffer MaterialDescription_ { MaterialDescription i[]; } matDesc;
+layout (binding = 1) buffer ObjectDescription_ { ObjectDescription i[]; } objDesc;
 
 // Push constant
 layout (push_constant) uniform Constants { PushConstant pc; };
@@ -54,9 +54,9 @@ vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDi
 void main()
 {
 	// Get material buffers
-	MaterialDescription matAddresses   = matDesc.i[pc.objectID];
-	MatIndexBuffer      matIndexBuffer = MatIndexBuffer(matAddresses.materialIndexAddress);
-	MaterialBuffer      materialBuffer = MaterialBuffer(matAddresses.materialAddress);
+	ObjectDescription objAddresses   = objDesc.i[pc.objectID];
+	MatIndexBuffer    matIndexBuffer = MatIndexBuffer(objAddresses.materialIndexAddress);
+	MaterialBuffer    materialBuffer = MaterialBuffer(objAddresses.materialAddress);
 
 	// Get the material
 	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];

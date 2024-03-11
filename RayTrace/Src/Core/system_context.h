@@ -9,7 +9,7 @@ class SystemContext
 {
 public:
 	// Initializer
-	void init(Window& window);
+	void init(Window& window, bool enableRaytacing);
 
 	// Getters
 	const Device& getDevice() const;

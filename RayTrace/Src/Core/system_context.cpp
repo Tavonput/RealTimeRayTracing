@@ -20,7 +20,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	return VK_FALSE;
 }
 
-void SystemContext::init(Window& window)
+void SystemContext::init(Window& window, bool enableRaytracing)
 {
 	initInstance();
 
@@ -30,7 +30,7 @@ void SystemContext::init(Window& window)
 
 	initSurface(window);
 
-	m_device.init(m_instance, m_surface, m_instanceLayers);
+	m_device.init(m_instance, m_surface, m_instanceLayers, enableRaytracing);
 }
 
 const Device& SystemContext::getDevice() const

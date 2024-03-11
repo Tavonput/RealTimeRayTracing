@@ -21,7 +21,7 @@ void Application::init(Application::Settings& settings)
 	m_window.init(settings.windowWidth, settings.windowHeight);
 
 	// System Context
-	m_context.init(m_window);
+	m_context.init(m_window, m_settings.gpuRaytracing);
 
 	// Swapchain initialization
 	Swapchain::CreateInfo swapchainCreateInfo{};
@@ -403,21 +403,28 @@ void Application::resetOffscreenRender()
 
 void Application::loadScene()
 {
+	APP_LOG_INFO("Loading scene");
+
 	// Load scene
 	ModelLoader loader(m_context.getDevice(), m_commandSystem);
 	m_scene.onLoad(loader);
 
-	// Create material description buffer
-	std::vector<MaterialDescription> materialDescriptions = loader.getMaterialDescriptions();
+	// Create object description buffer
+	std::vector<ObjectDescription> objectDescriptions = loader.getObjectDescriptions();
 
 	Buffer::CreateInfo createInfo{};
 	createInfo.device           = &m_context.getDevice();
 	createInfo.commandSystem    = &m_commandSystem;
-	createInfo.data             = materialDescriptions.data();
-	createInfo.dataSize         = sizeof(MaterialDescription) * materialDescriptions.size();
-	createInfo.dataCount        = static_cast<uint32_t>(materialDescriptions.size());
-	createInfo.name             = "Material Description Storage Buffer";
+	createInfo.data             = objectDescriptions.data();
+	createInfo.dataSize         = sizeof(ObjectDescription) * objectDescriptions.size();
+	createInfo.dataCount        = static_cast<uint32_t>(objectDescriptions.size());
+	createInfo.name             = "Object Description Storage Buffer";
+
 	m_materialDescriptionBuffer = Buffer::CreateStorageBuffer(createInfo);
+
+	// Create acceleration structure
+	if (m_context.getDevice().isRtxEnabled())
+		m_accelerationStructure.init(loader.getModelInformation(), m_context.getDevice(), m_commandSystem);
 }
 
 void Application::pollEvents()
@@ -514,6 +521,10 @@ void Application::cleanup()
 
 	// ImGui
 	m_gui.cleanup();
+
+	// Acceleration Structure
+	if (m_context.getDevice().isRtxEnabled())
+		m_accelerationStructure.cleanup();
 
 	// Framebuffers
 	for (auto& framebuffer : m_postFramebuffers)

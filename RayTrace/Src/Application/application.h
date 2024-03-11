@@ -26,6 +26,7 @@
 #include "Core/rendering_structures.h"
 #include "Core/framebuffer.h"
 #include "Core/texture.h"
+#include "Core/acceleration_structure.h"
 
 class Application
 {
@@ -40,6 +41,7 @@ public:
 
 		bool vSync         = true;
 		bool cpuRaytracing = false;
+		bool gpuRaytracing = false;
 	};
 
 	void init(Application::Settings& settings);
@@ -75,11 +77,15 @@ private:
 	std::vector<Buffer>        m_uniformBuffers;
 	Buffer                     m_materialDescriptionBuffer;
 
-  // Scenes
+    // Scenes
 	CornellBoxScene m_scene;
 	// SimpleCubeScene m_scene;
 
+	// Cpu Raytracing
 	CpuRaytracer m_cpuRaytracer;
+
+	// Gpu Raytracing
+	AccelerationStructure m_accelerationStructure;
 
 	void createRenderPasses();
 	void createPipelines();

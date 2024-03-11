@@ -11,6 +11,7 @@ int main()
 	settings.framesInFlight = 3;
 	settings.vSync          = true;
 	settings.cpuRaytracing  = false;
+	settings.gpuRaytracing  = true;
 
 	// Initialize application
 	Application app;
