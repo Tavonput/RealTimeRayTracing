@@ -54,6 +54,7 @@ private:
 	Window        m_window;
 	SystemContext m_context;
 	Gui           m_gui;
+	const Device* m_device = nullptr;
 
 	// Rendering components
 	Swapchain               m_swapchain;
@@ -86,6 +87,7 @@ private:
 
 	// Gpu Raytracing
 	AccelerationStructure m_accelerationStructure;
+	ShaderBindingTable    m_shaderBindingTable;
 	DescriptorPool        m_rtxDescriptorPool;
 	DescriptorSetLayout   m_rtxDescriptorLayout;
 	DescriptorSet         m_rtxDescriptorSet;
@@ -96,6 +98,7 @@ private:
 	void createFramebuffers();
 
 	void createRtxDescriptorSets();
+	void createRtxPipeline();
 
 	void setupOffscreenRender();
 	void resetOffscreenRender();

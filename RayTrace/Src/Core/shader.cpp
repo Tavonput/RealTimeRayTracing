@@ -2,45 +2,73 @@
 
 #include "shader.h"
 
-RasterShaderSet::RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device)
+void ShaderSet::addShader(ShaderStage type, const char* filepath)
 {
-	m_device = &device;
+	APP_LOG_INFO("Loading shaders {}", filepath);
 
-	APP_LOG_INFO("Loading shaders {} {}", vertPath, fragPath);
+	std::vector<char> m_code = readFile(filepath);
 
-	// Read files
-	m_vertCode = readFile(vertPath);
-	m_fragCode = readFile(fragPath);
+	VkShaderModule module = createShaderModule(m_code);
+	m_modules.emplace_back(module);
 
-	// Create modules
-	m_vertModule = createShaderModule(m_vertCode);
-	m_fragModule = createShaderModule(m_fragCode);
+	VkPipelineShaderStageCreateInfo stage{};
+	stage.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stage.module = module;
+	stage.pName  = "main";
 
-	// Vertex shader stage
-	m_shaderStages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	m_shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
-	m_shaderStages[0].module = m_vertModule;
-	m_shaderStages[0].pName  = "main";
+	switch (type)
+	{
+		case ShaderStage::VERT: stage.stage = VK_SHADER_STAGE_VERTEX_BIT;          break;
+		case ShaderStage::FRAG: stage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;        break;
+		case ShaderStage::RGEN: stage.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;      break;
+		case ShaderStage::MISS: stage.stage = VK_SHADER_STAGE_MISS_BIT_KHR;        break;
+		case ShaderStage::CHIT: stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR; break;
+	}
 
-	// Fragment shader stage
-	m_shaderStages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	m_shaderStages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-	m_shaderStages[1].module = m_fragModule;
-	m_shaderStages[1].pName  = "main";
+	m_shaderStages.emplace_back(stage);
 }
 
-VkPipelineShaderStageCreateInfo* RasterShaderSet::getStages()
+void ShaderSet::setupRtxShaderGroup()
 {
-	return m_shaderStages.data();
+	for (uint32_t i = 0; i < m_shaderStages.size(); i++)
+	{
+		VkRayTracingShaderGroupCreateInfoKHR group{};
+		group.sType              = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+		group.generalShader      = VK_SHADER_UNUSED_KHR;
+		group.closestHitShader   = VK_SHADER_UNUSED_KHR;
+		group.anyHitShader       = VK_SHADER_UNUSED_KHR;
+		group.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+		switch (m_shaderStages[i].stage)
+		{
+			case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+				group.type          = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+				group.generalShader = i;
+				m_shaderGroup.emplace_back(group);
+				break;
+
+			case VK_SHADER_STAGE_MISS_BIT_KHR:
+				group.type          = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+				group.generalShader = i;
+				m_shaderGroup.emplace_back(group);
+				break;
+
+			case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+				group.type             = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+				group.closestHitShader = i;
+				m_shaderGroup.emplace_back(group);
+				break;
+		}
+	}
 }
 
-void RasterShaderSet::cleanup()
+void ShaderSet::cleanup()
 {
-	vkDestroyShaderModule(m_device->getLogical(), m_vertModule, nullptr);
-	vkDestroyShaderModule(m_device->getLogical(), m_fragModule, nullptr);
+	for (auto& module : m_modules)
+		vkDestroyShaderModule(m_device->getLogical(), module, nullptr);
 }
 
-VkShaderModule RasterShaderSet::createShaderModule(const std::vector<char>& code)
+VkShaderModule ShaderSet::createShaderModule(const std::vector<char>& code)
 {
 	// Create shader module
 	VkShaderModuleCreateInfo createInfo{};
@@ -58,7 +86,7 @@ VkShaderModule RasterShaderSet::createShaderModule(const std::vector<char>& code
 	return shaderModule;
 }
 
-std::vector<char> RasterShaderSet::readFile(const std::string& filename)
+std::vector<char> ShaderSet::readFile(const std::string& filename)
 {
 	// Open binary file
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);

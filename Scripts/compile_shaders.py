@@ -14,7 +14,7 @@ class ShaderCompiler:
         executable = f"../Vendor/VulkanSDK/{vulkan_version}/Bin/glslc.exe"
         source_dir = "../RayTrace/Src/Shaders"
         bin_dir    = "../Bin/Shaders"
-        extensions = ["*.vert", "*.frag"]
+        extensions = ["*.vert", "*.frag", "*.rgen", "*.rchit", "*.rmiss"]
 
         # Find all shader sources to compile
         source_paths = []
@@ -28,7 +28,7 @@ class ShaderCompiler:
             bin_path = f"{bin_dir}/{name}_{ext[1:]}.spv"
 
             print(f"Compiling [{source_path}] ---> [{bin_path}]")
-            subprocess.run([executable, source_path, "-o", bin_path])
+            subprocess.run([executable, source_path, "-o", bin_path, "--target-spv=spv1.4"])
 
         print("Compilation finished")
 

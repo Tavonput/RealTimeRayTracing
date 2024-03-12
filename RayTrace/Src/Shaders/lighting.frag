@@ -1,5 +1,7 @@
 #version 460
 
+#extension GL_GOOGLE_include_directive : enable
+
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference2 : require
 

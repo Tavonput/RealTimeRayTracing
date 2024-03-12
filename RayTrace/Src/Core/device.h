@@ -36,6 +36,7 @@ public:
 	const QueueFamilyIndices& getIndices() const { return m_indices; }
 	const VkQueue& getGraphicsQueue() const { return m_graphicsQueue; }
 	const VkQueue& getPresentQueue() const { return m_presentQueue; }
+	const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getRtxProperties() const { return m_rtxProperties; }
 
 	const void waitForGPU() const { vkDeviceWaitIdle(m_logical); }
 	bool isRtxEnabled() const { return m_enabledRaytracing; }

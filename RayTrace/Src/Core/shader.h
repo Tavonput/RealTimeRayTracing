@@ -3,25 +3,41 @@
 #include "Application/logging.h"
 #include "device.h"
 
-class RasterShaderSet
+
+enum class ShaderStage
+{
+	NONE = 0,
+	VERT,
+	FRAG,
+	RGEN,
+	MISS,
+	CHIT
+};
+
+class ShaderSet
 {
 public:
-	RasterShaderSet(const char* vertPath, const char* fragPath, const Device& device);
+	ShaderSet() = default;
+	ShaderSet(const Device& device) { init(device); }
+	void init(const Device& device) { m_device = &device; }
 
-	VkPipelineShaderStageCreateInfo* getStages();
+	void addShader(ShaderStage type, const char* filepath);
+
+	void setupRtxShaderGroup();
+
+	VkPipelineShaderStageCreateInfo* getStages() { return m_shaderStages.data(); }
+	VkRayTracingShaderGroupCreateInfoKHR* getShaderGroup() { return m_shaderGroup.data(); }
+	uint32_t getStageCount() const { return static_cast<uint32_t>(m_shaderStages.size()); }
+	uint32_t getGroupCount() const { return static_cast<uint32_t>(m_shaderGroup.size()); }
 
 	void cleanup();
 
 private:
 	const Device* m_device = nullptr;
 
-	std::array<VkPipelineShaderStageCreateInfo, 2> m_shaderStages{};
-
-	std::vector<char> m_vertCode;
-	std::vector<char> m_fragCode;
-
-	VkShaderModule m_vertModule = VK_NULL_HANDLE;
-	VkShaderModule m_fragModule = VK_NULL_HANDLE;
+	std::vector<VkPipelineShaderStageCreateInfo>      m_shaderStages;
+	std::vector<VkShaderModule>                       m_modules;
+	std::vector<VkRayTracingShaderGroupCreateInfoKHR> m_shaderGroup;
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	std::vector<char> readFile(const std::string& filename);

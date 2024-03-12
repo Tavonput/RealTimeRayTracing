@@ -12,7 +12,8 @@ enum class BufferType
 	UNIFORM,
 	STORAGE,
 	SCRATCH,
-	ACCEL
+	ACCEL,
+	SBT
 };
 
 class Buffer
@@ -38,6 +39,10 @@ public:
 	static Buffer CreateScratchBuffer(CreateInfo& info);
 	static Buffer CreateAccelerationStructureBuffer(CreateInfo& info);
 	static Buffer CreateAccelerationStructureInstanceBuffer(CreateInfo& info);
+	static Buffer CreateShaderBindingTableBuffer(CreateInfo& info);
+
+	void map();
+	void unmap();
 
 	const VkBuffer& getBuffer() const { return m_buffer; }
 	const uint32_t getCount() const { return m_count; }
@@ -102,6 +107,4 @@ private:
 		m_count (count),
 		m_name  (name)
 	{}
-
-	void mapMemory();
 };

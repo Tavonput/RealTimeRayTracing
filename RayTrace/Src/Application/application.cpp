@@ -22,10 +22,11 @@ void Application::init(Application::Settings& settings)
 
 	// System Context
 	m_context.init(m_window, m_settings.gpuRaytracing);
+	m_device = &m_context.getDevice();
 
 	// Swapchain initialization
 	Swapchain::CreateInfo swapchainCreateInfo{};
-	swapchainCreateInfo.device         = &m_context.getDevice();
+	swapchainCreateInfo.device         = m_device;
 	swapchainCreateInfo.window         = &m_window;
 	swapchainCreateInfo.surface        = &m_context.getSurface();
 	swapchainCreateInfo.framesInFlight = m_settings.framesInFlight;
@@ -43,11 +44,11 @@ void Application::init(Application::Settings& settings)
 	createFramebuffers();
 
 	// Command system
-	m_commandSystem.init(m_context.getDevice(), m_settings.framesInFlight);
+	m_commandSystem.init(*m_device, m_settings.framesInFlight);
 
 	// Uniform buffers
 	Buffer::CreateInfo uboInfo{};
-	uboInfo.device        = &m_context.getDevice();
+	uboInfo.device        = m_device;
 	uboInfo.commandSystem = &m_commandSystem;
 	uboInfo.dataSize      = sizeof(GlobalUniform);
 
@@ -66,7 +67,7 @@ void Application::init(Application::Settings& settings)
 
 	// Descriptor Sets
 	createDescriptorSets();
-	if (m_context.getDevice().isRtxEnabled())
+	if (m_device->isRtxEnabled())
 		createRtxDescriptorSets();
 
 	// Camera
@@ -82,6 +83,12 @@ void Application::init(Application::Settings& settings)
 
 	// Pipeline
 	createPipelines();
+	if (m_device->isRtxEnabled())
+		createRtxPipeline();
+
+	// Shader Binding Table
+	if (m_device->isRtxEnabled())
+		m_shaderBindingTable.build(*m_device, m_pipelines[Pipeline::RTX].pipeline);
 
 	// ImGui
 	Gui::CreateInfo guiInfo{};
@@ -140,7 +147,7 @@ void Application::run()
 	Logger::changeLogLevel(LogLevel::INFO);
 
 	// Cleanup
-	m_context.getDevice().waitForGPU();
+	m_device->waitForGPU();
 	cleanup();
 }
 
@@ -149,7 +156,7 @@ void Application::createRenderPasses()
 	APP_LOG_INFO("Creating render passes");
 
 	// Create render pass builder
-	auto builder = RenderPass::Builder(m_context.getDevice());
+	auto builder = RenderPass::Builder(*m_device);
 
 	// Offscreen - MAIN
 	{
@@ -196,7 +203,7 @@ void Application::createPipelines()
 	APP_LOG_INFO("Creating pipelines");
 
 	// Create a pipeline builder
-	auto builder = Pipeline::Builder(m_context.getDevice());
+	auto builder = Pipeline::Builder(*m_device);
 
 	// Offscreen
 	{
@@ -205,24 +212,31 @@ void Application::createPipelines()
 		builder.disableFaceCulling();
 
 		builder.linkRenderPass(m_renderPasses[RenderPass::MAIN]);
-		builder.linkDescriptorSetLayout(m_offscreenDescriptorLayout);
+		
+		std::vector<VkDescriptorSetLayout> offscreenLayout = { m_offscreenDescriptorLayout.layout };
+		builder.linkDescriptorSetLayouts(offscreenLayout.data());
+
 		builder.linkPushConstants(sizeof(MeshPushConstants));
 
 		// Lighting shaders
-		RasterShaderSet lightingShaders("../../Shaders/lighting_vert.spv", "../../Shaders/lighting_frag.spv", m_context.getDevice());
+		ShaderSet lightingShaders(*m_device);
+		lightingShaders.addShader(ShaderStage::VERT, "../../Shaders/lighting_vert.spv");
+		lightingShaders.addShader(ShaderStage::FRAG, "../../Shaders/lighting_frag.spv");
 		builder.linkShaders(lightingShaders);
 
 		// Build graphics pipeline - LIGHTING
-		m_pipelines.push_back(builder.buildPipeline(Pipeline::LIGHTING, "Lighting Pipeline"));
+		m_pipelines.push_back(builder.buildGraphicsPipeline(Pipeline::LIGHTING, "Lighting Pipeline"));
 
 		// Flat shaders
-		RasterShaderSet flatShaders("../../Shaders/flat_vert.spv", "../../Shaders/flat_frag.spv", m_context.getDevice());
+		ShaderSet flatShaders(*m_device);
+		flatShaders.addShader(ShaderStage::VERT, "../../Shaders/flat_vert.spv");
+		flatShaders.addShader(ShaderStage::FRAG, "../../Shaders/flat_frag.spv");
 		builder.linkShaders(flatShaders);
 
 		// Build graphics pipeline - FLAT
-		m_pipelines.push_back(builder.buildPipeline(Pipeline::FLAT, "Flat Pipeline"));
+		m_pipelines.push_back(builder.buildGraphicsPipeline(Pipeline::FLAT, "Flat Pipeline"));
 
-		// Cleanup shader set
+		// Cleanup shader sets
 		lightingShaders.cleanup();
 		flatShaders.cleanup();
 	}
@@ -236,14 +250,17 @@ void Application::createPipelines()
 		builder.disableDepthTesting();
 
 		builder.linkRenderPass(m_renderPasses[RenderPass::POST]);
-		builder.linkDescriptorSetLayout(m_postDescriptorLayout);
+		std::vector<VkDescriptorSetLayout> postLayout = { m_postDescriptorLayout.layout };
+		builder.linkDescriptorSetLayouts(postLayout.data());
 
 		// Post shaders
-		RasterShaderSet postShaders("../../Shaders/post_vert.spv", "../../Shaders/post_frag.spv", m_context.getDevice());
+		ShaderSet postShaders(*m_device);
+		postShaders.addShader(ShaderStage::VERT, "../../Shaders/post_vert.spv");
+		postShaders.addShader(ShaderStage::FRAG, "../../Shaders/post_frag.spv");
 		builder.linkShaders(postShaders);
 
 		// Build graphics pipeline - POST
-		m_pipelines.push_back(builder.buildPipeline(Pipeline::POST, "Post Pipeline"));
+		m_pipelines.push_back(builder.buildGraphicsPipeline(Pipeline::POST, "Post Pipeline"));
 
 		// Cleanup shader set
 		postShaders.cleanup();
@@ -254,7 +271,7 @@ void Application::createDescriptorSets()
 {
 	// Initialize descriptor pool
 	DescriptorPool::CreateInfo poolInfo{};
-	poolInfo.pDevice  = &m_context.getDevice();
+	poolInfo.pDevice  = m_device;
 	poolInfo.name     = "Main Descriptor Pool";
 	poolInfo.maxSets  = 2 * m_settings.framesInFlight;
 	poolInfo.poolSize = 3;
@@ -266,7 +283,7 @@ void Application::createDescriptorSets()
 	m_descriptorPool.init(poolInfo);
 
 	// Create descriptor set layout builder
-	auto layoutBuilder = DescriptorSetLayout::Builder(m_context.getDevice());
+	auto layoutBuilder = DescriptorSetLayout::Builder(*m_device);
 
 	// Offscreen pass
 	{
@@ -306,13 +323,13 @@ void Application::createDescriptorSets()
 		m_offscreenDescriptorSets[i].setTotalWriteCounts(2, 0, 0);
 		m_offscreenDescriptorSets[i].addBufferWrite(m_uniformBuffers[i], BufferType::UNIFORM, 0, (uint32_t)SceneBinding::GLOBAL);
 		m_offscreenDescriptorSets[i].addBufferWrite(m_materialDescriptionBuffer, BufferType::STORAGE, 0, (uint32_t)SceneBinding::OBJ_DESC);
-		m_offscreenDescriptorSets[i].update(m_context.getDevice());
+		m_offscreenDescriptorSets[i].update(*m_device);
 
 		// Post set
 		m_postDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_postDescriptorLayout));
 		m_postDescriptorSets[i].setTotalWriteCounts(0, 1, 0);
 		m_postDescriptorSets[i].addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
-		m_postDescriptorSets[i].update(m_context.getDevice());
+		m_postDescriptorSets[i].update(*m_device);
 	}
 }
 
@@ -327,7 +344,7 @@ void Application::createFramebuffers()
 
 		Framebuffer::CreateInfo info{};
 		info.pRenderPass    = &m_renderPasses[RenderPass::MAIN];
-		info.pDevice        = &m_context.getDevice();
+		info.pDevice        = m_device;
 		info.pAttachments   = offscreenAttachments.data();
 		info.numAttachments = static_cast<uint32_t>(offscreenAttachments.size());
 		info.extent         = m_swapchain.getExtent();
@@ -344,7 +361,7 @@ void Application::createFramebuffers()
 
 		Framebuffer::CreateInfo info{};
 		info.pRenderPass    = &m_renderPasses[RenderPass::POST];
-		info.pDevice        = &m_context.getDevice();
+		info.pDevice        = m_device;
 		info.pAttachments   = postAttachments.data();
 		info.numAttachments = static_cast<uint32_t>(postAttachments.size());
 		info.extent         = m_swapchain.getExtent();
@@ -368,7 +385,7 @@ void Application::createRtxDescriptorSets()
 {
 	// Initialize descriptor pool
 	DescriptorPool::CreateInfo poolInfo{};
-	poolInfo.pDevice  = &m_context.getDevice();
+	poolInfo.pDevice  = m_device;
 	poolInfo.name     = "RTX Descriptor Pool";
 	poolInfo.maxSets  = 1;
 
@@ -378,7 +395,7 @@ void Application::createRtxDescriptorSets()
 
 	m_rtxDescriptorPool.init(poolInfo);
 
-	auto layoutBuilder = DescriptorSetLayout::Builder(m_context.getDevice());
+	auto layoutBuilder = DescriptorSetLayout::Builder(*m_device);
 
 	// Add an acceleration structure to the tlas binding
 	layoutBuilder.addBinding(
@@ -395,24 +412,48 @@ void Application::createRtxDescriptorSets()
 	m_rtxDescriptorLayout = layoutBuilder.buildLayout("Rtx Descriptor Set Layout");
 
 	m_rtxDescriptorSet = m_rtxDescriptorPool.allocateDescriptorSet(m_rtxDescriptorLayout);
-	m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1);
+
+	m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1); // 1 image, 1 accel
 	m_rtxDescriptorSet.addAccelerationStructureWrite(m_accelerationStructure.getTlas(), 1, (uint32_t)RtxBinding::TLAS);
 	m_rtxDescriptorSet.addImageWrite(m_offscreenColorTexture.getDescriptor(), (uint32_t)RtxBinding::OUT_IMAGE, true);
-	m_rtxDescriptorSet.update(m_context.getDevice());
+	m_rtxDescriptorSet.update(*m_device);
+}
+
+void Application::createRtxPipeline()
+{
+	APP_LOG_INFO("Creating Rtx pipeline");
+
+	auto builder = Pipeline::Builder(*m_device);
+
+	builder.addRtxBase();
+
+	std::vector<VkDescriptorSetLayout> rtxLayouts = { m_rtxDescriptorLayout.layout, m_offscreenDescriptorLayout.layout };
+	builder.linkDescriptorSetLayouts(rtxLayouts.data());
+
+	ShaderSet rtxShaders(*m_device);
+	rtxShaders.addShader(ShaderStage::RGEN, "../../Shaders/raytrace_rgen.spv");
+	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/raytrace_rmiss.spv");
+	rtxShaders.addShader(ShaderStage::CHIT, "../../Shaders/raytrace_rchit.spv");
+	rtxShaders.setupRtxShaderGroup();
+	builder.linkRtxShaders(rtxShaders);
+
+	m_pipelines.push_back(builder.buildRtxPipeline("Rtx Pipeline"));
+
+	rtxShaders.cleanup();
 }
 
 void Application::setupOffscreenRender()
 {
 	// Color texture
 	Texture::CreateInfo textureInfo{};
-	textureInfo.pDevice     = &m_context.getDevice();
+	textureInfo.pDevice     = m_device;
 	textureInfo.extent      = m_swapchain.getExtent();
 	textureInfo.name        = "Offscreen Texture";
 	m_offscreenColorTexture = Texture::Create(textureInfo);
 
 	// Create depth buffer
 	m_offscreenDepthBuffer = DepthBuffer(
-		m_context.getDevice(), 
+		*m_device, 
 		m_swapchain.getExtent(), 
 		m_offscreenColorTexture.getImage().numSamples, 
 		"Offscreen Depth Buffer");
@@ -438,15 +479,15 @@ void Application::resetOffscreenRender()
 		// Update post set
 		set.setTotalWriteCounts(0, 1, 0);
 		set.addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
-		set.update(m_context.getDevice());
+		set.update(*m_device);
 	}
 
-	if (m_context.getDevice().isRtxEnabled())
+	if (m_device->isRtxEnabled())
 	{
 		m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1);
 		m_rtxDescriptorSet.addAccelerationStructureWrite(m_accelerationStructure.getTlas(), 1, (uint32_t)RtxBinding::TLAS);
 		m_rtxDescriptorSet.addImageWrite(m_offscreenColorTexture.getDescriptor(), (uint32_t)RtxBinding::OUT_IMAGE, true);
-		m_rtxDescriptorSet.update(m_context.getDevice());
+		m_rtxDescriptorSet.update(*m_device);
 	}
 
 	// Make new framebuffers
@@ -458,14 +499,14 @@ void Application::loadScene()
 	APP_LOG_INFO("Loading scene");
 
 	// Load scene
-	ModelLoader loader(m_context.getDevice(), m_commandSystem);
+	ModelLoader loader(*m_device, m_commandSystem);
 	m_scene.onLoad(loader);
 
 	// Create object description buffer
 	std::vector<ObjectDescription> objectDescriptions = loader.getObjectDescriptions();
 
 	Buffer::CreateInfo createInfo{};
-	createInfo.device           = &m_context.getDevice();
+	createInfo.device           = m_device;
 	createInfo.commandSystem    = &m_commandSystem;
 	createInfo.data             = objectDescriptions.data();
 	createInfo.dataSize         = sizeof(ObjectDescription) * objectDescriptions.size();
@@ -475,8 +516,8 @@ void Application::loadScene()
 	m_materialDescriptionBuffer = Buffer::CreateStorageBuffer(createInfo);
 
 	// Create acceleration structure
-	if (m_context.getDevice().isRtxEnabled())
-		m_accelerationStructure.init(loader.getModelInformation(), loader.getInstances(), m_context.getDevice(), m_commandSystem);
+	if (m_device->isRtxEnabled())
+		m_accelerationStructure.init(loader.getModelInformation(), loader.getInstances(), *m_device, m_commandSystem);
 }
 
 void Application::pollEvents()
@@ -575,10 +616,11 @@ void Application::cleanup()
 	m_gui.cleanup();
 
 	// Rtx Structure
-	if (m_context.getDevice().isRtxEnabled())
+	if (m_device->isRtxEnabled())
 	{
+		m_shaderBindingTable.cleanup();
 		m_accelerationStructure.cleanup();
-		m_rtxDescriptorLayout.cleanup(m_context.getDevice());
+		m_rtxDescriptorLayout.cleanup(*m_device);
 		m_rtxDescriptorPool.cleanup();
 	}
 
@@ -589,14 +631,14 @@ void Application::cleanup()
 
 	// Pipelines
 	for (auto& pipeline : m_pipelines)
-		pipeline.cleanup(m_context.getDevice());
+		pipeline.cleanup(*m_device);
 
 	// Command System
 	m_commandSystem.cleanup();
 	
 	// Descriptor stuff
-	m_offscreenDescriptorLayout.cleanup(m_context.getDevice());
-	m_postDescriptorLayout.cleanup(m_context.getDevice());
+	m_offscreenDescriptorLayout.cleanup(*m_device);
+	m_postDescriptorLayout.cleanup(*m_device);
 	m_descriptorPool.cleanup();
 
 	// Buffers
@@ -606,7 +648,7 @@ void Application::cleanup()
 
 	// Render passes
 	for (auto& renderPass : m_renderPasses)
-		renderPass.cleanup(m_context.getDevice());
+		renderPass.cleanup(*m_device);
 
 	// Offscreen stuff
 	m_offscreenColorTexture.cleanup();

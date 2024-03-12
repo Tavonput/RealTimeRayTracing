@@ -184,18 +184,28 @@ void Device::createLogicalDevice()
 	bufferDeviceFeatures.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
 	bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
 
-	// Ray Tracing
+	// Acceleration structure
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelFeatures{};
 	accelFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-	accelFeatures.pNext = &bufferDeviceFeatures;
+
+	// Rtx Pipeline
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtxPipelineFeatures{};
+	rtxPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+
 	if (m_enabledRaytracing)
+	{
 		accelFeatures.accelerationStructure = VK_TRUE;
+		rtxPipelineFeatures.rayTracingPipeline = VK_TRUE;
+
+		bufferDeviceFeatures.pNext = &accelFeatures;
+		accelFeatures.pNext = &rtxPipelineFeatures;
+	}
 
 
 	// Device features
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext                      = &accelFeatures;
+	deviceFeatures.pNext                      = &bufferDeviceFeatures;
 	setDeviceFeatures(deviceFeatures);
 
 	// Device create

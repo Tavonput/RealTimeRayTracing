@@ -42,7 +42,7 @@ Buffer Buffer::CreateUniformBuffer(CreateInfo& info)
 
     // Create custom buffer and map memory
     auto uniformBuffer = Buffer(*info.device, buffer, memory, info.dataSize, 0, info.name);
-    uniformBuffer.mapMemory();
+    uniformBuffer.map();
 
     return uniformBuffer;
 }
@@ -105,6 +105,23 @@ Buffer Buffer::CreateAccelerationStructureInstanceBuffer(CreateInfo& info)
         info.name);
 }
 
+Buffer Buffer::CreateShaderBindingTableBuffer(CreateInfo& info)
+{
+    APP_LOG_INFO("Creating buffer ({})", info.name);
+
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+
+    Buffer::CreateBuffer(
+        info.dataSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | info.flags,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        buffer, memory,
+        *info.device);
+
+    return Buffer(*info.device, buffer, memory, info.dataSize, info.dataCount, info.name);
+}
+
 VkDeviceAddress Buffer::getDeviceAddress() const
 {
     VkBufferDeviceAddressInfo info{};
@@ -112,6 +129,16 @@ VkDeviceAddress Buffer::getDeviceAddress() const
     info.buffer = m_buffer;
 
     return vkGetBufferDeviceAddress(m_device->getLogical(), &info);
+}
+
+void Buffer::map()
+{
+    vkMapMemory(m_device->getLogical(), m_memory, 0, m_size, 0, &m_map);
+}
+
+void Buffer::unmap()
+{
+    vkUnmapMemory(m_device->getLogical(), m_memory);
 }
 
 void Buffer::cleanup()
@@ -250,9 +277,4 @@ Buffer::Buffer(
 
     vkDestroyBuffer(m_device->getLogical(), stagingBuffer, nullptr);
     vkFreeMemory(m_device->getLogical(), stagingMemory, nullptr);
-}
-
-void Buffer::mapMemory()
-{
-    vkMapMemory(m_device->getLogical(), m_memory, 0, m_size, 0, &m_map);
 }

@@ -6,6 +6,7 @@
 #include "buffer.h"
 
 /*****************************************************************************************************************
+ * 
  * Binding Enums
  * 
  * These are just enums that specify the corresponding descriptor set bindings used the in the shaders.
@@ -24,6 +25,7 @@ enum class RtxBinding
 };
 
 /*****************************************************************************************************************
+ * 
  * @class Descriptor Set Layout
  *
  * Wrapper around the Vulkan descriptor set layout.
@@ -86,6 +88,7 @@ private:
 };
 
 /*****************************************************************************************************************
+ * 
  * @class Descriptor Set
  *
  * Wrapper around the Vulkan descriptor set.
@@ -110,6 +113,13 @@ public:
 	DescriptorSet(VkDescriptorSet set, DescriptorSetLayout* layout)
 		: m_set(set), m_layout(layout) {}
 
+	/**
+	 * Set the total number of writes that you want to make before doing them.
+	 * 
+	 * @param bufferCount: Buffer write count.
+	 * @param imageCount: Image write count.
+	 * @param accelCount; Acceleration structure write count.
+	 */
 	void setTotalWriteCounts(uint32_t bufferCount, uint32_t imageCount, uint32_t accelCount);
 
 	/**
@@ -131,6 +141,13 @@ public:
 	 */
 	void addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding, bool storage = false);
 	 
+	/*
+	 * Add an acceleration structure write.
+	 *
+	 * @param accelerationStructure: A VkAccelerationStructureKHR.
+	 * @param count: The number of acceleration structures.
+	 * @param binding: The binding of the acceleration structure.
+	 */
 	void addAccelerationStructureWrite(const VkAccelerationStructureKHR& accelerationStructure, uint32_t count, uint32_t binding);
 
 	void update(const Device& device);
@@ -153,6 +170,7 @@ private:
 };
 
 /*****************************************************************************************************************
+ * 
  * @class Descriptor Pool
  * 
  * Wrapper around the Vulkan descriptor pool. 
