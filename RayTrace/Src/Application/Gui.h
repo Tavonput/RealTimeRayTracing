@@ -8,6 +8,10 @@
 #include "logging.h"
 #include "window.h"
 
+#include "Core/system_context.h"
+#include "Core/render_pass.h"
+#include "Core/descriptor.h"
+
 /*
 * General flow to follow 
 
@@ -31,11 +35,26 @@ call ImGui::DestroyContext()
 class Gui {
 
 public: 
-	void init(ImGui_ImplVulkan_InitInfo init_info, Window& m_window);
-	void cleanup();
-	void beginUI();
-	void renderUI(VkCommandBuffer);
-	void changeRenderMethod();
-private:
+	struct CreateInfo
+	{
+		SystemContext*        pSystemContext;
+		Window*               pWindow;
+		RenderPass*           pRenderPass;
+		uint32_t              minImageCount;
+		uint32_t              imageCount;                   
+		VkSampleCountFlagBits msaaSamples;
+	};
 
+	void init(Gui::CreateInfo info);
+
+	void cleanup();
+
+	void beginUI();
+	void renderUI(VkCommandBuffer commandBuffer);
+	void changeRenderMethod();
+
+private:
+	const Device* m_device = nullptr;
+
+	DescriptorPool m_descriptorPool;
 };

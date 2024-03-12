@@ -86,11 +86,16 @@ private:
 
 	// Gpu Raytracing
 	AccelerationStructure m_accelerationStructure;
-
+	DescriptorPool        m_rtxDescriptorPool;
+	DescriptorSetLayout   m_rtxDescriptorLayout;
+	DescriptorSet         m_rtxDescriptorSet;
+	
 	void createRenderPasses();
 	void createPipelines();
 	void createDescriptorSets();
 	void createFramebuffers();
+
+	void createRtxDescriptorSets();
 
 	void setupOffscreenRender();
 	void resetOffscreenRender();

@@ -40,7 +40,6 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 	blasInputs.reserve(blasCount);
 	for (const auto& model : models)
 	{
-		// Geometry triangle data
 		VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
 		triangles.sType                    = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 		triangles.vertexFormat             = VK_FORMAT_R32G32B32_SFLOAT;
@@ -50,14 +49,12 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 		triangles.indexType                = VK_INDEX_TYPE_UINT32;
 		triangles.indexData.deviceAddress  = model.indexAddress;
 
-		// Geometry
 		VkAccelerationStructureGeometryKHR geometry{};
 		geometry.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry.geometryType       = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 		geometry.flags              = VK_GEOMETRY_OPAQUE_BIT_KHR;
 		geometry.geometry.triangles = triangles;
 
-		// Offset
 		VkAccelerationStructureBuildRangeInfoKHR offset{};
 		offset.firstVertex     = 0;
 		offset.primitiveCount  = model.indexCount / 3;
@@ -76,7 +73,6 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 	VkDeviceSize maxScratchSize = 0;
 	for (const auto& blasInput : blasInputs)
 	{
-		// Build info
 		VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
 		buildInfo.sType         = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		buildInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -98,20 +94,18 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 		// Keep track of the largest scratch size needed
 		maxScratchSize = std::max(maxScratchSize, sizeInfo.buildScratchSize);
 
-		// Set blas build info
 		BlasBuildInfo blasInfo{};
 		blasInfo.buildInfo = buildInfo;
-		blasInfo.sizeInfo = sizeInfo;
+		blasInfo.sizeInfo  = sizeInfo;
 		blasInfo.rangeInfo = blasInput.buildRangeInfo.data();
 		blasBuildInfo.emplace_back(blasInfo);
 	}
 
-	// Create scratch buffer
+	// Create the scatch buffer
 	Buffer::CreateInfo bufferInfo{};
-	bufferInfo.device   = m_device;
-	bufferInfo.dataSize = maxScratchSize;
-	bufferInfo.name     = "BLAS Scratch Buffer";
-
+	bufferInfo.device    = m_device;
+	bufferInfo.dataSize  = maxScratchSize;
+	bufferInfo.name      = "BLAS Scratch Buffer";
 	Buffer scratchBuffer = Buffer::CreateScratchBuffer(bufferInfo);
 	VkDeviceAddress scratchAddress = scratchBuffer.getDeviceAddress();
 
@@ -128,22 +122,18 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 		// Check if we need to build the batch
 		if (batchSize >= batchLimit || i == blasCount - 1)
 		{
-			// Build the batch
 			VkCommandBuffer commandBuffer = m_commandSystem->beginSingleTimeCommands();
 			buildBlas(commandBuffer, indices, blasBuildInfo, scratchAddress);
 			m_commandSystem->endSingleTimeCommands(commandBuffer, m_device->getGraphicsQueue());
 
-			// Reset the batch
 			batchSize = 0;
 			indices.clear();
 		}
 	}
 
-	// Store blas
 	for (auto& build : blasBuildInfo)
 		m_blas.emplace_back(build.as);
 
-	// Cleanup
 	scratchBuffer.cleanup();
 }
 
@@ -215,9 +205,9 @@ void AccelerationStructure::createTlas(const std::vector<Model::Instance>& insta
 
 	// Create the scratch buffer
 	Buffer::CreateInfo scratchBufferInfo{};
-	scratchBufferInfo.device = m_device;
+	scratchBufferInfo.device   = m_device;
 	scratchBufferInfo.dataSize = sizeInfo.buildScratchSize;
-	scratchBufferInfo.name = "TLAS Scratch Buffer";
+	scratchBufferInfo.name     = "TLAS Scratch Buffer";
 
 	Buffer scratchBuffer = Buffer::CreateScratchBuffer(scratchBufferInfo);
 	VkDeviceAddress scratchAddress = scratchBuffer.getDeviceAddress();
@@ -243,7 +233,7 @@ void AccelerationStructure::createTlas(const std::vector<Model::Instance>& insta
 	}
 
 	// Update build information
-	buildInfo.dstAccelerationStructure = m_tlas.as;
+	buildInfo.dstAccelerationStructure  = m_tlas.as;
 	buildInfo.scratchData.deviceAddress = scratchAddress;
 
 	// Build the tlas
@@ -308,6 +298,7 @@ void AccelerationStructure::buildBlas(VkCommandBuffer commandBuffer, const std::
 
 inline VkTransformMatrixKHR AccelerationStructure::transformMatrixToKHR(glm::mat4 matrix)
 {
+	// Vulkan uses a different format for their transformation matrix, so we need to change our glm matrix
 	glm::mat4            temp = glm::transpose(matrix);
 	VkTransformMatrixKHR out_matrix;
 	memcpy(&out_matrix, &temp, sizeof(VkTransformMatrixKHR));

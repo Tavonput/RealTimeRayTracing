@@ -29,7 +29,7 @@ Texture::Texture(Texture::CreateInfo& info)
 	imgCreateInfo.layerCount = 1;
 	imgCreateInfo.numSamples = VK_SAMPLE_COUNT_1_BIT;
 	imgCreateInfo.tiling     = VK_IMAGE_TILING_OPTIMAL;
-	imgCreateInfo.usage      = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imgCreateInfo.usage      = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	imgCreateInfo.device     = info.pDevice;
 	imgCreateInfo.name       = info.name;
@@ -40,7 +40,7 @@ Texture::Texture(Texture::CreateInfo& info)
 		VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
 
 	m_image = Image::CreateImage(imgCreateInfo);
-	m_descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	m_descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	// Setup image view
 	Image::ImageViewSetupInfo viewSetupInfo{};

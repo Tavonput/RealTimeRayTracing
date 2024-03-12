@@ -66,6 +66,8 @@ void Application::init(Application::Settings& settings)
 
 	// Descriptor Sets
 	createDescriptorSets();
+	if (m_context.getDevice().isRtxEnabled())
+		createRtxDescriptorSets();
 
 	// Camera
 	Camera::CreateInfo cameraInfo{};
@@ -82,20 +84,14 @@ void Application::init(Application::Settings& settings)
 	createPipelines();
 
 	// ImGui
-	Device device = m_context.getDevice(); //Reduce function calls
-
-	ImGui_ImplVulkan_InitInfo guiInitInfo{};
-	guiInitInfo.Instance       = m_context.getInstance();
-	guiInitInfo.PhysicalDevice = device.getPhysical();
-	guiInitInfo.Device         = device.getLogical();
-	guiInitInfo.QueueFamily    = device.getIndices().graphicsFamily.value(); //Graphics or Present?
-	guiInitInfo.Queue          = device.getGraphicsQueue();
-	guiInitInfo.DescriptorPool = m_descriptorPool.getImguiPool(); //Make separate descriptor pool class? Ex. ImGuiDescriptorPool m_imguiDesPool
-	guiInitInfo.RenderPass     = m_renderPasses[RenderPass::POST].renderPass;
-	guiInitInfo.ImageCount     = m_swapchain.getImageCount();
-	guiInitInfo.MinImageCount  = 2;
-	guiInitInfo.MSAASamples    = m_swapchain.getMSAASampleCount();
-	m_gui.init(guiInitInfo, m_window);
+	Gui::CreateInfo guiInfo{};
+	guiInfo.pSystemContext = &m_context;
+	guiInfo.pRenderPass    = &m_renderPasses[RenderPass::POST];
+	guiInfo.pWindow        = &m_window;
+	guiInfo.minImageCount  = 2; // TODO: Query from swapchain
+	guiInfo.imageCount     = m_swapchain.getImageCount();
+	guiInfo.msaaSamples    = m_swapchain.getMSAASampleCount();
+	m_gui.init(guiInfo);
 }
 
 void Application::run()
@@ -257,7 +253,17 @@ void Application::createPipelines()
 void Application::createDescriptorSets()
 {
 	// Initialize descriptor pool
-	m_descriptorPool.init(m_context.getDevice(), m_settings.framesInFlight, 2);
+	DescriptorPool::CreateInfo poolInfo{};
+	poolInfo.pDevice  = &m_context.getDevice();
+	poolInfo.name     = "Main Descriptor Pool";
+	poolInfo.maxSets  = 2 * m_settings.framesInFlight;
+	poolInfo.poolSize = 3;
+
+	poolInfo.uniformBufferCount        = m_settings.framesInFlight;
+	poolInfo.storageBufferCount        = m_settings.framesInFlight;
+	poolInfo.combinedImageSamplerCount = m_settings.framesInFlight;
+
+	m_descriptorPool.init(poolInfo);
 
 	// Create descriptor set layout builder
 	auto layoutBuilder = DescriptorSetLayout::Builder(m_context.getDevice());
@@ -268,13 +274,13 @@ void Application::createDescriptorSets()
 		layoutBuilder.addBinding(
 			(uint32_t)SceneBinding::GLOBAL,
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 
-		// Add a storage buffer for the scene object materials
+		// Add a storage buffer for the scene objects
 		layoutBuilder.addBinding(
-			(uint32_t)SceneBinding::MATERIAL,
+			(uint32_t)SceneBinding::OBJ_DESC,
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-			VK_SHADER_STAGE_FRAGMENT_BIT);
+			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 
 		m_offscreenDescriptorLayout = layoutBuilder.buildLayout("Offscreen Descriptor Set Layout");
 	}
@@ -295,16 +301,16 @@ void Application::createDescriptorSets()
 	// Allocate and update descriptors set for each frame in flight
 	for (uint8_t i = 0; i < m_settings.framesInFlight; i++)
 	{
-		// Allocate sets
+		// Offscreen set
 		m_offscreenDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_offscreenDescriptorLayout));
-		m_postDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_postDescriptorLayout));
-
-		// Update offscreen set
+		m_offscreenDescriptorSets[i].setTotalWriteCounts(2, 0, 0);
 		m_offscreenDescriptorSets[i].addBufferWrite(m_uniformBuffers[i], BufferType::UNIFORM, 0, (uint32_t)SceneBinding::GLOBAL);
-		m_offscreenDescriptorSets[i].addBufferWrite(m_materialDescriptionBuffer, BufferType::STORAGE, 0, (uint32_t)SceneBinding::MATERIAL);
+		m_offscreenDescriptorSets[i].addBufferWrite(m_materialDescriptionBuffer, BufferType::STORAGE, 0, (uint32_t)SceneBinding::OBJ_DESC);
 		m_offscreenDescriptorSets[i].update(m_context.getDevice());
 
-		// Update post set
+		// Post set
+		m_postDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_postDescriptorLayout));
+		m_postDescriptorSets[i].setTotalWriteCounts(0, 1, 0);
 		m_postDescriptorSets[i].addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
 		m_postDescriptorSets[i].update(m_context.getDevice());
 	}
@@ -358,6 +364,43 @@ void Application::createFramebuffers()
 	}
 }
 
+void Application::createRtxDescriptorSets()
+{
+	// Initialize descriptor pool
+	DescriptorPool::CreateInfo poolInfo{};
+	poolInfo.pDevice  = &m_context.getDevice();
+	poolInfo.name     = "RTX Descriptor Pool";
+	poolInfo.maxSets  = 1;
+
+	poolInfo.poolSize                   = 2;
+	poolInfo.accelerationStructureCount = 1;
+	poolInfo.storageImageCount          = 1;
+
+	m_rtxDescriptorPool.init(poolInfo);
+
+	auto layoutBuilder = DescriptorSetLayout::Builder(m_context.getDevice());
+
+	// Add an acceleration structure to the tlas binding
+	layoutBuilder.addBinding(
+		(uint32_t)RtxBinding::TLAS,
+		VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
+		VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+
+	// Add an image to the out-image binding
+	layoutBuilder.addBinding(
+		(uint32_t)RtxBinding::OUT_IMAGE,
+		VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1,
+		VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+
+	m_rtxDescriptorLayout = layoutBuilder.buildLayout("Rtx Descriptor Set Layout");
+
+	m_rtxDescriptorSet = m_rtxDescriptorPool.allocateDescriptorSet(m_rtxDescriptorLayout);
+	m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1);
+	m_rtxDescriptorSet.addAccelerationStructureWrite(m_accelerationStructure.getTlas(), 1, (uint32_t)RtxBinding::TLAS);
+	m_rtxDescriptorSet.addImageWrite(m_offscreenColorTexture.getDescriptor(), (uint32_t)RtxBinding::OUT_IMAGE, true);
+	m_rtxDescriptorSet.update(m_context.getDevice());
+}
+
 void Application::setupOffscreenRender()
 {
 	// Color texture
@@ -393,8 +436,17 @@ void Application::resetOffscreenRender()
 	for (auto& set : m_postDescriptorSets)
 	{
 		// Update post set
+		set.setTotalWriteCounts(0, 1, 0);
 		set.addImageWrite(m_offscreenColorTexture.getDescriptor(), 0);
 		set.update(m_context.getDevice());
+	}
+
+	if (m_context.getDevice().isRtxEnabled())
+	{
+		m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1);
+		m_rtxDescriptorSet.addAccelerationStructureWrite(m_accelerationStructure.getTlas(), 1, (uint32_t)RtxBinding::TLAS);
+		m_rtxDescriptorSet.addImageWrite(m_offscreenColorTexture.getDescriptor(), (uint32_t)RtxBinding::OUT_IMAGE, true);
+		m_rtxDescriptorSet.update(m_context.getDevice());
 	}
 
 	// Make new framebuffers
@@ -522,9 +574,13 @@ void Application::cleanup()
 	// ImGui
 	m_gui.cleanup();
 
-	// Acceleration Structure
+	// Rtx Structure
 	if (m_context.getDevice().isRtxEnabled())
+	{
 		m_accelerationStructure.cleanup();
+		m_rtxDescriptorLayout.cleanup(m_context.getDevice());
+		m_rtxDescriptorPool.cleanup();
+	}
 
 	// Framebuffers
 	for (auto& framebuffer : m_postFramebuffers)

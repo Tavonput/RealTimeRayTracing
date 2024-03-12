@@ -17,6 +17,8 @@ public:
 		const Device& device, 
 		const CommandSystem& commandSystem);
 
+	const VkAccelerationStructureKHR& getTlas() const { return m_tlas.as; }
+
 	void cleanup();
 
 private:
@@ -55,12 +57,6 @@ private:
 		const std::vector<uint32_t>& indices,
 		std::vector<BlasBuildInfo>&  buildInfos,
 		VkDeviceAddress              scratchAddress);
-
-	void buildTlas(
-		VkCommandBuffer commandBuffer,
-		uint32_t        instanceCount,
-		VkDeviceAddress instanceBufferAddress,
-		Buffer&         scratchBuffer);
 
 	VkTransformMatrixKHR transformMatrixToKHR(glm::mat4 matrix);
 	VkDeviceAddress getBlasDeviceAddress(uint32_t id);
