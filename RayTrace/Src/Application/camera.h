@@ -14,7 +14,6 @@ enum class CameraMode // Makes adding new camera modes easy
 	FPV, STATIONARY
 };
 
-//cameraInfo.position = { 0.0f, 0.0f, 6.0f }; Initial
 
 class Camera
 {
@@ -69,9 +68,6 @@ private:
 	float m_fov         = 45.0f;
 	float m_sensitivity = 1.0f;
 
-	float m_yaw = -90.0f;
-	float m_pitch = 0.0f;
-
 	uint32_t m_width  = 0;
 	uint32_t m_height = 0;
 
@@ -80,8 +76,6 @@ private:
 
 	float m_currentFrame = 0;
 	float m_lastFrame = 0;
-
-	bool m_firstMouseMove = true;
 
 	// Input state
 	bool m_leftMouse     = false;

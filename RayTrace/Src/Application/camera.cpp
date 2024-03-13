@@ -77,8 +77,8 @@ void Camera::onMouseMove(MouseMoveEvent event)
 		dolly(deltaX, deltaY);
 
 	else if (m_cameraMode == CameraMode::FPV)
-		//updateDirection(deltaX, deltaY);
-		orbit(deltaX, deltaY);
+		updateDirection(deltaX, deltaY);
+		//orbit(deltaX, deltaY);
 
 	updateViewMatrix();
 
@@ -137,7 +137,6 @@ void Camera::stationaryMode()
 	m_cameraMode = CameraMode::STATIONARY;
 	resetPosition();
 	updateViewMatrix();
-	m_firstMouseMove = true;
 }
 
 void Camera::updatePosition() {
@@ -156,6 +155,7 @@ void Camera::updatePosition() {
 	if (m_wKey) {
 		//APP_LOG_INFO("W Key Down");
 		m_eye -= cameraSpeed * axisZ; // Moves camera position forwards (Z-axis represents forward and backwards for camera)
+		m_center -= cameraSpeed * axisZ; // Moves camera center point forwards
 	}
 	if (m_aKey) {
 		//APP_LOG_INFO("A Key Down");
@@ -165,6 +165,7 @@ void Camera::updatePosition() {
 	if (m_sKey) {
 		//APP_LOG_INFO("S Key Down");
 		m_eye += cameraSpeed * axisZ; // Moves camera position backwards (Z-axis represents forward and backwards of camera)
+		m_center += cameraSpeed * axisZ; // Moves camera center point backwards.
 	}
 	if (m_dKey) {
 		//APP_LOG_INFO("D Key Down");
@@ -174,7 +175,7 @@ void Camera::updatePosition() {
 	if (m_lShift) {
 		//APP_LOG_INFO("Left-Shift Key Down");
 		m_eye -= cameraSpeed * m_worldUp; // Moves camera down
-		m_center -= cameraSpeed * m_worldUp;
+		m_center -= cameraSpeed * m_worldUp; 
 	}
 	if (m_space) {
 		//APP_LOG_INFO("Space Key Down"); 
@@ -182,39 +183,39 @@ void Camera::updatePosition() {
 		m_center += cameraSpeed * m_worldUp;
 	}
 	updateViewMatrix();
-
-
 }
 
 void Camera::updateDirection(float deltaX, float deltaY)
 {
-	float sensitivity = 5.0f;
 
-	if (m_firstMouseMove) {
+	deltaX *= glm::pi<float>() * m_sensitivity;
+	deltaY *= glm::pi<float>() * m_sensitivity;
 
-	}
+	// Calculates vector from camera's position to its center coordinate. Represents camera's z-axis
+	glm::vec3 eyeToCenter(m_center - m_eye);
+	float length = glm::length(eyeToCenter);
+	eyeToCenter = glm::normalize(eyeToCenter);
+
+	//Gets the matrix to rotate vector around y-coordinate
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), -deltaX, m_up);
+
+	// Applies the rotation transformation to eyeToCenter (z-axis)
+	eyeToCenter = rotationY * glm::vec4(eyeToCenter, 0.0f); 
 	
-	deltaX *= sensitivity;
-	deltaY *= sensitivity * -1;
+	// Calculates the cross product between the up vector (y-axis) with eyeToCenter (z-axis) to get x-axis
+	glm::vec3 axisX = glm::normalize(glm::cross(m_up, eyeToCenter));
 
-	m_yaw += deltaX;
-	m_pitch += deltaY;
+	// Gets the matrix to rotate vector around x-coordinate
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), deltaY, axisX);
 
-	if (m_pitch > 89.0f)
-		m_pitch = 89.0f; // Stops camera from going too far up
+	// Applies the rotation transformation to eyeToCenter. Stores in temporary variable
+	glm::vec3 rotationXVec = rotationX * glm::vec4(eyeToCenter, 0.0f);
 
-	if (m_pitch < -89.0f)
-		m_pitch = -89.0f; // Stops camera from going too far down
+	// If rotation around x-axis goes beyond +- 90 degrees, rotation is not applied. Prevents camera from flipping over
+	if (glm::sign(rotationXVec.x) == glm::sign(eyeToCenter.x) && glm::sign(rotationXVec.z) == glm::sign(eyeToCenter.z))
+		eyeToCenter = rotationXVec;
 
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-	direction.y = sin(glm::radians(m_pitch));
-	direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-	m_center = m_eye + glm::normalize(direction);
-	
-	glm::vec3 axisZ = glm::normalize(m_eye - m_center);
-	glm::vec3 axisX = glm::normalize(glm::cross(m_up, axisZ));
-	//m_up = glm::normalize(glm::cross(axisZ, axisX));
+	m_center = m_eye + eyeToCenter * length;
 }
 
 void Camera::orbit(float deltaX, float deltaY)
@@ -244,15 +245,10 @@ void Camera::orbit(float deltaX, float deltaY)
 	if (glm::sign(rotationXVec.x) == glm::sign(centerToEye.x) && glm::sign(rotationXVec.z) == glm::sign(centerToEye.z))
 		centerToEye = rotationXVec;
 
-	if (m_cameraMode == CameraMode::STATIONARY) 
-	{
-		centerToEye *= radius;
-		m_eye = centerToEye + m_center;
-	}
-	else if (m_cameraMode == CameraMode::FPV)
-	{
-		m_center = m_eye + centerToEye;
-	}
+	
+	centerToEye *= radius;
+	m_eye = centerToEye + m_center;
+	
 }
 
 void Camera::dolly(float deltaX, float deltaY)
