@@ -46,10 +46,17 @@ std::string MouseMoveEvent::eventString() const
 std::string KeyPressEvent::eventString() const
 {
 	std::string keyStr;
-	if      (key == GLFW_KEY_W)  keyStr = "W";
-	else if (key == GLFW_KEY_A)  keyStr = "A";
-	else if (key == GLFW_KEY_S)  keyStr = "S";
-	else if (key == GLFW_KEY_D)  keyStr = "D";
+
+	switch (key)
+	{
+		case GLFW_KEY_W: keyStr = "W"; break;
+		case GLFW_KEY_A: keyStr = "A"; break;
+		case GLFW_KEY_S: keyStr = "S"; break;
+		case GLFW_KEY_D: keyStr = "D"; break;
+		case GLFW_KEY_ESCAPE: keyStr = "Escape"; break;
+		case GLFW_KEY_LEFT_SHIFT: keyStr = "Left Shift"; break;
+		case GLFW_KEY_SPACE: keyStr = "Space"; break;
+	}
 
 	std::stringstream ss;
 	ss << "Key Press - " << keyStr;
@@ -59,10 +66,17 @@ std::string KeyPressEvent::eventString() const
 std::string KeyReleaseEvent::eventString() const
 {
 	std::string keyStr;
-	if      (key == GLFW_KEY_W)  keyStr = "W";
-	else if (key == GLFW_KEY_A)  keyStr = "A";
-	else if (key == GLFW_KEY_S)  keyStr = "S";
-	else if (key == GLFW_KEY_D)  keyStr = "D";
+
+	switch (key)
+	{
+		case GLFW_KEY_W: keyStr = "W"; break;
+		case GLFW_KEY_A: keyStr = "A"; break;
+		case GLFW_KEY_S: keyStr = "S"; break;
+		case GLFW_KEY_D: keyStr = "D"; break;
+		case GLFW_KEY_ESCAPE: keyStr = "Escape"; break;
+		case GLFW_KEY_LEFT_SHIFT: keyStr = "Left Shift"; break;
+		case GLFW_KEY_SPACE: keyStr = "Space"; break;
+	}
 
 	std::stringstream ss;
 	ss << "Key Release - " << keyStr;
