@@ -101,16 +101,6 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 {
 	APP_LOG_INFO("Choosing physical device");
 
-	// Extensions
-	m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
-	if (m_enabledRaytracing)
-	{
-		m_deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-		m_deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-		m_deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-	}
-
 	// Find GPUs
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -123,6 +113,42 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+	m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	if (m_enabledRaytracing)
+	{
+		m_deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
+		// Check for a GPU with RTX support
+		for (const auto& device : devices)
+		{
+			if (Device::isDeviceSuitable(device, surface))
+			{
+				m_physical = device;
+
+				m_indices = findQueueFamilies(m_physical, surface);
+
+				// Query for raytracing properties
+				m_rtxProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+				VkPhysicalDeviceProperties2 properties{};
+				properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+				properties.pNext = &m_rtxProperties;
+				vkGetPhysicalDeviceProperties2(m_physical, &properties);
+
+				return;
+			}
+		}
+
+		// No GPU with RTX support found
+		APP_LOG_ERROR("Requested RTX but it is not supported. Disabling RTX");
+		m_enabledRaytracing = false;
+		m_deviceExtensions.clear();
+		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	}
 
 	// Check for a GPU that has supported features
 	for (const auto& device : devices)
@@ -140,21 +166,9 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 		throw;
 	}
 
-	APP_LOG_INFO("Physical device was found");
-
-	// Set indices
 	m_indices = findQueueFamilies(m_physical, surface);
 
-	// Query for raytracing properties
-	if (m_enabledRaytracing)
-	{
-		m_rtxProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-
-		VkPhysicalDeviceProperties2 properties{};
-		properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		properties.pNext = &m_rtxProperties;
-		vkGetPhysicalDeviceProperties2(m_physical, &properties);
-	}
+	APP_LOG_INFO("Physical device was found");
 }
 
 void Device::createLogicalDevice()
