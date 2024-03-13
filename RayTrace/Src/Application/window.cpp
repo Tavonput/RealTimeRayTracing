@@ -83,7 +83,8 @@ void Window::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	std::vector<int> keys = { GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D }; // Keys to care about
+	std::vector<int> keys = { GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D, GLFW_KEY_ESCAPE, 
+	GLFW_KEY_LEFT_SHIFT, GLFW_KEY_SPACE }; // Keys to care about
 	for (int i = 0; i < keys.size(); i++) //Loops through keys to find match
 	{
 		if (key == keys[i] && action == GLFW_PRESS) // Key press

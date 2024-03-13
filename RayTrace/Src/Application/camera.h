@@ -6,12 +6,15 @@
 
 #include "logging.h"
 #include "event.h"
+#include "window.h"
 
-enum class CameraMode
+enum class CameraMode // Makes adding new camera modes easy
 {
 	NONE = 0,
-	FLY, STATIONARY
+	FPV, STATIONARY
 };
+
+//cameraInfo.position = { 0.0f, 0.0f, 6.0f }; Initial
 
 class Camera
 {
@@ -28,6 +31,8 @@ public:
 
 		uint32_t windowWidth  = 0;
 		uint32_t windowHeight = 0;
+
+		Window window;
 	};
 
 	void init(Camera::CreateInfo& info);
@@ -38,8 +43,6 @@ public:
 	const float getFov() const { return m_fov; }
 
 	void updatePosition();
-	void resetPosition();
-	void flyMode();
 
 
 	void setWindowSize(uint32_t width, uint32_t height);
@@ -66,10 +69,19 @@ private:
 	float m_fov         = 45.0f;
 	float m_sensitivity = 1.0f;
 
+	float m_yaw = -90.0f;
+	float m_pitch = 0.0f;
+
 	uint32_t m_width  = 0;
 	uint32_t m_height = 0;
 
-	CameraMode m_cameraMode;
+	CameraMode m_cameraMode = CameraMode::STATIONARY;
+	Window m_window;
+
+	float m_currentFrame = 0;
+	float m_lastFrame = 0;
+
+	bool m_firstMouseMove = true;
 
 	// Input state
 	bool m_leftMouse     = false;
@@ -79,10 +91,17 @@ private:
 	bool m_aKey          = false;
 	bool m_sKey          = false;
 	bool m_dKey          = false;
+	bool m_lShift        = false;
+	bool m_space         = false;
+
 	glm::vec2 m_mousePos = { 0.0f, 0.0f };
 
 	void updateViewMatrix() { m_view = glm::lookAt(m_eye, m_center, m_up); }
 
+	void FPVMode();
+	void stationaryMode();
 	void orbit(float deltaX, float deltaY);
 	void dolly(float deltaX, float deltaY);
+	void resetPosition();
+	void updateDirection(float deltaX, float deltaY);
 };
