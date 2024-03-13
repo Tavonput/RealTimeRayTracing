@@ -9,7 +9,7 @@ int main()
 	settings.windowWidth    = 800;
 	settings.windowHeight   = 600;
 	settings.framesInFlight = 3;
-	settings.vSync          = true;
+	settings.vSync          = false;
 	settings.cpuRaytracing  = false;
 	settings.gpuRaytracing  = true;
 

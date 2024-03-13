@@ -178,7 +178,7 @@ void Pipeline::Builder::addGraphicsBase()
 void Pipeline::Builder::addRtxBase()
 {
 	m_pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	m_rtxPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+	m_rtxPipelineInfo.sType    = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
 	m_rtxPipelineInfo.maxPipelineRayRecursionDepth = 2; // TODO: Make a setable parameter
 	
@@ -201,9 +201,9 @@ void Pipeline::Builder::linkShaders(ShaderSet& shaders)
 	m_pipelineInfo.pStages    = shaders.getStages();
 }
 
-void Pipeline::Builder::linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts)
+void Pipeline::Builder::linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts, uint32_t count)
 {
-	m_pipelineLayoutInfo.setLayoutCount = 1;
+	m_pipelineLayoutInfo.setLayoutCount = count;
 	m_pipelineLayoutInfo.pSetLayouts    = layouts;
 }
 
@@ -224,7 +224,7 @@ void Pipeline::Builder::enableMultisampling(VkSampleCountFlagBits sampleCount)
 	m_multisampling.rasterizationSamples = sampleCount;
 }
 
-void Pipeline::Builder::linkRtxPushConstant(uint32_t size)
+void Pipeline::Builder::linkRtxPushConstants(uint32_t size)
 {
 	m_pushConstantRange.offset     = 0;
 	m_pushConstantRange.size       = size;
@@ -301,6 +301,7 @@ void ShaderBindingTable::build(const Device& device, VkPipeline& rtxPipeline)
 	m_regions[RGEN].deviceAddress = sbtAddress;
 	m_regions[MISS].deviceAddress = sbtAddress + m_regions[RGEN].size;
 	m_regions[HIT].deviceAddress  = sbtAddress + m_regions[RGEN].size + m_regions[MISS].size;
+	m_regions[CALL].deviceAddress = sbtAddress + m_regions[RGEN].size + m_regions[MISS].size + m_regions[HIT].size;
 
 	auto getHandle = [&](int i)
 	{ 

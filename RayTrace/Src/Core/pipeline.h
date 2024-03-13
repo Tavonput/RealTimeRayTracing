@@ -41,10 +41,10 @@ public:
 
 		void linkRenderPass(RenderPass& pass);
 		void linkShaders(ShaderSet& shaders);
-		void linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts);
+		void linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts, uint32_t count);
 		void linkPushConstants(uint32_t size);
 
-		void linkRtxPushConstant(uint32_t size);
+		void linkRtxPushConstants(uint32_t size);
 		void linkRtxShaders(ShaderSet& shaders);
 
 		void enableMultisampling(VkSampleCountFlagBits sampleCount);

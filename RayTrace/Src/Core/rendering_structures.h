@@ -10,10 +10,18 @@ struct MeshPushConstants
 	int32_t   objectID    = 0;
 };
 
+struct RtxPushConstants
+{
+	glm::vec4 clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
 struct GlobalUniform
 {
 	// Sorted by alignment
 	glm::mat4 viewProjection;
+	glm::mat4 viewInverse;
+	glm::mat4 projInverse;
+
 	glm::vec3 viewPosition;
 	float     lightIntensity = 1.0;
 

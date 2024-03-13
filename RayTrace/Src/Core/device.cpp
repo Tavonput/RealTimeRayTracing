@@ -228,6 +228,7 @@ void Device::createLogicalDevice()
 	// Store queues
 	vkGetDeviceQueue(m_logical, m_indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_logical, m_indices.presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_logical, m_indices.computeFamily.value(), 0, &m_computeQueue);
 
 	APP_LOG_INFO("Logical device initialization successful");
 }
@@ -266,16 +267,20 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device, VkSurfaceK
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-	// Find queue families for graphics and present
+	// Find queue families
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies)
 	{
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		// Graphics and compute
+		if ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
+		{
 			indices.graphicsFamily = i;
+			indices.computeFamily  = i;
+		}
 
+		// Present
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
 		if (presentSupport)
 			indices.presentFamily = i;
 

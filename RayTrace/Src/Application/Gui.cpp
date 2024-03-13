@@ -52,16 +52,22 @@ void Gui::beginUI()
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow(&showDemoWindow);
-	return;
+	// ImGui::ShowDemoWindow(&showDemoWindow);
+
+	ImGui::Begin("Lumify Raytracing");
+
+	if (m_device->isRtxSupported())
+		ImGui::Checkbox("Enable Rtx", &m_state.useRtx);
+
+	ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+	ImGui::End();
 }
 
 void Gui::renderUI(VkCommandBuffer commandBuffer)
 {
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer); //Third argument can be NULL.
-
-	return;
 }
 
 void Gui::changeRenderMethod()

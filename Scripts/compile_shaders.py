@@ -28,7 +28,7 @@ class ShaderCompiler:
             bin_path = f"{bin_dir}/{name}_{ext[1:]}.spv"
 
             print(f"Compiling [{source_path}] ---> [{bin_path}]")
-            subprocess.run([executable, source_path, "-o", bin_path, "--target-spv=spv1.4"])
+            subprocess.run([executable, source_path, "-o", bin_path, "--target-env=vulkan1.3"])
 
         print("Compilation finished")
 

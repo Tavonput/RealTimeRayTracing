@@ -1,9 +1,15 @@
 #version 460
-#extension GL_EXT_ray_tracing : require
 
-layout(location = 0) rayPayloadInEXT vec3 hitValue;
+#extension GL_EXT_ray_tracing : require
+#extension GL_ARB_gpu_shader_int64 : require
+
+#include "structures.glsl"
+
+layout (location = 0) rayPayloadInEXT hitPayload payload;
+
+layout (push_constant) uniform _RtxPushConstant { RtxPushConstant pc; };
 
 void main()
 {
-    hitValue = vec3(0.0, 0.1, 0.3);
+    payload.hitValue = pc.clearColor.xyz;
 }

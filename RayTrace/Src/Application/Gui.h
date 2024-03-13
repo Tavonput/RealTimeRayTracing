@@ -45,16 +45,25 @@ public:
 		VkSampleCountFlagBits msaaSamples;
 	};
 
+	struct UiState
+	{
+		bool useRtx = false;
+	};
+
 	void init(Gui::CreateInfo info);
 
-	void cleanup();
+	const UiState& getUIState() const { return m_state; }
 
 	void beginUI();
 	void renderUI(VkCommandBuffer commandBuffer);
 	void changeRenderMethod();
 
+	void cleanup();
+
 private:
 	const Device* m_device = nullptr;
 
 	DescriptorPool m_descriptorPool;
+
+	UiState m_state;
 };

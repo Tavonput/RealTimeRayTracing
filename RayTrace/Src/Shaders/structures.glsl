@@ -1,9 +1,12 @@
 struct GlobalUniform
 {
 	mat4 viewProjection;
-	vec3 viewPosition;
+	mat4 viewInverse;
+	mat4 projInverse;
 
+	vec3 viewPosition;
 	float lightIntensity;
+
 	vec3 lightPosition;
 	vec3 lightColor;
 };
@@ -14,6 +17,14 @@ struct ObjectDescription
 	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+};
+
+struct Vertex
+{
+	vec3 pos;
+	vec3 color;
+	vec3 normal;
+	vec2 texCoord;
 };
 
 struct Material
@@ -39,4 +50,14 @@ struct PushConstant
 	mat4 model;
 	vec3 objectColor;
 	int  objectID;
+};
+
+struct RtxPushConstant
+{
+	vec4 clearColor;
+};
+
+struct hitPayload
+{
+	vec3 hitValue;
 };

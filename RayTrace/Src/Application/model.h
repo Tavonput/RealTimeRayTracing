@@ -107,7 +107,7 @@ public:
 		: m_device(&device), m_commandSystem(&commandSystem) {}
 
 	Model loadModel(const std::string& filename);
-	Model::Instance createInstance(const Model& model);
+	Model::Instance createInstance(const Model& model, glm::mat4 transform);
 
 	const std::vector<ModelInfo>& getModelInformation() const { return m_modelInfos; }
 	const std::vector<ObjectDescription>& getObjectDescriptions() const { return m_objectDescriptions; }

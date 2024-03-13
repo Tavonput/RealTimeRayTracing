@@ -73,16 +73,13 @@ void SystemContext::initInstance()
 	wantedLayers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
 
-	// Automatic FPS counter in window bar
-	wantedLayers.push_back("VK_LAYER_LUNARG_monitor");
-
 	// Check if instance layers are supported
 	m_instanceLayers = checkLayerSupport(wantedLayers);
 
 	// Application info
 	VkApplicationInfo appInfo{};
 	appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName   = "Real Time Raytracing";
+	appInfo.pApplicationName   = "Lumify Raytracing";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName        = "No Engine";
 	appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);

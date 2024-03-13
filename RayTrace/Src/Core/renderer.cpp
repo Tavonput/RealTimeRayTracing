@@ -7,6 +7,10 @@
 
 void Renderer::beginFrame()
 {
+	// Update UI state
+	Gui::UiState ui = m_gui->getUIState();
+	m_useRtx        = ui.useRtx;
+
 	m_gui->beginUI();
 
 	// Acquire image from swapchain
@@ -30,27 +34,18 @@ void Renderer::beginFrame()
 		throw;
 	}
 
-	// Update dynamic states
+	// Get window size
 	VkExtent2D extent = m_swapchain->getExtent();
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)extent.width;
-	viewport.height = (float)extent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = extent;
-	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
-
-	aspectRatio = extent.width / (float)extent.height;
+	m_windowWidth     = extent.width;
+	m_windowHeight    = extent.height;
+	aspectRatio       = (float)extent.width / (float)extent.height;
 
 	// Update uniform buffers
-	ubo.viewProjection = m_camera->getViewProjection();
+	glm::mat4 view = m_camera->getView();
+	glm::mat4 proj = m_camera->getProjection();
+	ubo.viewProjection = proj * view;
+	ubo.viewInverse    = glm::inverse(view);
+	ubo.projInverse    = glm::inverse(proj);
 	ubo.viewPosition   = m_camera->getPosition();
 
 	Buffer::Update(BufferType::UNIFORM, m_uniformBuffers[m_frameIndex], &ubo);
@@ -97,7 +92,12 @@ void Renderer::endRenderPass()
 
 void Renderer::bindPipeline(Pipeline::PipelineType pipeline)
 {
-	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[pipeline].pipeline);
+	VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	if (pipeline == Pipeline::RTX)
+		bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+
+	vkCmdBindPipeline(m_commandBuffer, bindPoint, m_pipelines[pipeline].pipeline);
 
 	m_pipelineIndex = pipeline;
 }
@@ -118,27 +118,51 @@ void Renderer::bindIndexBuffer(Buffer& indexBuffer)
 	m_indexBuffer = indexBuffer;
 }
 
-void Renderer::bindDescriptorSets()
+void Renderer::bindDescriptorSets(Pipeline::PipelineType type)
 {
-	if (m_pipelineIndex == Pipeline::POST)
+	switch (type)
 	{
-		vkCmdBindDescriptorSets(
-			m_commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			m_pipelines[m_pipelineIndex].layout,
-			0, 1,
-			&m_postDescriptorSets[m_frameIndex].getSet(),
-			0, nullptr);
-	}
-	else
-	{
-		vkCmdBindDescriptorSets(
-			m_commandBuffer, 
-			VK_PIPELINE_BIND_POINT_GRAPHICS, 
-			m_pipelines[m_pipelineIndex].layout, 
-			0, 1, 
-			&m_offscreenDescriptorSets[m_frameIndex].getSet(), 
-			0, nullptr);
+		case Pipeline::POST:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_postDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
+
+		case Pipeline::LIGHTING:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_offscreenDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
+
+		case Pipeline::FLAT:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_offscreenDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
+
+		case Pipeline::RTX:
+			std::vector<VkDescriptorSet> rtxSets = { m_rtxDescriptorSets->getSet(), m_offscreenDescriptorSets[m_frameIndex].getSet() };
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+				m_pipelines[type].layout,
+				0, 
+				(uint32_t)rtxSets.size(),
+				rtxSets.data(),
+				0, nullptr);
+			break;
 	}
 }
 
@@ -153,6 +177,17 @@ void Renderer::bindPushConstants()
 		&pushConstants);
 }
 
+void Renderer::bindRtxPushConstants()
+{
+	vkCmdPushConstants(
+		m_commandBuffer,
+		m_pipelines[m_pipelineIndex].layout,
+		VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR,
+		0,
+		sizeof(RtxPushConstants),
+		&rtxPushConstants);
+}
+
 void Renderer::drawVertex()
 {
 	if (m_passIndex == RenderPass::POST)
@@ -164,10 +199,39 @@ void Renderer::drawVertex()
 void Renderer::drawIndexed()
 {
 	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
-
 }
 
 void Renderer::drawUI()
 {
 	m_gui->renderUI(m_commandBuffer);
+}
+
+void Renderer::traceRays()
+{
+	auto& regions = m_SBT->getRegions();
+
+	vkCmdTraceRaysKHR(
+		m_commandBuffer,
+		&regions[ShaderBindingTable::RGEN],
+		&regions[ShaderBindingTable::MISS],
+		&regions[ShaderBindingTable::HIT],
+		&regions[ShaderBindingTable::CALL],
+		m_windowWidth, m_windowHeight, 1);
+}
+
+void Renderer::setDynamicStates()
+{
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_windowWidth;
+	viewport.height = (float)m_windowHeight;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = { m_windowWidth, m_windowHeight };
+	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
 }

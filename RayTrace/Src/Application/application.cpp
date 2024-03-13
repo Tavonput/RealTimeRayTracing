@@ -34,6 +34,9 @@ void Application::init(Application::Settings& settings)
 	swapchainCreateInfo.msaa           = false;
 	m_swapchain.init(swapchainCreateInfo);
 
+	// Command system
+	m_commandSystem.init(*m_device, m_settings.framesInFlight);
+
 	// Offscreen render
 	setupOffscreenRender();
 
@@ -43,14 +46,13 @@ void Application::init(Application::Settings& settings)
 	// Framebuffers
 	createFramebuffers();
 
-	// Command system
-	m_commandSystem.init(*m_device, m_settings.framesInFlight);
-
 	// Uniform buffers
 	Buffer::CreateInfo uboInfo{};
 	uboInfo.device        = m_device;
 	uboInfo.commandSystem = &m_commandSystem;
 	uboInfo.dataSize      = sizeof(GlobalUniform);
+	if (m_device->isRtxSupported())
+		uboInfo.flags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 
 	for (uint8_t i = 0; i < m_settings.framesInFlight; i++)
 	{
@@ -67,7 +69,7 @@ void Application::init(Application::Settings& settings)
 
 	// Descriptor Sets
 	createDescriptorSets();
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 		createRtxDescriptorSets();
 
 	// Camera
@@ -83,11 +85,11 @@ void Application::init(Application::Settings& settings)
 
 	// Pipeline
 	createPipelines();
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 		createRtxPipeline();
 
 	// Shader Binding Table
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 		m_shaderBindingTable.build(*m_device, m_pipelines[Pipeline::RTX].pipeline);
 
 	// ImGui
@@ -124,6 +126,13 @@ void Application::run()
 	rendererInfo.pGui                     = &m_gui;
 	rendererInfo.pOffscreenFramebuffer    = &m_offscreenFramebuffer;
 	rendererInfo.pPostFramebuffers        = m_postFramebuffers.data();
+
+	if (m_device->isRtxSupported())
+	{
+		rendererInfo.enableRtx          = true;
+		rendererInfo.pRtxDescriptorSets = &m_rtxDescriptorSet;
+		rendererInfo.pSBT               = &m_shaderBindingTable;
+	}
 
 	// Create renderer
 	Renderer renderer(rendererInfo);
@@ -212,10 +221,7 @@ void Application::createPipelines()
 		builder.disableFaceCulling();
 
 		builder.linkRenderPass(m_renderPasses[RenderPass::MAIN]);
-		
-		std::vector<VkDescriptorSetLayout> offscreenLayout = { m_offscreenDescriptorLayout.layout };
-		builder.linkDescriptorSetLayouts(offscreenLayout.data());
-
+		builder.linkDescriptorSetLayouts(&m_offscreenDescriptorLayout.layout, 1);
 		builder.linkPushConstants(sizeof(MeshPushConstants));
 
 		// Lighting shaders
@@ -250,8 +256,7 @@ void Application::createPipelines()
 		builder.disableDepthTesting();
 
 		builder.linkRenderPass(m_renderPasses[RenderPass::POST]);
-		std::vector<VkDescriptorSetLayout> postLayout = { m_postDescriptorLayout.layout };
-		builder.linkDescriptorSetLayouts(postLayout.data());
+		builder.linkDescriptorSetLayouts(&m_postDescriptorLayout.layout, 1);
 
 		// Post shaders
 		ShaderSet postShaders(*m_device);
@@ -291,7 +296,7 @@ void Application::createDescriptorSets()
 		layoutBuilder.addBinding(
 			(uint32_t)SceneBinding::GLOBAL,
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 
 		// Add a storage buffer for the scene objects
 		layoutBuilder.addBinding(
@@ -428,7 +433,9 @@ void Application::createRtxPipeline()
 	builder.addRtxBase();
 
 	std::vector<VkDescriptorSetLayout> rtxLayouts = { m_rtxDescriptorLayout.layout, m_offscreenDescriptorLayout.layout };
-	builder.linkDescriptorSetLayouts(rtxLayouts.data());
+	builder.linkDescriptorSetLayouts(rtxLayouts.data(), static_cast<uint32_t>(rtxLayouts.size()));
+
+	builder.linkRtxPushConstants(sizeof(RtxPushConstants));
 
 	ShaderSet rtxShaders(*m_device);
 	rtxShaders.addShader(ShaderStage::RGEN, "../../Shaders/raytrace_rgen.spv");
@@ -446,10 +453,11 @@ void Application::setupOffscreenRender()
 {
 	// Color texture
 	Texture::CreateInfo textureInfo{};
-	textureInfo.pDevice     = m_device;
-	textureInfo.extent      = m_swapchain.getExtent();
-	textureInfo.name        = "Offscreen Texture";
-	m_offscreenColorTexture = Texture::Create(textureInfo);
+	textureInfo.pDevice        = m_device;
+	textureInfo.pCommandSystem = &m_commandSystem;
+	textureInfo.extent         = m_swapchain.getExtent();
+	textureInfo.name           = "Offscreen Texture";
+	m_offscreenColorTexture    = Texture::Create(textureInfo);
 
 	// Create depth buffer
 	m_offscreenDepthBuffer = DepthBuffer(
@@ -482,7 +490,7 @@ void Application::resetOffscreenRender()
 		set.update(*m_device);
 	}
 
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 	{
 		m_rtxDescriptorSet.setTotalWriteCounts(0, 1, 1);
 		m_rtxDescriptorSet.addAccelerationStructureWrite(m_accelerationStructure.getTlas(), 1, (uint32_t)RtxBinding::TLAS);
@@ -516,7 +524,7 @@ void Application::loadScene()
 	m_materialDescriptionBuffer = Buffer::CreateStorageBuffer(createInfo);
 
 	// Create acceleration structure
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 		m_accelerationStructure.init(loader.getModelInformation(), loader.getInstances(), *m_device, m_commandSystem);
 }
 
@@ -616,7 +624,7 @@ void Application::cleanup()
 	m_gui.cleanup();
 
 	// Rtx Structure
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 	{
 		m_shaderBindingTable.cleanup();
 		m_accelerationStructure.cleanup();

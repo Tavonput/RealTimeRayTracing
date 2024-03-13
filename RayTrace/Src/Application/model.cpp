@@ -74,6 +74,9 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 	// Loop over all shapes
 	for (const auto& shape : shapes)
 	{
+		vertices.reserve(shape.mesh.indices.size() + vertices.size());
+		indices.reserve(shape.mesh.indices.size() + indices.size());
+
 		// Material indices
 		matIndex.insert(matIndex.end(), shape.mesh.material_ids.begin(), shape.mesh.material_ids.end());
 
@@ -159,7 +162,7 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.device        = m_device;
 	createInfo.commandSystem = m_commandSystem;
 
-	if (m_device->isRtxEnabled())
+	if (m_device->isRtxSupported())
 		createInfo.flags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 
 	// Create vertex buffer
@@ -217,10 +220,10 @@ Model ModelLoader::loadModel(const std::string& filename)
 	return Model(modelInfo);
 }
 
-Model::Instance ModelLoader::createInstance(const Model& model)
+Model::Instance ModelLoader::createInstance(const Model& model, glm::mat4 transform)
 {
 	Model::Instance instance;
-	instance.transform = glm::mat4(1.0f);
+	instance.transform = transform;
 	instance.objectID  = model.getIndex();
 
 	m_instances.emplace_back(instance);
