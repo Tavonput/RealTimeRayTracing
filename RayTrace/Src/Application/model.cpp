@@ -124,6 +124,22 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 			index = 0;
 	}
 
+	// Compute normal when no normal were provided
+	if (attrib.normals.empty())
+	{
+		for (uint32_t i = 0; i < indices.size(); i += 3)
+		{
+			Vertex& v0 = vertices[indices[i + 0]];
+			Vertex& v1 = vertices[indices[i + 1]];
+			Vertex& v2 = vertices[indices[i + 2]];
+
+			glm::vec3 n = glm::normalize(glm::cross((v1.pos - v0.pos), (v2.pos - v0.pos)));
+			v0.normal = n;
+			v1.normal = n;
+			v2.normal = n;
+		}
+	}
+
 	APP_LOG_TRACE("Number of materials: {}", materialsTOL.size());
 	APP_LOG_TRACE("Number of shapes: {}", shapes.size());
 	APP_LOG_TRACE("Number of vertices: {}", attrib.vertices.size());

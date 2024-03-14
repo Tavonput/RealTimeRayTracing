@@ -7,18 +7,14 @@
 
 void Renderer::beginFrame()
 {
-	// Update UI state
-	Gui::UiState ui = m_gui->getUIState();
-	m_useRtx        = ui.useRtx;
-
-	m_gui->beginUI();
+	updateUI();
 
 	// Acquire image from swapchain
 	m_imageIndex = m_swapchain->acquireImage(m_frameIndex);
 
 	// Compute delta time
 	float currentFrameTime = static_cast<float>(glfwGetTime());
-	deltaTime = currentFrameTime - m_lastFrameTime;
+	deltaTime       = currentFrameTime - m_lastFrameTime;
 	m_lastFrameTime = currentFrameTime;
 
 	// Reset and begin command buffer
@@ -41,12 +37,12 @@ void Renderer::beginFrame()
 	aspectRatio       = (float)extent.width / (float)extent.height;
 
 	// Update uniform buffers
-	glm::mat4 view = m_camera->getView();
-	glm::mat4 proj = m_camera->getProjection();
-	ubo.viewProjection = proj * view;
-	ubo.viewInverse    = glm::inverse(view);
-	ubo.projInverse    = glm::inverse(proj);
-	ubo.viewPosition   = m_camera->getPosition();
+	const glm::mat4& view = m_camera->getView();
+	const glm::mat4& proj = m_camera->getProjection();
+	ubo.viewProjection    = proj * view;
+	ubo.viewInverse       = glm::inverse(view);
+	ubo.projInverse       = glm::inverse(proj);
+	ubo.viewPosition      = m_camera->getPosition();
 
 	Buffer::Update(BufferType::UNIFORM, m_uniformBuffers[m_frameIndex], &ubo);
 }
@@ -208,8 +204,13 @@ void Renderer::drawUI()
 
 void Renderer::traceRays()
 {
-	auto& regions = m_SBT->getRegions();
+	// Update TAA frame
+	updateRtxTAAFrame();
+	if (rtxPushConstants.frame >= m_ui.TAAFrameCount)
+		return;
 
+	// Ray trace
+	auto& regions = m_SBT->getRegions();
 	vkCmdTraceRaysKHR(
 		m_commandBuffer,
 		&regions[ShaderBindingTable::RGEN],
@@ -234,4 +235,39 @@ void Renderer::setDynamicStates()
 	scissor.offset = { 0, 0 };
 	scissor.extent = { m_windowWidth, m_windowHeight };
 	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+}
+
+void Renderer::updateUI()
+{
+	// Update UI state
+	m_ui = m_gui->getUIState();
+
+	if (m_ui.changed)
+		resetRtxTAAFrame();
+
+	m_useRtx = m_ui.useRtx;
+
+	rtxPushConstants.maxDepth    = m_ui.maxDepth;
+	rtxPushConstants.sampleCount = m_ui.sampleCount;
+
+	// Start UI
+	m_gui->beginUI();
+}
+
+void Renderer::updateRtxTAAFrame()
+{
+	const glm::mat4& newView = m_camera->getView();
+
+	if (m_currentCameraView != newView)
+	{
+		resetRtxTAAFrame();
+		m_currentCameraView = newView;
+	}
+
+	rtxPushConstants.frame++;
+}
+
+void Renderer::resetRtxTAAFrame()
+{
+	rtxPushConstants.frame = -1;
 }

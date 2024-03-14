@@ -41,7 +41,7 @@ public:
 
 		bool vSync         = true;
 		bool cpuRaytracing = false;
-		bool gpuRaytracing = false;
+		bool useRtx        = false;
 	};
 
 	void init(Application::Settings& settings);
@@ -63,6 +63,7 @@ private:
 	std::vector<Pipeline>   m_pipelines;
 	std::vector<RenderPass> m_renderPasses;
 	Camera                  m_camera;
+	Renderer                m_renderer;
 
 	// Post pass
 	std::vector<Framebuffer>   m_postFramebuffers;

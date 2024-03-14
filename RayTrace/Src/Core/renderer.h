@@ -3,6 +3,7 @@
 #include "Application/logging.h"
 #include "Application/camera.h"
 #include "Application/Gui.h"
+#include "Application/event.h"
 
 #include "device.h"
 #include "swapchain.h"
@@ -49,6 +50,7 @@ public:
 	float deltaTime   = 0.0f;
 	float aspectRatio = 0.0f;
 
+	Renderer() = default;
 	Renderer(Renderer::CreateInfo info)
 		: m_swapchain              (info.pSwapchain),
 		  m_commandSystem          (info.pCommandSystem),
@@ -91,6 +93,8 @@ public:
 
 	bool isRtxEnabled() const { return m_useRtx; }
 
+	void onWindowResize(WindowResizeEvent event) { resetRtxTAAFrame(); }
+
 private:
 	Swapchain*     m_swapchain               = nullptr;
 	CommandSystem* m_commandSystem           = nullptr;
@@ -125,4 +129,13 @@ private:
 	ShaderBindingTable* m_SBT = nullptr;
 
 	bool m_useRtx = false;
+
+	glm::mat4 m_currentCameraView = glm::mat4(1.0f);
+
+	Gui::UiState m_ui;
+
+	void updateUI();
+
+	void updateRtxTAAFrame();
+	void resetRtxTAAFrame();
 };

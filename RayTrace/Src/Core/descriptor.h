@@ -33,6 +33,8 @@ enum class RtxBinding
  * Provides a builder that is used to create layouts. Think of the builder as providing a blank layout that you
  * can add bindings to construct your desired layout. The builder should be reset between builds.
  *
+ * The creator of the descriptor set layout is responsible for calling its cleanup().
+ * 
  * Example Usage:
  *     auto builder = DescriptorSetLayout::Builder(device);
  *     
@@ -54,9 +56,29 @@ public:
 		Builder(const Device& device)
 			: m_device(&device) {}
 
+		/**
+		 * Build a layout with the current set bindings.
+		 * 
+		 * @param name: A debug name for the layout.
+		 * 
+		 * @return A descriptor set layout.
+		 */
 		DescriptorSetLayout buildLayout(const std::string name);
+
+		/**
+		 * Reset the builder to no bindings.
+		 */
 		void reset();
 
+		/**
+		 * Add a binding to the current layout.
+		 * 
+		 * @param binding: Integer binding point.
+		 * @param descriptorType: The type of descriptor to bind.
+		 * @param descriptorCount: The number of descriptors.
+		 * @param stageFlags: All shader stages that the binding will be used in.
+		 * @param pImmutableSamplers: Immutable samplers (default nullptr)
+		 */
 		void addBinding(
 			uint32_t           binding,
 			VkDescriptorType   descriptorType,
@@ -104,6 +126,8 @@ private:
  *     set.addBufferWrite(buffer, BufferType::UNIFORM, 0, 0);
  *     set.update(device);
  *
+ * TODO: Make builder for writes. The descriptor set itself does not need to hold the current write state.
+ * 
  */
 class DescriptorSet
 {
@@ -132,7 +156,7 @@ public:
 	 */
 	void addBufferWrite(Buffer buffer, BufferType type, VkDeviceSize offset, uint32_t binding);
 
-	/*
+	/**
 	 * Add an image write.
 	 * 
 	 * @param imageInfo: A VkDescriptorImageInfo that specifies the sampler, view, and layout.
@@ -141,7 +165,7 @@ public:
 	 */
 	void addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding, bool storage = false);
 	 
-	/*
+	/**
 	 * Add an acceleration structure write.
 	 *
 	 * @param accelerationStructure: A VkAccelerationStructureKHR.
@@ -150,6 +174,11 @@ public:
 	 */
 	void addAccelerationStructureWrite(const VkAccelerationStructureKHR& accelerationStructure, uint32_t count, uint32_t binding);
 
+	/**
+	 * Update the descriptor set with the current applied writes. Automatically resets the writes.
+	 * 
+	 * @param device: The device the descriptor set was allocated from.
+	 */
 	void update(const Device& device);
 
 	VkDescriptorSet& getSet();
@@ -235,7 +264,7 @@ public:
 	 */
 	DescriptorSet allocateDescriptorSet(DescriptorSetLayout& layout);
 
-	VkDescriptorPool getPool() { return m_pool; }
+	VkDescriptorPool getPool() const { return m_pool; }
 
 	void cleanup();
 

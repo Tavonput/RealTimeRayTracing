@@ -32,8 +32,43 @@ call ImGui_ImplXXXX_Shutdown() for each backend.
 call ImGui::DestroyContext()
 */
 
-class Gui {
-
+/*****************************************************************************************************************
+ *
+ * @class Gui
+ *
+ * Contains all UI rendering logic. Implements ImGui.
+ *
+ * Fill out the create info, initialize the Gui, then use it within the main rendering loop. Call beginUI() at the
+ * start of each frame, and renderUI() when you want the UI to be rendered. Retrieve the current state of the
+ * UI with getUIState().
+ * 
+ * The creator of the Gui is responsible for calling its cleanup().
+ *
+ * Example Usage:
+ *     Gui::CreateInfo info{};
+ *     info.pSystemContext = ...;
+ *     info.pWindow        = ...;
+ *     info.pRenderPass    = ...;
+ *     ...
+ *     Gui myGui;
+ *     myGui.init(info);
+ *     
+ *     ...
+ *     
+ *     UiState currentUIState = myGui.getUIState();
+ *     myGui.beginUI();
+ *     
+ *     ...
+ *     
+ *     myGui.renderUI();
+ *     
+ *     ...
+ *     
+ *     myGui.cleanup();
+ *
+ */
+class Gui 
+{
 public: 
 	struct CreateInfo
 	{
@@ -47,15 +82,36 @@ public:
 
 	struct UiState
 	{
-		bool useRtx = false;
+		bool changed = false;
+
+		// RTX
+		bool useRtx        = false;
+		int  maxDepth      = 2;
+		int  sampleCount   = 1;
+		int  TAAFrameCount = 10;
 	};
 
 	void init(Gui::CreateInfo info);
 
+	/**
+	 * Get the current state of the UI.
+	 * 
+	 * @return UiState struct.
+	 */
 	const UiState& getUIState() const { return m_state; }
 
+	/**
+	 * Start a new Gui frame.
+	 */
 	void beginUI();
+
+	/**
+	 * Render the UI.
+	 * 
+	 * @param commandBuffer: Command buffer to record the UI draw commands.
+	 */
 	void renderUI(VkCommandBuffer commandBuffer);
+
 	void changeRenderMethod();
 
 	void cleanup();
@@ -66,4 +122,6 @@ private:
 	DescriptorPool m_descriptorPool;
 
 	UiState m_state;
+
+	void renderRtxUI();
 };

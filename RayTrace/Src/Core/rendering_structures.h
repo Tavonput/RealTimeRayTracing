@@ -13,6 +13,10 @@ struct MeshPushConstants
 struct RtxPushConstants
 {
 	glm::vec4 clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	int maxDepth    = 1;
+	int sampleCount = 1;
+	int frame       = 0;
 };
 
 struct GlobalUniform

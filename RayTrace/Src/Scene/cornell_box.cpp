@@ -5,15 +5,27 @@ void CornellBoxScene::onLoad(ModelLoader& modelLoader)
 {
 	Logger::changeLogLevel(LogLevel::TRACE);
 
-	// Model
-	m_cornellBoxModel = modelLoader.loadModel("../../../Assets/Cornell-Box/CornellBox-Original.obj");
+	// Models
+	m_cornellBoxModel = modelLoader.loadModel("../../../Assets/Cornell-Box/CornellBox-Mirror.obj");
+	m_mirrorModel     = modelLoader.loadModel("../../../Assets/Cube/cube_mirror.obj");
 
 	// Cornell box 
-	glm::mat4 transform    = glm::mat4(1.0f);
-	transform              = glm::translate(transform, glm::vec3(0.0f, -2.0f, 0.0f));
-	transform              = glm::scale(transform, glm::vec3(2.0f, 2.0f, 2.0f));
+	glm::mat4 transform1 = glm::mat4(1.0f);
+	transform1           = glm::translate(transform1, glm::vec3(0.0f, -2.0f, 0.0f));
+	transform1           = glm::scale(transform1, glm::vec3(2.0f, 2.0f, 2.0f));
+	m_cornellBox = modelLoader.createInstance(m_cornellBoxModel, transform1);
 
-	m_cornellBox = modelLoader.createInstance(m_cornellBoxModel, transform);
+	// Left mirror
+	glm::mat4 transform2 = glm::mat4(1.0f);
+	transform2           = glm::translate(transform2, glm::vec3(-7.0f, 0.0f, 0.0f));
+	transform2           = glm::scale(transform2, glm::vec3(0.2f, 10.0f, 10.0f));
+	m_leftMirror = modelLoader.createInstance(m_mirrorModel, transform2);
+
+	// Right mirror
+	glm::mat4 transform3 = glm::mat4(1.0f);
+	transform3           = glm::translate(transform3, glm::vec3(7.0f, 0.0f, 0.0f));
+	transform3           = glm::scale(transform3, glm::vec3(0.2f, 10.0f, 10.0f));
+	m_rightMirror = modelLoader.createInstance(m_mirrorModel, transform3);
 }
 
 void CornellBoxScene::onUpdate(Renderer& renderer)
@@ -27,7 +39,7 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 
 	if (renderer.isRtxEnabled())
 	{
-		renderer.rtxPushConstants.clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderer.rtxPushConstants.clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		renderer.bindPipeline(Pipeline::RTX);
 		renderer.bindDescriptorSets(Pipeline::RTX);
@@ -45,12 +57,31 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 		renderer.bindIndexBuffer(m_cornellBoxModel.getIndexBuffer());
 		renderer.bindDescriptorSets(Pipeline::LIGHTING);
 
-		// Set push constant
-		renderer.pushConstants.model    = m_cornellBox.transform;
-		renderer.pushConstants.objectID = m_cornellBox.objectID;
-		renderer.bindPushConstants();
+		// Cornell box
+		{
+			renderer.pushConstants.model    = m_cornellBox.transform;
+			renderer.pushConstants.objectID = m_cornellBox.objectID;
+			renderer.bindPushConstants();
+			renderer.drawIndexed();
+		}
 
-		renderer.drawIndexed();
+		// Mirrors
+		{
+			renderer.bindVertexBuffer(m_mirrorModel.getVertexBuffer());
+			renderer.bindIndexBuffer(m_mirrorModel.getIndexBuffer());
+
+			// Left mirror
+			renderer.pushConstants.model    = m_leftMirror.transform;
+			renderer.pushConstants.objectID = m_leftMirror.objectID;
+			renderer.bindPushConstants();
+			renderer.drawIndexed();
+
+			// Right mirror
+			renderer.pushConstants.model    = m_rightMirror.transform;
+			renderer.pushConstants.objectID = m_rightMirror.objectID;
+			renderer.bindPushConstants();
+			renderer.drawIndexed();
+		}
 
 		// Visualize the light position
 		glm::mat4 lightTransform     = glm::translate(glm::mat4(1.0f), m_lightPosition);
@@ -82,4 +113,5 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 void CornellBoxScene::onUnload()
 {
 	m_cornellBoxModel.cleanup();
+	m_mirrorModel.cleanup();
 }

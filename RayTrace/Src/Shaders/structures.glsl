@@ -55,9 +55,19 @@ struct PushConstant
 struct RtxPushConstant
 {
 	vec4 clearColor;
+
+	int maxDepth;
+	int sampleCount;
+
+	int frame;
 };
 
 struct hitPayload
 {
 	vec3 hitValue;
+	int  depth;
+	vec3 attenuation;
+	int  done;
+	vec3 rayOrigin;
+	vec3 rayDir;
 };

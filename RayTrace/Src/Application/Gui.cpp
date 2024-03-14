@@ -2,9 +2,6 @@
 
 #include "Gui.h"
 
-
-
-
 void Gui::init(Gui::CreateInfo info)
 {
 	APP_LOG_INFO("Initializing ImGui");
@@ -48,20 +45,27 @@ void Gui::init(Gui::CreateInfo info)
 
 void Gui::beginUI()
 {
-	bool showDemoWindow = true;
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+
+	m_state.changed = false;
+
+	// bool showDemoWindow = true;
 	// ImGui::ShowDemoWindow(&showDemoWindow);
 
-	ImGui::Begin("Lumify Raytracing");
+	{
+		ImGui::Begin("Lumify Raytracing");
 
-	if (m_device->isRtxSupported())
-		ImGui::Checkbox("Enable Rtx", &m_state.useRtx);
+		// RTX Settings
+		if (m_device->isRtxSupported())
+			renderRtxUI();
 
-	ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		// Framerate
+		ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-	ImGui::End();
+		ImGui::End();
+	}
 }
 
 void Gui::renderUI(VkCommandBuffer commandBuffer)
@@ -74,8 +78,6 @@ void Gui::changeRenderMethod()
 {
 }
 
-
-
 void Gui::cleanup() 
 {
 	APP_LOG_INFO("Destroying ImGui");
@@ -85,4 +87,12 @@ void Gui::cleanup()
 	ImGui::DestroyContext();
 
 	m_descriptorPool.cleanup();
+}
+
+void Gui::renderRtxUI()
+{
+	m_state.changed |= ImGui::Checkbox("Enable RTX", &m_state.useRtx);
+	m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 50);
+	m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
+	m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
 }

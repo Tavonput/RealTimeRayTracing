@@ -180,9 +180,9 @@ void Pipeline::Builder::addRtxBase()
 	m_pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	m_rtxPipelineInfo.sType    = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 
-	m_rtxPipelineInfo.maxPipelineRayRecursionDepth = 2; // TODO: Make a setable parameter
-	
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR props = m_device->getRtxProperties();
+	m_rtxPipelineInfo.maxPipelineRayRecursionDepth = 2;
+	
 	if (props.maxRayRecursionDepth <= 1)
 	{
 		APP_LOG_CRITICAL("GPU does not support ray recursion");
@@ -268,7 +268,7 @@ void ShaderBindingTable::build(const Device& device, VkPipeline& rtxPipeline)
 	m_device = &device;
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtxProps = m_device->getRtxProperties();
 
-	uint32_t missCount         = 1;
+	uint32_t missCount         = 2;
 	uint32_t hitCount          = 1;
 	uint32_t handleCount       = 1 + missCount + hitCount;
 	uint32_t handleSize        = rtxProps.shaderGroupHandleSize;

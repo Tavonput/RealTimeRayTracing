@@ -1,0 +1,73 @@
+newmtl top
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.2 0.2 0.02
+  Kd 1.0 1.0 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl red
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.2 0.02 0.02
+  Kd 1.0 0.1 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl front
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.02 0.2 0.2
+  Kd 0.1 1.0 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl left
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.02 0.2 0.02
+  Kd 0.1 1.0 0.1
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl right
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.02 0.02 0.2
+  Kd 0.1 0.1 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl bottom
+  illum 2
+  Tr 0  
+  Ns 16.0000
+  Ni 1.5000
+  Ka 0.2 0.02 0.2
+  Kd 1.0 0.1 1.0
+  Ks 0.2 0.2 0.2
+  Ke 0 0 0
+
+newmtl mirror
+  illum 3
+  Ns 32
+  Ka 0.01 0.01 0.01
+  Kd 0.01 0.01 0.01
+  Ks 0.95 0.95 0.95
+
+newmtl edge
+  illum 2
+  Ns 8
+  Ka 0.2 0.2 0.2
+  Kd 0.75 0.75 0.75
+  Ks 0.2 0.2 0.2

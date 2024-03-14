@@ -21,8 +21,9 @@ void Application::init(Application::Settings& settings)
 	m_window.init(settings.windowWidth, settings.windowHeight);
 
 	// System Context
-	m_context.init(m_window, m_settings.gpuRaytracing);
+	m_context.init(m_window, m_settings.useRtx);
 	m_device = &m_context.getDevice();
+	m_settings.useRtx = m_device->isRtxSupported();
 
 	// Swapchain initialization
 	Swapchain::CreateInfo swapchainCreateInfo{};
@@ -54,7 +55,7 @@ void Application::init(Application::Settings& settings)
 	if (m_device->isRtxSupported())
 		uboInfo.flags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 
-	for (uint8_t i = 0; i < m_settings.framesInFlight; i++)
+	for (uint8_t i = 0; i < m_swapchain.getImageCount(); i++)
 	{
 		// Set name
 		char buffer[128];
@@ -97,22 +98,12 @@ void Application::init(Application::Settings& settings)
 	guiInfo.pSystemContext = &m_context;
 	guiInfo.pRenderPass    = &m_renderPasses[RenderPass::POST];
 	guiInfo.pWindow        = &m_window;
-	guiInfo.minImageCount  = 2; // TODO: Query from swapchain
+	guiInfo.minImageCount  = m_swapchain.getMinImageCount();
 	guiInfo.imageCount     = m_swapchain.getImageCount();
 	guiInfo.msaaSamples    = m_swapchain.getMSAASampleCount();
 	m_gui.init(guiInfo);
-}
 
-void Application::run()
-{
-	if (m_settings.cpuRaytracing)
-	{
-		m_cpuRaytracer.render();
-		m_cpuRaytracer.cleanup();
-		return;
-	}
-
-	// Setup rendering context
+	// Renderer
 	Renderer::CreateInfo rendererInfo{};
 	rendererInfo.pSwapchain               = &m_swapchain;
 	rendererInfo.pCommandSystem           = &m_commandSystem;
@@ -134,8 +125,17 @@ void Application::run()
 		rendererInfo.pSBT               = &m_shaderBindingTable;
 	}
 
-	// Create renderer
-	Renderer renderer(rendererInfo);
+	m_renderer = Renderer(rendererInfo);
+}
+
+void Application::run()
+{
+	if (m_settings.cpuRaytracing)
+	{
+		m_cpuRaytracer.render();
+		m_cpuRaytracer.cleanup();
+		return;
+	}
 
 	Logger::changeLogLevel(LogLevel::TRACE);
 	APP_LOG_INFO("Starting main render loop");
@@ -149,7 +149,7 @@ void Application::run()
 			continue;
 		
 		m_camera.updatePosition();
-		m_scene.onUpdate(renderer);
+		m_scene.onUpdate(m_renderer);
 	}
 
 	APP_LOG_INFO("Main render loop ended");
@@ -174,7 +174,7 @@ void Application::createRenderPasses()
 			m_offscreenColorTexture.getImage().numSamples,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			m_offscreenColorTexture.getDescriptor().imageLayout,
-			{ {0.0f, 0.0f, 0.0f, 1.0f} });
+			{ {1.0f, 1.0f, 1.0f, 1.0f} });
 
 		builder.addDepthAttachment(
 			m_offscreenDepthBuffer.format,
@@ -321,7 +321,7 @@ void Application::createDescriptorSets()
 	}
 	
 	// Allocate and update descriptors set for each frame in flight
-	for (uint8_t i = 0; i < m_settings.framesInFlight; i++)
+	for (uint8_t i = 0; i < m_swapchain.getImageCount(); i++)
 	{
 		// Offscreen set
 		m_offscreenDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_offscreenDescriptorLayout));
@@ -360,7 +360,7 @@ void Application::createFramebuffers()
 
 	// Create post framebuffers
 	{
-		m_postFramebuffers.resize(m_settings.framesInFlight);
+		m_postFramebuffers.resize(m_swapchain.getImageCount());
 
 		std::array<VkImageView, 2> postAttachments;
 
@@ -406,7 +406,7 @@ void Application::createRtxDescriptorSets()
 	layoutBuilder.addBinding(
 		(uint32_t)RtxBinding::TLAS,
 		VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1,
-		VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+		VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 
 	// Add an image to the out-image binding
 	layoutBuilder.addBinding(
@@ -438,9 +438,10 @@ void Application::createRtxPipeline()
 	builder.linkRtxPushConstants(sizeof(RtxPushConstants));
 
 	ShaderSet rtxShaders(*m_device);
-	rtxShaders.addShader(ShaderStage::RGEN, "../../Shaders/raytrace_rgen.spv");
-	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/raytrace_rmiss.spv");
-	rtxShaders.addShader(ShaderStage::CHIT, "../../Shaders/raytrace_rchit.spv");
+	rtxShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_main_rgen.spv");
+	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_main_rmiss.spv");
+	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_shadow_rmiss.spv");
+	rtxShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_main_rchit.spv");
 	rtxShaders.setupRtxShaderGroup();
 	builder.linkRtxShaders(rtxShaders);
 
@@ -551,6 +552,7 @@ void Application::pollEvents()
 
 				m_swapchain.onWindowResize(*windowResizeEvent);
 				m_camera.onWindowResize(*windowResizeEvent);
+				m_renderer.onWindowResize(*windowResizeEvent);
 				resetOffscreenRender();
 				break;
 			}

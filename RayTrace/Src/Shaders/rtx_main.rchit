@@ -9,9 +9,15 @@
 
 #include "structures.glsl"
 
-// Payload
+// Payload in
 layout (location = 0) rayPayloadInEXT hitPayload payload;
 hitAttributeEXT vec3 attribs;
+
+// Payload out
+layout (location = 1) rayPayloadEXT bool isShadowed;
+
+// Acceleration structure
+layout (set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
 
 // Global uniform buffer
 layout (set = 1, binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
@@ -22,25 +28,28 @@ layout (buffer_reference, scalar) buffer IndexBuffer { ivec3 i[]; };
 layout (buffer_reference, scalar) buffer MaterialBuffer { Material m[]; };
 layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 
-// Addresses to the material storage buffers
+// Addresses to the object buffers
 layout (set = 1, binding = 1) buffer _ObjectDescription { ObjectDescription i[]; } objDesc;
 
-vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDirection, float lightIntensity)
+vec3 computeDiffuse(Material mat, vec3 normal, vec3 lightDirection)
 {
 	// Ambient
-	vec3 ambient = uni.lightColor * mat.ambient * lightIntensity;
+	vec3 ambient = uni.lightColor * mat.ambient;
 
 	// Diffuse
 	float dotNL    = max(dot(normal, lightDirection), 0.0);
-	vec3  diffuse  = dotNL * mat.diffuse * uni.lightColor * lightIntensity;
+	vec3  diffuse  = dotNL * mat.diffuse * uni.lightColor;
 
-	// Specular
+	return (ambient + diffuse);
+};
+
+vec3 computeSpecular(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDirection)
+{
     vec3  halfway  = normalize(lightDirection + viewDirection);  
     float dotNH    = pow(max(dot(normal, halfway), 0.0), mat.shininess);
-    vec3  specular = dotNH * mat.specular * uni.lightColor * lightIntensity;  
 
-	return (ambient + diffuse + specular);
-}
+    return (dotNH * mat.specular * uni.lightColor);  
+};
 
 void main()
 {
@@ -73,14 +82,55 @@ void main()
 	const vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
 	const vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
 
-	// Lighting
+	// Lighting properties
 	vec3  lightDirection = uni.lightPosition - worldPos;
 	float lightDistance  = length(lightDirection);
 	float lightIntensity = uni.lightIntensity / (lightDistance * lightDistance);
 	lightDirection       = normalize(lightDirection);
 
-	vec3 color = vec3(0.0);
-	color += computeLighting(material, worldNormal, gl_WorldRayDirectionEXT, lightDirection, lightIntensity);
+	// Diffuse
+	vec3 diffuse = computeDiffuse(material, worldNormal, lightDirection);
 
-	payload.hitValue = color;
+	// Initialize shadow and specular components before tracing
+	float shadowComponent = 1;
+	vec3  specular = vec3(0);
+
+	// Trace shadow ray if we are visible
+	if (dot(worldNormal, lightDirection) > 0)
+	{
+		float tMin   = 0.001;
+		float tMax   = lightDistance;
+		vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+		vec3  rayDir = lightDirection;
+		uint  flags  = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
+		isShadowed   = true;
+		traceRayEXT(
+			topLevelAS,  // acceleration structure
+			flags,       // rayFlags
+			0xFF,        // cullMask
+			0,           // sbtRecordOffset
+			0,           // sbtRecordStride
+			1,           // missIndex
+			origin,      // ray origin
+			tMin,        // ray min range
+			rayDir,      // ray direction
+			tMax,        // ray max range
+			1            // payload (location = 1)
+		);
+	}
+	if (isShadowed)
+		shadowComponent = 0.3;
+	else
+		specular = computeSpecular(material, worldNormal,  -gl_WorldRayDirectionEXT, lightDirection);
+
+	// Reflection
+	if (material.illum == 3)
+	{
+		payload.attenuation *= material.specular;
+		payload.done         = 0;
+		payload.rayOrigin    = worldPos;
+		payload.rayDir       = reflect(gl_WorldRayDirectionEXT, worldNormal);
+	}
+
+	payload.hitValue = lightIntensity * shadowComponent * (diffuse + specular);
 }
