@@ -65,6 +65,16 @@ void Application::init(Application::Settings& settings)
 		m_uniformBuffers.push_back(Buffer::CreateUniformBuffer(uboInfo));
 	}
 
+	// Gui
+	Gui::CreateInfo guiInfo{};
+	guiInfo.pSystemContext = &m_context;
+	guiInfo.pRenderPass    = &m_renderPasses[RenderPass::POST];
+	guiInfo.pWindow        = &m_window;
+	guiInfo.minImageCount  = m_swapchain.getMinImageCount();
+	guiInfo.imageCount     = m_swapchain.getImageCount();
+	guiInfo.msaaSamples    = m_swapchain.getMSAASampleCount();
+	m_gui.init(guiInfo);
+
 	// Load scene
 	loadScene();
 
@@ -94,15 +104,7 @@ void Application::init(Application::Settings& settings)
 	if (m_device->isRtxSupported())
 		m_shaderBindingTable.build(*m_device, m_pipelines[Pipeline::RTX].pipeline);
 
-	// ImGui
-	Gui::CreateInfo guiInfo{};
-	guiInfo.pSystemContext = &m_context;
-	guiInfo.pRenderPass    = &m_renderPasses[RenderPass::POST];
-	guiInfo.pWindow        = &m_window;
-	guiInfo.minImageCount  = m_swapchain.getMinImageCount();
-	guiInfo.imageCount     = m_swapchain.getImageCount();
-	guiInfo.msaaSamples    = m_swapchain.getMSAASampleCount();
-	m_gui.init(guiInfo);
+
 
 	// Renderer
 	Renderer::CreateInfo rendererInfo{};
@@ -509,7 +511,7 @@ void Application::loadScene()
 	APP_LOG_INFO("Loading scene");
 
 	// Load scene
-	ModelLoader loader(*m_device, m_commandSystem);
+	SceneBuilder loader(*m_device, m_commandSystem, m_gui);
 	m_scene.onLoad(loader);
 
 	// Create object description buffer

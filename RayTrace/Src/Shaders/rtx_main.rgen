@@ -52,7 +52,7 @@ void main()
         payload.rayOrigin   = origin.xyz;
         payload.rayDir      = direction.xyz;
 
-        // Iteritively trace rays for reflections
+        // Iteratively trace rays for reflections
         while (true)
         {
             traceRayEXT(

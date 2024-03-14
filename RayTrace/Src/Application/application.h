@@ -81,7 +81,7 @@ private:
 
     // Scenes
 	CornellBoxScene m_scene;
-	// SimpleCubeScene m_scene;
+	// SimpleCubeScene m_scene; Kind of broken right now.
 
 	// Cpu Raytracing
 	CpuRaytracer m_cpuRaytracer;

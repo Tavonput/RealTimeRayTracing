@@ -32,6 +32,9 @@ public:
 		std::vector<const char*> instanceLayers,
 		bool enableRaytracing);
 
+	/**
+	 * Getters.
+	 */
 	const VkPhysicalDevice& getPhysical() const { return m_physical; }
 	const VkDevice& getLogical() const { return m_logical; }
 	const QueueFamilyIndices& getIndices() const { return m_indices; }
@@ -40,7 +43,14 @@ public:
 	const VkQueue& getComputeQueue() const { return m_computeQueue; }
 	const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getRtxProperties() const { return m_rtxProperties; }
 
+	/**
+	 * Wait for the entire GPU to be idle.
+	 */
 	const void waitForGPU() const { vkDeviceWaitIdle(m_logical); }
+
+	/**
+	 * @return False if RTX is either not supported or disabled during initialization.
+	 */
 	bool isRtxSupported() const { return m_enabledRaytracing; }
 
 	VkFormat findSupportedFormat(

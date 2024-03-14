@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "logging.h"
+#include "Gui.h"
 
 #include "Core/device.h"
 #include "Core/buffer.h"
@@ -99,15 +100,19 @@ private:
 	uint32_t m_index = 0;
 };
 
-class ModelLoader
+class SceneBuilder
 {
 public:
-	ModelLoader() = default;
-	ModelLoader(const Device& device, const CommandSystem& commandSystem)
-		: m_device(&device), m_commandSystem(&commandSystem) {}
+	SceneBuilder() = default;
+	SceneBuilder(const Device& device, const CommandSystem& commandSystem, Gui& gui)
+		: m_device(&device), m_commandSystem(&commandSystem), m_gui(&gui) {}
 
 	Model loadModel(const std::string& filename);
 	Model::Instance createInstance(const Model& model, glm::mat4 transform);
+
+	void setLightPosition(glm::vec3 pos) { m_gui->setInitialLightPosition(pos); }
+	
+	void addUICheckBox(const std::string& name, bool* button) { m_gui->addCustomCheckBox(name, button); }
 
 	const std::vector<ModelInfo>& getModelInformation() const { return m_modelInfos; }
 	const std::vector<ObjectDescription>& getObjectDescriptions() const { return m_objectDescriptions; }
@@ -134,4 +139,5 @@ private:
 
 	const Device*        m_device        = nullptr;
 	const CommandSystem* m_commandSystem = nullptr;
+	Gui*                 m_gui           = nullptr;
 };

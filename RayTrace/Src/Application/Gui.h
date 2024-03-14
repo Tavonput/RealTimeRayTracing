@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
@@ -84,6 +86,14 @@ public:
 	{
 		bool changed = false;
 
+		// Scene
+		float backgroundColor[3] = { 1.0f, 1.0f, 1.0f };
+
+		// Lighting
+		float lightColor[3]    = { 1.0f, 1.0f, 1.0f };
+		float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
+		float lightIntensity   = 1.0f;
+
 		// RTX
 		bool useRtx        = false;
 		int  maxDepth      = 2;
@@ -112,16 +122,37 @@ public:
 	 */
 	void renderUI(VkCommandBuffer commandBuffer);
 
+	/**
+	 * Allow the user to specify custom check boxes.
+	 * 
+	 * @param name: Name for the check box.
+	 * @param button: The boolean attached to the button.
+	 */
+	void addCustomCheckBox(const std::string& name, bool* button) { m_customCheckBoxes.emplace_back(name, button); }
+
 	void changeRenderMethod();
+
+	void setInitialLightPosition(glm::vec3 pos);
 
 	void cleanup();
 
 private:
+	// Used for storing custom check boxes from the user
+	struct CheckBox
+	{
+		std::string name;
+		bool*       button;
+
+		CheckBox(const std::string& _name, bool* _button)
+			: name(_name), button(_button) {}
+	};
+
 	const Device* m_device = nullptr;
 
 	DescriptorPool m_descriptorPool;
 
-	UiState m_state;
+	UiState               m_state;
+	std::vector<CheckBox> m_customCheckBoxes;
 
 	void renderRtxUI();
 };

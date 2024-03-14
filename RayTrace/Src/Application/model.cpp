@@ -22,7 +22,7 @@ void Model::cleanup()
 // Object Loader
 //
 
-void ModelLoader::ObjLoader::loadObj(const std::string& filename)
+void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 {
 	tinyobj::ObjReader reader;
 
@@ -148,10 +148,10 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 }
 
 // --------------------------------------------------------------------------
-// Model Loader
+// Scene Builder
 //
 
-Model ModelLoader::loadModel(const std::string& filename)
+Model SceneBuilder::loadModel(const std::string& filename)
 {
 	APP_LOG_INFO("Loading model {}", filename);
 
@@ -236,7 +236,7 @@ Model ModelLoader::loadModel(const std::string& filename)
 	return Model(modelInfo);
 }
 
-Model::Instance ModelLoader::createInstance(const Model& model, glm::mat4 transform)
+Model::Instance SceneBuilder::createInstance(const Model& model, glm::mat4 transform)
 {
 	Model::Instance instance;
 	instance.transform = transform;

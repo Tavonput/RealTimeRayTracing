@@ -68,6 +68,8 @@ void Renderer::beginRenderPass(RenderPass::PassType pass)
 	beginInfo.renderArea.extent = m_swapchain->getExtent();
 	beginInfo.renderPass        = m_renderPasses[pass].renderPass;
 	beginInfo.clearValueCount   = static_cast<uint32_t>(m_renderPasses[pass].clearValues.size());
+
+	m_renderPasses[pass].clearValues[0].color = { m_ui.backgroundColor[0], m_ui.backgroundColor[1] , m_ui.backgroundColor[2], 1.0f };
 	beginInfo.pClearValues      = m_renderPasses[pass].clearValues.data();
 
 	switch (pass)
@@ -242,13 +244,18 @@ void Renderer::updateUI()
 	// Update UI state
 	m_ui = m_gui->getUIState();
 
+	// RTX
+	m_useRtx                     = m_ui.useRtx;
+	rtxPushConstants.maxDepth    = m_ui.maxDepth;
+	rtxPushConstants.sampleCount = m_ui.sampleCount;
+	rtxPushConstants.clearColor  = { m_ui.backgroundColor[0], m_ui.backgroundColor[1], m_ui.backgroundColor[2], 1.0f };
 	if (m_ui.changed)
 		resetRtxTAAFrame();
 
-	m_useRtx = m_ui.useRtx;
-
-	rtxPushConstants.maxDepth    = m_ui.maxDepth;
-	rtxPushConstants.sampleCount = m_ui.sampleCount;
+	// Light
+	ubo.lightColor     = { m_ui.lightColor[0], m_ui.lightColor[1], m_ui.lightColor[2] };
+	ubo.lightPosition  = { m_ui.lightPosition[0], m_ui.lightPosition[1], m_ui.lightPosition[2] };
+	ubo.lightIntensity = m_ui.lightIntensity;
 
 	// Start UI
 	m_gui->beginUI();

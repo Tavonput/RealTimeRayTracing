@@ -1,52 +1,50 @@
 #include "pch.h"
 #include "cornell_box.h"
 
-void CornellBoxScene::onLoad(ModelLoader& modelLoader)
+void CornellBoxScene::onLoad(SceneBuilder& scene)
 {
-	Logger::changeLogLevel(LogLevel::TRACE);
-
 	// Models
-	m_cornellBoxModel = modelLoader.loadModel("../../../Assets/Cornell-Box/CornellBox-Mirror.obj");
-	m_mirrorModel     = modelLoader.loadModel("../../../Assets/Cube/cube_mirror.obj");
+	m_cornellBoxModel = scene.loadModel("../../../Assets/Cornell-Box/CornellBox-Original.obj");
+	m_mirrorModel     = scene.loadModel("../../../Assets/Cube/cube_mirror.obj");
 
 	// Cornell box 
-	glm::mat4 transform1 = glm::mat4(1.0f);
-	transform1           = glm::translate(transform1, glm::vec3(0.0f, -2.0f, 0.0f));
-	transform1           = glm::scale(transform1, glm::vec3(2.0f, 2.0f, 2.0f));
-	m_cornellBox = modelLoader.createInstance(m_cornellBoxModel, transform1);
+	glm::mat4 cornellTrans = glm::mat4(1.0f);
+	cornellTrans           = glm::translate(cornellTrans, glm::vec3(0.0f, -2.0f, 0.0f));
+	cornellTrans           = glm::scale(cornellTrans, glm::vec3(2.0f, 2.0f, 2.0f));
+	m_cornellBox = scene.createInstance(m_cornellBoxModel, cornellTrans);
 
 	// Left mirror
-	glm::mat4 transform2 = glm::mat4(1.0f);
-	transform2           = glm::translate(transform2, glm::vec3(-7.0f, 0.0f, 0.0f));
-	transform2           = glm::scale(transform2, glm::vec3(0.2f, 10.0f, 10.0f));
-	m_leftMirror = modelLoader.createInstance(m_mirrorModel, transform2);
+	glm::mat4 leftMirrorTrans = glm::mat4(1.0f);
+	leftMirrorTrans           = glm::translate(leftMirrorTrans, glm::vec3(-7.0f, 0.0f, 0.0f));
+	leftMirrorTrans           = glm::scale(leftMirrorTrans, glm::vec3(0.2f, 10.0f, 10.0f));
+	m_leftMirror = scene.createInstance(m_mirrorModel, leftMirrorTrans);
 
 	// Right mirror
-	glm::mat4 transform3 = glm::mat4(1.0f);
-	transform3           = glm::translate(transform3, glm::vec3(7.0f, 0.0f, 0.0f));
-	transform3           = glm::scale(transform3, glm::vec3(0.2f, 10.0f, 10.0f));
-	m_rightMirror = modelLoader.createInstance(m_mirrorModel, transform3);
+	glm::mat4 rightMirrorTrans = glm::mat4(1.0f);
+	rightMirrorTrans           = glm::translate(rightMirrorTrans, glm::vec3(7.0f, 0.0f, 0.0f));
+	rightMirrorTrans           = glm::scale(rightMirrorTrans, glm::vec3(0.2f, 10.0f, 10.0f));
+	m_rightMirror = scene.createInstance(m_mirrorModel, rightMirrorTrans);
+
+	// Set initial light position
+	scene.setLightPosition(glm::vec3(0.0f, 1.8f, 0.0f));
+
+	// Set custom UI check boxes
+	scene.addUICheckBox("Enable Mirrors (Raster Only)", &m_renderMirrors);
+	scene.addUICheckBox("Visualize Light (Raster Only)", &m_visualizeLight);
 }
 
 void CornellBoxScene::onUpdate(Renderer& renderer)
 {
 	renderer.beginFrame();
 
-	// Set light UBO
-	renderer.ubo.lightColor     = m_lightColor;
-	renderer.ubo.lightPosition  = m_lightPosition;
-	renderer.ubo.lightIntensity = m_lightIntensity;
-
 	if (renderer.isRtxEnabled())
 	{
-		renderer.rtxPushConstants.clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-
 		renderer.bindPipeline(Pipeline::RTX);
 		renderer.bindDescriptorSets(Pipeline::RTX);
 		renderer.bindRtxPushConstants();
 		renderer.traceRays();
 	}
-	else
+	else // Render rasterized scene
 	{
 		renderer.beginRenderPass(RenderPass::MAIN);
 
@@ -66,6 +64,7 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 		}
 
 		// Mirrors
+		if (m_renderMirrors)
 		{
 			renderer.bindVertexBuffer(m_mirrorModel.getVertexBuffer());
 			renderer.bindIndexBuffer(m_mirrorModel.getIndexBuffer());
@@ -83,11 +82,20 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 			renderer.drawIndexed();
 		}
 
-		// Visualize the light position
-		glm::mat4 lightTransform     = glm::translate(glm::mat4(1.0f), m_lightPosition);
-		renderer.pushConstants.model = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
-		renderer.bindPushConstants();
-		renderer.drawIndexed();
+		// Light cube
+		if (m_visualizeLight)
+		{
+			renderer.bindPipeline(Pipeline::FLAT);
+			renderer.bindVertexBuffer(m_mirrorModel.getVertexBuffer());
+			renderer.bindIndexBuffer(m_mirrorModel.getIndexBuffer());
+
+			glm::mat4 lightTransform           = glm::translate(glm::mat4(1.0f), renderer.ubo.lightPosition);
+			renderer.pushConstants.model       = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+			renderer.pushConstants.objectColor = renderer.ubo.lightColor;
+			renderer.bindPushConstants();
+
+			renderer.drawIndexed();
+		}
 
 		renderer.endRenderPass();
 	}

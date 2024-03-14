@@ -1,17 +1,19 @@
 #include "pch.h"
 #include "simple_cube_scene.h"
 
-void SimpleCubeScene::onLoad(ModelLoader& modelLoader)
+void SimpleCubeScene::onLoad(SceneBuilder& scene)
 {
 	// Cube model
-	m_cubeModel = modelLoader.loadModel("../../../Assets/Cube/cube.obj");
+	m_cubeModel = scene.loadModel("../../../Assets/Cube/cube.obj");
 
 	// Cube instances
 	glm::mat4 mainCubeTransform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
-	m_mainCube = modelLoader.createInstance(m_cubeModel, mainCubeTransform);
+	m_mainCube = scene.createInstance(m_cubeModel, mainCubeTransform);
 
 	glm::mat4 lightCubeTransform = glm::mat4(1.0f);
-	m_lightCube = modelLoader.createInstance(m_cubeModel, lightCubeTransform);
+	m_lightCube = scene.createInstance(m_cubeModel, lightCubeTransform);
+
+	scene.setLightPosition(m_lightPosition);
 }
 
 void SimpleCubeScene::onUpdate(Renderer& renderer)

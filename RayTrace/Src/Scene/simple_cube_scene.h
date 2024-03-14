@@ -14,7 +14,7 @@
 class SimpleCubeScene : public Scene
 {
 public:
-	virtual void onLoad(ModelLoader& modelLoader) override;
+	virtual void onLoad(SceneBuilder& scene) override;
 
 	virtual void onUpdate(Renderer& renderer) override;
 

@@ -15,7 +15,7 @@
 class CornellBoxScene : public Scene
 {
 public:
-	virtual void onLoad(ModelLoader& modelLoader) override;
+	virtual void onLoad(SceneBuilder& scene) override;
 
 	virtual void onUpdate(Renderer& renderer) override;
 
@@ -25,11 +25,10 @@ private:
 	Model           m_cornellBoxModel;
 	Model::Instance m_cornellBox;
 
-	Model m_mirrorModel;
+	Model           m_mirrorModel;
 	Model::Instance m_leftMirror;
 	Model::Instance m_rightMirror;
 
-	glm::vec3 m_lightColor     = { 1.0f, 1.0f, 1.0f };
-	glm::vec3 m_lightPosition  = { 0.0f, 1.8f, 0.0f };
-	float     m_lightIntensity = 1.0f;
+	bool m_renderMirrors  = true;
+	bool m_visualizeLight = true;
 };

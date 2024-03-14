@@ -45,6 +45,7 @@ void Gui::init(Gui::CreateInfo info)
 
 void Gui::beginUI()
 {
+	// Start a new frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -55,11 +56,32 @@ void Gui::beginUI()
 	// ImGui::ShowDemoWindow(&showDemoWindow);
 
 	{
-		ImGui::Begin("Lumify Raytracing");
+		ImGui::Begin("Settings");
+
+		// Scene settings
+		if (ImGui::CollapsingHeader("Scene"))
+		{
+			m_state.changed |= ImGui::ColorEdit3("Background", m_state.backgroundColor);
+		}
+
+		// Lighting settings
+		if (ImGui::CollapsingHeader("Lighting"))
+		{
+			m_state.changed |= ImGui::ColorEdit3("Light Color", m_state.lightColor);
+			m_state.changed |= ImGui::DragFloat3("Light Position", m_state.lightPosition, 0.01f);
+			m_state.changed |= ImGui::SliderFloat("Light Intensity", &m_state.lightIntensity, 0.0f, 5.0f);
+		}
 
 		// RTX Settings
 		if (m_device->isRtxSupported())
 			renderRtxUI();
+
+		// Custom check boxes defined by the user
+		if (ImGui::CollapsingHeader("Custom Check Boxes"))
+		{
+			for (CheckBox& box : m_customCheckBoxes)
+				m_state.changed |= ImGui::Checkbox(box.name.c_str(), box.button);
+		}
 
 		// Framerate
 		ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -78,6 +100,13 @@ void Gui::changeRenderMethod()
 {
 }
 
+void Gui::setInitialLightPosition(glm::vec3 pos)
+{
+	m_state.lightPosition[0] = pos.x;
+	m_state.lightPosition[1] = pos.y;
+	m_state.lightPosition[2] = pos.z;
+}
+
 void Gui::cleanup() 
 {
 	APP_LOG_INFO("Destroying ImGui");
@@ -91,8 +120,11 @@ void Gui::cleanup()
 
 void Gui::renderRtxUI()
 {
-	m_state.changed |= ImGui::Checkbox("Enable RTX", &m_state.useRtx);
-	m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 50);
-	m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
-	m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+	if (ImGui::CollapsingHeader("RTX"))
+	{
+		m_state.changed |= ImGui::Checkbox("Enable RTX", &m_state.useRtx);
+		m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 50);
+		m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
+		m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+	}
 }
