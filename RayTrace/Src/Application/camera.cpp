@@ -12,6 +12,8 @@ void Camera::init(Camera::CreateInfo& info)
 	m_width  = info.windowWidth;
 	m_height = info.windowHeight;
 
+	m_window = info.window;
+
 	// Set view matrix
 	updateViewMatrix();
 
@@ -55,7 +57,7 @@ void Camera::onMouseRelease(MouseReleaseEvent event)
 
 void Camera::onMouseMove(MouseMoveEvent event)
 {
-	if (!m_leftMouse && !m_rightMouse)
+	if (!m_leftMouse && !m_rightMouse && m_cameraMode == CameraMode::STATIONARY)
 	{
 		// No action, just update the mouse position
 		m_mousePos.x = static_cast<float>(event.xPos);
@@ -68,11 +70,15 @@ void Camera::onMouseMove(MouseMoveEvent event)
 	float deltaY = float(event.yPos - m_mousePos.y) / float(m_height);
 
 	// Update camera
-	if (m_leftMouse)
+	if (m_leftMouse && m_cameraMode == CameraMode::STATIONARY)
 		orbit(deltaX, deltaY);
 
-	else if (m_rightMouse)
+	else if (m_rightMouse && m_cameraMode == CameraMode::STATIONARY)
 		dolly(deltaX, deltaY);
+
+	else if (m_cameraMode == CameraMode::FPV)
+		updateDirection(deltaX, deltaY);
+		//orbit(deltaX, deltaY);
 
 	updateViewMatrix();
 
@@ -81,42 +87,136 @@ void Camera::onMouseMove(MouseMoveEvent event)
 	m_mousePos.y = static_cast<float>(event.yPos);
 }
 
-void Camera::updatePosition() { // Updates camera position according to 
-	if (m_wKey) APP_LOG_INFO("W Key Down");
-	if (m_aKey) APP_LOG_INFO("A Key Down");
-	if (m_sKey) APP_LOG_INFO("S Key Down");
-	if (m_dKey) APP_LOG_INFO("D Key Down");
-
-
-	
-}
-
 void Camera::resetPosition()
 {
-	m_eye = { 0.0f, 0.0f, 0.0f };
-}
-
-void Camera::flyMode()
-{
-	m_cameraMode = CameraMode::FLY;
+	m_eye = { 0.0f, 0.0f, 6.0f };
+	m_center = { 0.0f, 0.0f, 0.0f };
+	m_up = { 0.0f, 1.0f, 0.0f };
 }
 
 void Camera::onKeyPress(KeyPressEvent event)
 {
-	if      (event.key == GLFW_KEY_W) m_wKey = true;
-	else if (event.key == GLFW_KEY_A) m_aKey = true;
-	else if (event.key == GLFW_KEY_S) m_sKey = true;
-	else if (event.key == GLFW_KEY_D) m_dKey = true;
+	switch (event.key)
+	{
+		case GLFW_KEY_W: m_wKey = true; break;
+		case GLFW_KEY_A: m_aKey = true; break;
+		case GLFW_KEY_S: m_sKey = true; break;
+		case GLFW_KEY_D: m_dKey = true; break;
+		case GLFW_KEY_LEFT_SHIFT: m_lShift = true; break;
+		case GLFW_KEY_SPACE: m_space = true; break;
+	}
 }
 
 void Camera::onKeyRelease(KeyReleaseEvent event)
 {
-	if      (event.key == GLFW_KEY_W) m_wKey = false;
-	else if (event.key == GLFW_KEY_A) m_aKey = false;
-	else if (event.key == GLFW_KEY_S) m_sKey = false;
-	else if (event.key == GLFW_KEY_D) m_dKey = false;
+	switch (event.key)
+	{
+		case GLFW_KEY_W: m_wKey = false; break;
+		case GLFW_KEY_A: m_aKey = false; break;
+		case GLFW_KEY_S: m_sKey = false; break;
+		case GLFW_KEY_D: m_dKey = false; break;
+		case GLFW_KEY_LEFT_SHIFT: m_lShift = false; break;
+		case GLFW_KEY_SPACE: m_space = false; break;
+		case GLFW_KEY_ESCAPE: // Will likely change keybinds later on. 
+			// Switches between fly mode and stationary mode. 
+			if (m_cameraMode == CameraMode::STATIONARY) FPVMode();
+			else if (m_cameraMode == CameraMode::FPV) stationaryMode();
+			break;
+	}
 }
 
+void Camera::FPVMode()
+{
+	glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	m_cameraMode = CameraMode::FPV;
+}
+
+void Camera::stationaryMode()
+{
+	glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	m_cameraMode = CameraMode::STATIONARY;
+	resetPosition();
+	updateViewMatrix();
+}
+
+void Camera::updatePosition() {
+
+	if (m_cameraMode == CameraMode::STATIONARY) return;
+
+	m_currentFrame = glfwGetTime(); // Computes the change in time
+	float deltaT = m_currentFrame - m_lastFrame;
+	m_lastFrame = m_currentFrame;
+
+	glm::vec3 axisZ = glm::normalize(m_eye - m_center); // Normalized Z-axis relative to camera (Direction camera is looking)
+	glm::vec3 axisX = glm::normalize(glm::cross(m_up, axisZ)); // Normalized X-axis relative to camera
+
+	const float cameraSpeed = 3.0f * deltaT;
+
+	if (m_wKey) {
+		//APP_LOG_INFO("W Key Down");
+		m_eye -= cameraSpeed * axisZ; // Moves camera position forwards (Z-axis represents forward and backwards for camera)
+		m_center -= cameraSpeed * axisZ; // Moves camera center point forwards
+	}
+	if (m_aKey) {
+		//APP_LOG_INFO("A Key Down");
+		m_eye -= cameraSpeed * axisX; // Moves camera to the left (X-axis represents left and right of camera)
+		m_center -= cameraSpeed * axisX; // Moves point that camera is looking at to the left
+	}
+	if (m_sKey) {
+		//APP_LOG_INFO("S Key Down");
+		m_eye += cameraSpeed * axisZ; // Moves camera position backwards (Z-axis represents forward and backwards of camera)
+		m_center += cameraSpeed * axisZ; // Moves camera center point backwards.
+	}
+	if (m_dKey) {
+		//APP_LOG_INFO("D Key Down");
+		m_eye += cameraSpeed * axisX; // Moves camera to the right (X-axis represents left and right of camera)
+		m_center += cameraSpeed * axisX; // Moves point that camera is looking at to the right
+	}
+	if (m_lShift) {
+		//APP_LOG_INFO("Left-Shift Key Down");
+		m_eye -= cameraSpeed * m_worldUp; // Moves camera down
+		m_center -= cameraSpeed * m_worldUp; 
+	}
+	if (m_space) {
+		//APP_LOG_INFO("Space Key Down"); 
+		m_eye += cameraSpeed * m_worldUp; // Moves camera up
+		m_center += cameraSpeed * m_worldUp;
+	}
+	updateViewMatrix();
+}
+
+void Camera::updateDirection(float deltaX, float deltaY)
+{
+
+	deltaX *= glm::pi<float>() * m_sensitivity;
+	deltaY *= glm::pi<float>() * m_sensitivity;
+
+	// Calculates vector from camera's position to its center coordinate. Represents camera's z-axis
+	glm::vec3 eyeToCenter(m_center - m_eye);
+	float length = glm::length(eyeToCenter);
+	eyeToCenter = glm::normalize(eyeToCenter);
+
+	//Gets the matrix to rotate vector around y-coordinate
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), -deltaX, m_up);
+
+	// Applies the rotation transformation to eyeToCenter (z-axis)
+	eyeToCenter = rotationY * glm::vec4(eyeToCenter, 0.0f); 
+	
+	// Calculates the cross product between the up vector (y-axis) with eyeToCenter (z-axis) to get x-axis
+	glm::vec3 axisX = glm::normalize(glm::cross(m_up, eyeToCenter));
+
+	// Gets the matrix to rotate vector around x-coordinate
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), deltaY, axisX);
+
+	// Applies the rotation transformation to eyeToCenter. Stores in temporary variable
+	glm::vec3 rotationXVec = rotationX * glm::vec4(eyeToCenter, 0.0f);
+
+	// If rotation around x-axis goes beyond +- 90 degrees, rotation is not applied. Prevents camera from flipping over
+	if (glm::sign(rotationXVec.x) == glm::sign(eyeToCenter.x) && glm::sign(rotationXVec.z) == glm::sign(eyeToCenter.z))
+		eyeToCenter = rotationXVec;
+
+	m_center = m_eye + eyeToCenter * length;
+}
 
 void Camera::orbit(float deltaX, float deltaY)
 {
@@ -145,8 +245,10 @@ void Camera::orbit(float deltaX, float deltaY)
 	if (glm::sign(rotationXVec.x) == glm::sign(centerToEye.x) && glm::sign(rotationXVec.z) == glm::sign(centerToEye.z))
 		centerToEye = rotationXVec;
 
+	
 	centerToEye *= radius;
 	m_eye = centerToEye + m_center;
+	
 }
 
 void Camera::dolly(float deltaX, float deltaY)

@@ -82,6 +82,7 @@ void Application::init(Application::Settings& settings)
 	cameraInfo.sensitivity  = 0.5f;
 	cameraInfo.windowHeight = m_swapchain.getExtent().height;
 	cameraInfo.windowWidth  = m_swapchain.getExtent().width;
+	cameraInfo.window = m_window;
 	m_camera.init(cameraInfo);
 
 	// Pipeline
@@ -588,7 +589,6 @@ void Application::pollEvents()
 			{
 				auto mouseMoveEvent = dynamic_cast<MouseMoveEvent*>(event.get());
 				// APP_LOG_TRACE(mouseMoveEvent->eventString());
-
 				m_camera.onMouseMove(*mouseMoveEvent);
 				break;
 			}
