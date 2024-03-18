@@ -10,13 +10,20 @@ struct MeshPushConstants
 	int32_t   objectID    = 0;
 };
 
+struct PostPushConstants
+{
+	float exposure = 1.0f;
+};
+
 struct RtxPushConstants
 {
 	glm::vec4 clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	int maxDepth    = 1;
-	int sampleCount = 1;
-	int frame       = 0;
+	int maxDepth        = 1;
+	int sampleCount     = 1;
+	int frame           = 0;
+
+	float russianRoulette = 1.0f;
 };
 
 struct GlobalUniform

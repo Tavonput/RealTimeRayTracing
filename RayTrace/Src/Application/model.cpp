@@ -47,15 +47,17 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 	for (const auto& material : materialsTOL)
 	{
 		Material mat;
-		mat.ambient = glm::vec3(material.ambient[0], material.ambient[1], material.ambient[2]);
-		mat.diffuse = glm::vec3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
-		mat.specular = glm::vec3(material.specular[0], material.specular[1], material.specular[2]);
-		mat.emission = glm::vec3(material.emission[0], material.emission[1], material.emission[2]);
+		mat.ambient       = glm::vec3(material.ambient[0], material.ambient[1], material.ambient[2]);
+		mat.diffuse       = glm::vec3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+		mat.specular      = glm::vec3(material.specular[0], material.specular[1], material.specular[2]);
+		mat.emission      = glm::vec3(material.emission[0], material.emission[1], material.emission[2]);
 		mat.transmittance = glm::vec3(material.transmittance[0], material.transmittance[1], material.transmittance[2]);
-		mat.dissolve = material.dissolve;
-		mat.ior = material.ior;
-		mat.shininess = material.shininess;
-		mat.illum = material.illum;
+		mat.dissolve      = material.dissolve;
+		mat.ior           = material.ior;
+		mat.shininess     = material.shininess;
+		mat.illum         = material.illum;
+		mat.roughness     = material.roughness;
+		mat.metallic      = material.metallic;
 
 		// Diffuse texture
 		if (!material.diffuse_texname.empty())

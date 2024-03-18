@@ -29,6 +29,9 @@ private:
 	Model::Instance m_leftMirror;
 	Model::Instance m_rightMirror;
 
+	Model           m_planeModel;
+	Model::Instance m_plane;
+
 	bool m_renderMirrors  = true;
 	bool m_visualizeLight = true;
 };

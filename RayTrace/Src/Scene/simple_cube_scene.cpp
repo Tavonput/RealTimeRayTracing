@@ -26,8 +26,8 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 		updateLightCube(renderer);
 
-		renderer.bindPipeline(Pipeline::RTX);
-		renderer.bindDescriptorSets(Pipeline::RTX);
+		renderer.bindPipeline(Pipeline::RTX_RT);
+		renderer.bindDescriptorSets(Pipeline::RTX_RT);
 		renderer.bindRtxPushConstants();
 		renderer.traceRays();
 	}
@@ -47,14 +47,14 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 		renderer.pushConstants.model = m_mainCube.transform;
 		renderer.pushConstants.objectID = m_mainCube.objectID;
-		renderer.bindPushConstants();
+		renderer.bindPushConstants(Pipeline::LIGHTING);
 		renderer.drawIndexed();
 
 
 		// Draw light cube
 		renderer.bindPipeline(Pipeline::FLAT);
 		updateLightCube(renderer);
-		renderer.bindPushConstants();
+		renderer.bindPushConstants(Pipeline::FLAT);
 		renderer.drawIndexed();
 
 		renderer.endRenderPass();
@@ -69,6 +69,7 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 		renderer.bindPipeline(Pipeline::POST);
 		renderer.bindDescriptorSets(Pipeline::POST);
+		renderer.bindPushConstants(Pipeline::POST);
 		renderer.drawVertex();
 		renderer.drawUI();
 

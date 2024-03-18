@@ -121,6 +121,7 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 		m_deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
 
 		// Check for a GPU with RTX support
 		for (const auto& device : devices)
@@ -206,13 +207,20 @@ void Device::createLogicalDevice()
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtxPipelineFeatures{};
 	rtxPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 
+	// Shader clock
+	VkPhysicalDeviceShaderClockFeaturesKHR shaderClockFeatures{};
+	shaderClockFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
+
 	if (m_enabledRaytracing)
 	{
-		accelFeatures.accelerationStructure = VK_TRUE;
-		rtxPipelineFeatures.rayTracingPipeline = VK_TRUE;
+		accelFeatures.accelerationStructure     = VK_TRUE;
+		rtxPipelineFeatures.rayTracingPipeline  = VK_TRUE;
+		shaderClockFeatures.shaderDeviceClock   = VK_TRUE;
+		shaderClockFeatures.shaderSubgroupClock = VK_TRUE;
 
 		bufferDeviceFeatures.pNext = &accelFeatures;
-		accelFeatures.pNext = &rtxPipelineFeatures;
+		accelFeatures.pNext        = &rtxPipelineFeatures;
+		rtxPipelineFeatures.pNext  = &shaderClockFeatures;
 	}
 
 

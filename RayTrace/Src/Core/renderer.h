@@ -33,7 +33,8 @@ public:
 		Camera*        pCamera                  = nullptr;
 		Gui*           pGui                     = nullptr;
 
-		ShaderBindingTable* pSBT = nullptr;
+		ShaderBindingTable* pRtSBT   = nullptr;
+		ShaderBindingTable* pPathSBT = nullptr;
 
 		Framebuffer* pPostFramebuffers     = nullptr;
 		Framebuffer* pOffscreenFramebuffer = nullptr;
@@ -46,6 +47,7 @@ public:
 	GlobalUniform     ubo;
 	MeshPushConstants pushConstants;
 	RtxPushConstants  rtxPushConstants;
+	PostPushConstants postPushConstants;
 
 	float deltaTime   = 0.0f;
 	float aspectRatio = 0.0f;
@@ -65,7 +67,8 @@ public:
           m_gui                    (info.pGui),
 		  m_postFramebuffers       (info.pPostFramebuffers),
 		  m_offScreenFramebuffer   (info.pOffscreenFramebuffer),
-		  m_SBT                    (info.pSBT),
+		  m_rtSBT                  (info.pRtSBT),
+		  m_pathSBT(info.pPathSBT),
 		  m_useRtx                 (info.enableRtx)
 	{}
 
@@ -80,7 +83,10 @@ public:
 	void bindVertexBuffer(Buffer& vertexBuffer);
 	void bindIndexBuffer(Buffer& indexBuffer);
 	void bindDescriptorSets(Pipeline::PipelineType type);
-	void bindPushConstants();
+	void bindPushConstants(Pipeline::PipelineType type);
+
+	void bindRtxPipeline();
+	void bindRtxDescriptorSets();
 	void bindRtxPushConstants();
 
 	void drawVertex();
@@ -93,7 +99,8 @@ public:
 
 	bool isRtxEnabled() const { return m_useRtx; }
 
-	void onWindowResize(WindowResizeEvent event) { resetRtxTAAFrame(); }
+	void onWindowResize(WindowResizeEvent event) { resetRtxFrame(); }
+	void onKeyPress(KeyPressEvent event);
 
 private:
 	Swapchain*     m_swapchain               = nullptr;
@@ -126,16 +133,18 @@ private:
 	Buffer m_vertexBuffer;
 	Buffer m_indexBuffer;
 
-	ShaderBindingTable* m_SBT = nullptr;
+	ShaderBindingTable* m_rtSBT   = nullptr;
+	ShaderBindingTable* m_pathSBT = nullptr;
 
 	bool m_useRtx = false;
 
 	glm::mat4 m_currentCameraView = glm::mat4(1.0f);
 
 	Gui::UiState m_ui;
+	bool         m_showUI = true;
 
 	void updateUI();
 
-	void updateRtxTAAFrame();
-	void resetRtxTAAFrame();
+	void updateRtxFrame();
+	void resetRtxFrame();
 };

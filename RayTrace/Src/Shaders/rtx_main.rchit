@@ -8,6 +8,7 @@
 #extension GL_EXT_scalar_block_layout : enable
 
 #include "structures.glsl"
+#include "pbr.glsl"
 
 // Payload in
 layout (location = 0) rayPayloadInEXT hitPayload payload;
@@ -83,17 +84,40 @@ void main()
 	const vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
 
 	// Lighting properties
+	vec3  viewDir        = -gl_WorldRayDirectionEXT;
 	vec3  lightDirection = uni.lightPosition - worldPos;
 	float lightDistance  = length(lightDirection);
 	float lightIntensity = uni.lightIntensity / (lightDistance * lightDistance);
 	lightDirection       = normalize(lightDirection);
 
 	// Diffuse
-	vec3 diffuse = computeDiffuse(material, worldNormal, lightDirection);
+	// vec3 diffuse = computeDiffuse(material, worldNormal, lightDirection);
+
+	const vec3  halfway = normalize(viewDir + lightDirection);
+	const float NdotL   = max(dot(worldNormal, lightDirection), 0.0);
+
+	float distance    = length(uni.lightPosition - worldPos);
+	float attenuation = uni.lightIntensity / (distance * distance);
+	vec3  radiance    = uni.lightColor * attenuation;
+
+	vec3 F0 = vec3(0.04);
+	F0      = mix(F0, material.diffuse, material.metallic);
+
+	float NDF = distributionGGX(worldNormal, halfway, material.roughness);
+	float G   = geometrySmith(worldNormal, viewDir, lightDirection, material.roughness);
+	vec3  F   = fresnelSchlick(clamp(dot(halfway, viewDir), 0.0, 1.0), F0);
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;
+	kD *= 1.0 - material.metallic;
+
+	vec3  num      = NDF * G * F;
+	float den      = 4.0 * max(dot(worldNormal, viewDir), 0.0) * NdotL + 0.0001;
+	vec3  specular = num / den;
 
 	// Initialize shadow and specular components before tracing
 	float shadowComponent = 1;
-	vec3  specular = vec3(0);
+	// vec3  specular = vec3(0);
 
 	// Trace shadow ray if we are visible
 	if (dot(worldNormal, lightDirection) > 0)
@@ -119,18 +143,26 @@ void main()
 		);
 	}
 	if (isShadowed)
+	{
+		specular = vec3(0);
 		shadowComponent = 0.3;
-	else
-		specular = computeSpecular(material, worldNormal,  -gl_WorldRayDirectionEXT, lightDirection);
+	}
+
+	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
+
+	vec3 ambient = material.ambient * vec3(0.01);
+	vec3 color   = Lo + ambient;
 
 	// Reflection
-	if (material.illum == 3)
+	if (material.illum >= 3)
 	{
+		color = vec3(0);
 		payload.attenuation *= material.specular;
 		payload.done         = 0;
 		payload.rayOrigin    = worldPos;
 		payload.rayDir       = reflect(gl_WorldRayDirectionEXT, worldNormal);
 	}
 
-	payload.hitValue = lightIntensity * shadowComponent * (diffuse + specular);
+	// payload.hitValue = lightIntensity * shadowComponent * (diffuse + specular);
+	payload.hitValue = shadowComponent * color;
 }

@@ -64,6 +64,8 @@ newmtl mirror
   Ka 0.01 0.01 0.01
   Kd 0.01 0.01 0.01
   Ks 0.95 0.95 0.95
+  Pr 1.00
+  Pm 0.01
 
 newmtl edge
   illum 2
@@ -71,3 +73,5 @@ newmtl edge
   Ka 0.2 0.2 0.2
   Kd 0.75 0.75 0.75
   Ks 0.2 0.2 0.2
+  Pr 0.4
+  Pm 0.8

@@ -53,6 +53,7 @@ std::string KeyPressEvent::eventString() const
 		case GLFW_KEY_A: keyStr = "A"; break;
 		case GLFW_KEY_S: keyStr = "S"; break;
 		case GLFW_KEY_D: keyStr = "D"; break;
+		case GLFW_KEY_U: keyStr = "U"; break;
 		case GLFW_KEY_ESCAPE: keyStr = "Escape"; break;
 		case GLFW_KEY_LEFT_SHIFT: keyStr = "Left Shift"; break;
 		case GLFW_KEY_SPACE: keyStr = "Space"; break;
@@ -73,6 +74,7 @@ std::string KeyReleaseEvent::eventString() const
 		case GLFW_KEY_A: keyStr = "A"; break;
 		case GLFW_KEY_S: keyStr = "S"; break;
 		case GLFW_KEY_D: keyStr = "D"; break;
+		case GLFW_KEY_U: keyStr = "U"; break;
 		case GLFW_KEY_ESCAPE: keyStr = "Escape"; break;
 		case GLFW_KEY_LEFT_SHIFT: keyStr = "Left Shift"; break;
 		case GLFW_KEY_SPACE: keyStr = "Space"; break;

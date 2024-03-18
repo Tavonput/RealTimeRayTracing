@@ -10,6 +10,7 @@
 
 #include "Scene/simple_cube_scene.h"
 #include "Scene/cornell_box.h"
+#include "Scene/dragon.h"
 // #include "Scene/pyramid_scene.h"
 
 #include "Core/system_context.h"
@@ -81,6 +82,7 @@ private:
 
     // Scenes
 	CornellBoxScene m_scene;
+	// DragonScene     m_scene;
 	// SimpleCubeScene m_scene; Kind of broken right now.
 
 	// Cpu Raytracing
@@ -88,7 +90,8 @@ private:
 
 	// Gpu Raytracing
 	AccelerationStructure m_accelerationStructure;
-	ShaderBindingTable    m_shaderBindingTable;
+	ShaderBindingTable    m_realTimeSBT;
+	ShaderBindingTable    m_pathSBT;
 	DescriptorPool        m_rtxDescriptorPool;
 	DescriptorSetLayout   m_rtxDescriptorLayout;
 	DescriptorSet         m_rtxDescriptorSet;

@@ -85,7 +85,7 @@ void Application::init(Application::Settings& settings)
 
 	// Camera
 	Camera::CreateInfo cameraInfo{};
-	cameraInfo.position     = { 0.0f, 0.0f, 6.0f };
+	cameraInfo.position     = { 0.0f, 1.0f, 6.0f };
 	cameraInfo.fov          = 45.0f;
 	cameraInfo.nearPlane    = 0.1f;
 	cameraInfo.farPlane     = 1000.0f;
@@ -99,12 +99,6 @@ void Application::init(Application::Settings& settings)
 	createPipelines();
 	if (m_device->isRtxSupported())
 		createRtxPipeline();
-
-	// Shader Binding Table
-	if (m_device->isRtxSupported())
-		m_shaderBindingTable.build(*m_device, m_pipelines[Pipeline::RTX].pipeline);
-
-
 
 	// Renderer
 	Renderer::CreateInfo rendererInfo{};
@@ -125,7 +119,8 @@ void Application::init(Application::Settings& settings)
 	{
 		rendererInfo.enableRtx          = true;
 		rendererInfo.pRtxDescriptorSets = &m_rtxDescriptorSet;
-		rendererInfo.pSBT               = &m_shaderBindingTable;
+		rendererInfo.pRtSBT             = &m_realTimeSBT;
+		rendererInfo.pPathSBT           = &m_pathSBT;
 	}
 
 	m_renderer = Renderer(rendererInfo);
@@ -260,6 +255,7 @@ void Application::createPipelines()
 
 		builder.linkRenderPass(m_renderPasses[RenderPass::POST]);
 		builder.linkDescriptorSetLayouts(&m_postDescriptorLayout.layout, 1);
+		builder.linkPushConstants(sizeof(PostPushConstants));
 
 		// Post shaders
 		ShaderSet postShaders(*m_device);
@@ -429,7 +425,7 @@ void Application::createRtxDescriptorSets()
 
 void Application::createRtxPipeline()
 {
-	APP_LOG_INFO("Creating Rtx pipeline");
+	APP_LOG_INFO("Creating Rtx pipelines");
 
 	auto builder = Pipeline::Builder(*m_device);
 
@@ -440,17 +436,38 @@ void Application::createRtxPipeline()
 
 	builder.linkRtxPushConstants(sizeof(RtxPushConstants));
 
-	ShaderSet rtxShaders(*m_device);
-	rtxShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_main_rgen.spv");
-	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_main_rmiss.spv");
-	rtxShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_shadow_rmiss.spv");
-	rtxShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_main_rchit.spv");
-	rtxShaders.setupRtxShaderGroup();
-	builder.linkRtxShaders(rtxShaders);
+	// Real time
+	{
+		ShaderSet rtxRtShaders(*m_device);
+		rtxRtShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_main_rgen.spv");
+		rtxRtShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_main_rmiss.spv");
+		rtxRtShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_shadow_rmiss.spv");
+		rtxRtShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_main_rchit.spv");
+		rtxRtShaders.setupRtxShaderGroup();
+		builder.linkRtxShaders(rtxRtShaders);
 
-	m_pipelines.push_back(builder.buildRtxPipeline("Rtx Pipeline"));
+		m_pipelines.push_back(builder.buildRtxPipeline("RTX Real Time Pipeline"));
 
-	rtxShaders.cleanup();
+		m_realTimeSBT.build(*m_device, m_pipelines[Pipeline::RTX_RT].pipeline, rtxRtShaders, "SBT Real Time");
+
+		rtxRtShaders.cleanup();
+	}
+	
+	// Path	
+	{
+		ShaderSet rtxPathShaders(*m_device);
+		rtxPathShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_path_rgen.spv");
+		rtxPathShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_path_rmiss.spv");
+		rtxPathShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_path_rchit.spv");
+		rtxPathShaders.setupRtxShaderGroup();
+		builder.linkRtxShaders(rtxPathShaders);
+
+		m_pipelines.push_back(builder.buildRtxPipeline("RTX Path Pipeline"));
+
+		m_pathSBT.build(*m_device, m_pipelines[Pipeline::RTX_PATH].pipeline, rtxPathShaders, "SBT Path");
+
+		rtxPathShaders.cleanup();
+	}
 }
 
 void Application::setupOffscreenRender()
@@ -601,6 +618,7 @@ void Application::pollEvents()
 				APP_LOG_TRACE(keyPressEvent->eventString());
 
 				m_camera.onKeyPress(*keyPressEvent);
+				m_renderer.onKeyPress(*keyPressEvent);
 				break;
 			}
 
@@ -630,7 +648,8 @@ void Application::cleanup()
 	// Rtx Structure
 	if (m_device->isRtxSupported())
 	{
-		m_shaderBindingTable.cleanup();
+		m_realTimeSBT.cleanup();
+		m_pathSBT.cleanup();
 		m_accelerationStructure.cleanup();
 		m_rtxDescriptorLayout.cleanup(*m_device);
 		m_rtxDescriptorPool.cleanup();

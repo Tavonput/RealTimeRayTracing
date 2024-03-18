@@ -4,9 +4,10 @@
 void CornellBoxScene::onLoad(SceneBuilder& scene)
 {
 	// Models
-	m_cornellBoxModel = scene.loadModel("../../../Assets/Cornell-Box/CornellBox-Original.obj");
+	m_cornellBoxModel = scene.loadModel("../../../Assets/Cornell-Box/CornellBox-PBR.obj");
 	m_mirrorModel     = scene.loadModel("../../../Assets/Cube/cube_mirror.obj");
-
+	m_planeModel      = scene.loadModel("../../../Assets/Plane/plane.obj");
+	
 	// Cornell box 
 	glm::mat4 cornellTrans = glm::mat4(1.0f);
 	cornellTrans           = glm::translate(cornellTrans, glm::vec3(0.0f, -2.0f, 0.0f));
@@ -25,8 +26,15 @@ void CornellBoxScene::onLoad(SceneBuilder& scene)
 	rightMirrorTrans           = glm::scale(rightMirrorTrans, glm::vec3(0.2f, 10.0f, 10.0f));
 	m_rightMirror = scene.createInstance(m_mirrorModel, rightMirrorTrans);
 
-	// Set initial light position
+	// Plane
+	glm::mat4 planTrans = glm::mat4(1.0f);
+	planTrans           = glm::translate(planTrans, glm::vec3(0.0f, -2.05f, 0.0f));
+	planTrans           = glm::scale(planTrans, glm::vec3(10.0f, 10.0f, 10.0f));
+	m_plane = scene.createInstance(m_planeModel, planTrans);
+
+	// Set initial conditions
 	scene.setLightPosition(glm::vec3(0.0f, 1.8f, 0.0f));
+	scene.setBackgroundColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	// Set custom UI check boxes
 	scene.addUICheckBox("Enable Mirrors (Raster Only)", &m_renderMirrors);
@@ -39,8 +47,8 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 
 	if (renderer.isRtxEnabled())
 	{
-		renderer.bindPipeline(Pipeline::RTX);
-		renderer.bindDescriptorSets(Pipeline::RTX);
+		renderer.bindRtxPipeline();
+		renderer.bindRtxDescriptorSets();
 		renderer.bindRtxPushConstants();
 		renderer.traceRays();
 	}
@@ -50,17 +58,32 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 
 		renderer.setDynamicStates();
 
-		renderer.bindPipeline(Pipeline::LIGHTING);
-		renderer.bindVertexBuffer(m_cornellBoxModel.getVertexBuffer());
-		renderer.bindIndexBuffer(m_cornellBoxModel.getIndexBuffer());
-		renderer.bindDescriptorSets(Pipeline::LIGHTING);
+
 
 		// Cornell box
 		{
+			renderer.bindPipeline(Pipeline::LIGHTING);
+			renderer.bindVertexBuffer(m_cornellBoxModel.getVertexBuffer());
+			renderer.bindIndexBuffer(m_cornellBoxModel.getIndexBuffer());
+			renderer.bindDescriptorSets(Pipeline::LIGHTING);
+
 			renderer.pushConstants.model    = m_cornellBox.transform;
 			renderer.pushConstants.objectID = m_cornellBox.objectID;
-			renderer.bindPushConstants();
+			renderer.bindPushConstants(Pipeline::LIGHTING);
 			renderer.drawIndexed();
+		}
+
+		// Plane
+		{
+			renderer.bindPipeline(Pipeline::LIGHTING);
+			renderer.bindVertexBuffer(m_planeModel.getVertexBuffer());
+			renderer.bindIndexBuffer(m_planeModel.getIndexBuffer());
+			renderer.bindDescriptorSets(Pipeline::LIGHTING);
+
+			renderer.pushConstants.model    = m_plane.transform;
+			renderer.pushConstants.objectID = m_plane.objectID;
+			renderer.bindPushConstants(Pipeline::LIGHTING);
+			renderer.drawVertex();
 		}
 
 		// Mirrors
@@ -72,13 +95,13 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 			// Left mirror
 			renderer.pushConstants.model    = m_leftMirror.transform;
 			renderer.pushConstants.objectID = m_leftMirror.objectID;
-			renderer.bindPushConstants();
+			renderer.bindPushConstants(Pipeline::LIGHTING);
 			renderer.drawIndexed();
 
 			// Right mirror
 			renderer.pushConstants.model    = m_rightMirror.transform;
 			renderer.pushConstants.objectID = m_rightMirror.objectID;
-			renderer.bindPushConstants();
+			renderer.bindPushConstants(Pipeline::LIGHTING);
 			renderer.drawIndexed();
 		}
 
@@ -92,7 +115,7 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 			glm::mat4 lightTransform           = glm::translate(glm::mat4(1.0f), renderer.ubo.lightPosition);
 			renderer.pushConstants.model       = glm::scale(lightTransform, glm::vec3(0.1f, 0.1f, 0.1f));
 			renderer.pushConstants.objectColor = renderer.ubo.lightColor;
-			renderer.bindPushConstants();
+			renderer.bindPushConstants(Pipeline::FLAT);
 
 			renderer.drawIndexed();
 		}
@@ -108,6 +131,7 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 
 		renderer.bindPipeline(Pipeline::POST);
 		renderer.bindDescriptorSets(Pipeline::POST);
+		renderer.bindPushConstants(Pipeline::POST);
 		renderer.drawVertex();
 		renderer.drawUI();
 
@@ -122,4 +146,5 @@ void CornellBoxScene::onUnload()
 {
 	m_cornellBoxModel.cleanup();
 	m_mirrorModel.cleanup();
+	m_planeModel.cleanup();
 }

@@ -27,6 +27,9 @@ struct Material
 
 	glm::vec3 emission      = { 0.0f, 0.0f, 0.0f };
 	int32_t   textureID     = -1;
+
+	float roughness        = 1.0f;
+	float metallic         = 0.0f;
 };
 
 struct ObjectDescription
@@ -111,6 +114,7 @@ public:
 	Model::Instance createInstance(const Model& model, glm::mat4 transform);
 
 	void setLightPosition(glm::vec3 pos) { m_gui->setInitialLightPosition(pos); }
+	void setBackgroundColor(glm::vec3 color) { m_gui->setInitialBackground(color); }
 	
 	void addUICheckBox(const std::string& name, bool* button) { m_gui->addCustomCheckBox(name, button); }
 

@@ -72,6 +72,13 @@ call ImGui::DestroyContext()
 class Gui 
 {
 public: 
+	enum class RenderMethod
+	{
+		RASTER = 0,
+		RTX_RT,
+		RTX_PATH
+	};
+
 	struct CreateInfo
 	{
 		SystemContext*        pSystemContext;
@@ -88,6 +95,7 @@ public:
 
 		// Scene
 		float backgroundColor[3] = { 1.0f, 1.0f, 1.0f };
+		float exposure           = 1.0;
 
 		// Lighting
 		float lightColor[3]    = { 1.0f, 1.0f, 1.0f };
@@ -95,10 +103,12 @@ public:
 		float lightIntensity   = 1.0f;
 
 		// RTX
-		bool useRtx        = false;
-		int  maxDepth      = 2;
-		int  sampleCount   = 1;
-		int  TAAFrameCount = 10;
+		RenderMethod renderMethod    = RenderMethod::RASTER;
+		int          maxDepth        = 10;
+		int          sampleCount     = 4;
+		int          TAAFrameCount   = 10;
+		int          maxPathFrame    = 0;
+		float        russianRoulette = 1.0f;
 	};
 
 	void init(Gui::CreateInfo info);
@@ -133,6 +143,7 @@ public:
 	void changeRenderMethod();
 
 	void setInitialLightPosition(glm::vec3 pos);
+	void setInitialBackground(glm::vec3 color);
 
 	void cleanup();
 

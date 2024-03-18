@@ -62,6 +62,7 @@ void Gui::beginUI()
 		if (ImGui::CollapsingHeader("Scene"))
 		{
 			m_state.changed |= ImGui::ColorEdit3("Background", m_state.backgroundColor);
+			m_state.changed |= ImGui::SliderFloat("Exposure", &m_state.exposure, 0.1f, 5.0f);
 		}
 
 		// Lighting settings
@@ -69,7 +70,7 @@ void Gui::beginUI()
 		{
 			m_state.changed |= ImGui::ColorEdit3("Light Color", m_state.lightColor);
 			m_state.changed |= ImGui::DragFloat3("Light Position", m_state.lightPosition, 0.01f);
-			m_state.changed |= ImGui::SliderFloat("Light Intensity", &m_state.lightIntensity, 0.0f, 5.0f);
+			m_state.changed |= ImGui::SliderFloat("Light Intensity", &m_state.lightIntensity, 0.0f, 20.0f);
 		}
 
 		// RTX Settings
@@ -107,6 +108,13 @@ void Gui::setInitialLightPosition(glm::vec3 pos)
 	m_state.lightPosition[2] = pos.z;
 }
 
+void Gui::setInitialBackground(glm::vec3 color)
+{
+	m_state.backgroundColor[0] = color.x;
+	m_state.backgroundColor[1] = color.y;
+	m_state.backgroundColor[2] = color.z;
+}
+
 void Gui::cleanup() 
 {
 	APP_LOG_INFO("Destroying ImGui");
@@ -122,9 +130,31 @@ void Gui::renderRtxUI()
 {
 	if (ImGui::CollapsingHeader("RTX"))
 	{
-		m_state.changed |= ImGui::Checkbox("Enable RTX", &m_state.useRtx);
-		m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 50);
+		const char* methods[3] = { "Raster", "RTX Real Time", "RTX Path" };
+		m_state.changed |= ImGui::Combo("Render Method", (int*)&m_state.renderMethod, methods, 3);
+
+		m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 100);
 		m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
-		m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+
+		if (ImGui::TreeNode("Real Time"))
+		{
+			m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+			ImGui::SetItemTooltip("Number of accumulation frames for TAA");
+
+			ImGui::TreePop();
+			ImGui::Spacing();
+		}
+
+		if (ImGui::TreeNode("Path Tracer"))
+		{
+			m_state.changed |= ImGui::SliderFloat("Russian Roulette", &m_state.russianRoulette, 0.0f, 1.0f);
+			ImGui::SetItemTooltip("Minimum Russian Roulette survival rate");
+
+			m_state.changed |= ImGui::SliderInt("Max Path Frame Count", &m_state.maxPathFrame, 0, 100);
+			ImGui::SetItemTooltip("Number of accumulation frames to compute for path tracing. Set to 0 for infinite");
+
+			ImGui::TreePop();
+			ImGui::Spacing();
+		}
 	}
 }

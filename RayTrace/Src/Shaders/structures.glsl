@@ -1,3 +1,5 @@
+#define PI 3.14159265
+
 struct GlobalUniform
 {
 	mat4 viewProjection;
@@ -43,6 +45,9 @@ struct Material
 
 	vec3    emission;
 	int     textureID;
+
+	float roughness;
+	float metallic;
 };
 
 struct PushConstant
@@ -52,22 +57,45 @@ struct PushConstant
 	int  objectID;
 };
 
+struct PostPushConstant
+{
+	float exposure;
+};
+
 struct RtxPushConstant
 {
 	vec4 clearColor;
 
 	int maxDepth;
 	int sampleCount;
-
 	int frame;
+
+	float russianRoulette;
 };
 
 struct hitPayload
 {
 	vec3 hitValue;
-	int  depth;
+	uint depth;
+
 	vec3 attenuation;
-	int  done;
+	uint done;
+
+	vec3 rayOrigin;
+	uint seed;
+
+	vec3 rayDir;
+};
+
+struct hitPayloadPath
+{
+	vec3 throughput;
+	vec3 emission;
+
 	vec3 rayOrigin;
 	vec3 rayDir;
+
+	uint depth;
+	uint seed;
+	uint done;
 };

@@ -23,7 +23,8 @@ public:
 		LIGHTING = 0,
 		FLAT,
 		POST,
-		RTX
+		RTX_RT,
+		RTX_PATH
 	};
 
 	// Builder Class
@@ -85,38 +86,4 @@ public:
 
 private:
 	std::string m_name = "";
-};
-
-/*****************************************************************************************************************
- *
- * @class Shader Binding Table
- *
- * Maybe this should go in the shader file and be built off a ShaderSet.
- * 
- */
-class ShaderBindingTable
-{
-public:
-	enum SbtRegion
-	{
-		RGEN = 0,
-		MISS,
-		HIT,
-		CALL
-	};
-
-	void build(const Device& device, VkPipeline& rtxPipeline);
-
-	void cleanup();
-
-	std::array<VkStridedDeviceAddressRegionKHR, 4>& getRegions() { return m_regions; }
-
-private:
-	const Device* m_device = nullptr;
-
-	Buffer m_sbtBuffer;
-
-	std::array<VkStridedDeviceAddressRegionKHR, 4> m_regions;
-
-	uint32_t alignUp(uint32_t x, uint32_t y);
 };

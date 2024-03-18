@@ -1,11 +1,13 @@
 #version 460
 
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_scalar_block_layout : enable
 
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference2 : require
 
 #include "structures.glsl"
+#include "pbr.glsl"
 
 // Inputs
 layout (location = 0) in vec3 fragNormal;
@@ -19,10 +21,10 @@ layout (location = 0) out vec4 outColor;
 layout (binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
 
 // Material storage buffers
-layout (buffer_reference) buffer MaterialBuffer { Material m[]; };
-layout (buffer_reference) buffer MatIndexBuffer { int i[]; };
+layout (buffer_reference, scalar) buffer MaterialBuffer { Material m[]; };
+layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 
-// Addresses to the material storage buffers
+// Addresses to the storage buffers
 layout (binding = 1) buffer ObjectDescription_ { ObjectDescription i[]; } objDesc;
 
 // Push constant
@@ -64,13 +66,40 @@ void main()
 	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];
 	Material material = materialBuffer.m[matIndex];
 
-	// Lighting
-	vec3 norm     = normalize(fragNormal);
-	vec3 viewDir  = normalize(uni.viewPosition - fragPos);
-	vec3 lightDir = normalize(uni.lightPosition - fragPos);
+	float roughness = material.roughness;
+	float metallic  = material.metallic;
 
-	vec3 color     = vec3(0.0);
-	color += computeLighting(material, norm, viewDir, lightDir);
+	// Lighting
+	vec3 N = normalize(fragNormal);
+	vec3 V = normalize(uni.viewPosition - fragPos);
+	vec3 L = normalize(uni.lightPosition - fragPos);
+	vec3 H = normalize(V + L);
+
+	vec3 F0 = vec3(0.04);
+	F0      = mix(F0, material.diffuse, metallic);
+
+	float distance    = length(uni.lightPosition - fragPos);
+	float attenuation = uni.lightIntensity / (distance * distance);
+	vec3  radiance    = uni.lightColor * attenuation;
+
+	float NDF = distributionGGX(N, H, roughness);
+	float G   = geometrySmith(N, V, L, roughness);
+	vec3  F   = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;
+	kD     *= 1.0 - metallic;
+
+	vec3  num      = NDF * G * F;
+	float den      = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+	vec3  specular = num / den;
+
+	const float NdotL = max(dot(N, L), 0.0);
+
+	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
+
+	vec3 ambient = material.ambient * vec3(0.01);
+	vec3 color = Lo + ambient;
 
 	outColor = vec4(color, 1.0);
 }

@@ -11,5 +11,6 @@ layout (push_constant) uniform _RtxPushConstant { RtxPushConstant pc; };
 
 void main()
 {
-    payload.hitValue = pc.clearColor.xyz;
+	float rayDir = (payload.rayDir.y + 1.0) / 2.0;
+	payload.hitValue = mix(vec3(0), pc.clearColor.xyz, rayDir);
 }
