@@ -1,5 +1,6 @@
 #version 460
 
+#extension GL_GOOGLE_include_directive : enable
 #extension GL_ARB_gpu_shader_int64 : require
 
 #include "structures.glsl"

@@ -38,4 +38,6 @@ private:
 	VkDescriptorImageInfo m_descriptor{};
 
 	Texture(Texture::CreateInfo& info);
+
+	void transitionImage(VkCommandBuffer cmdBuf);
 };

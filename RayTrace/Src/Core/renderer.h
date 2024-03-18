@@ -3,6 +3,7 @@
 #include "Application/logging.h"
 #include "Application/camera.h"
 #include "Application/Gui.h"
+#include "Application/event.h"
 
 #include "device.h"
 #include "swapchain.h"
@@ -21,28 +22,37 @@ public:
 	// Create info
 	struct CreateInfo
 	{
-		Swapchain*     pSwapchain;
-		CommandSystem* pCommandSystem;
-		RenderPass*    pRenderPasses;
-		Pipeline*      pPipelines;
-		Buffer*        pUniformBuffers;
-		DescriptorSet* pOffscreenDescriptorSets;
-		DescriptorSet* pPostDescriptorSets;
-		Camera*        pCamera;
-		Gui*           pGui;
+		Swapchain*     pSwapchain               = nullptr;
+		CommandSystem* pCommandSystem           = nullptr;
+		RenderPass*    pRenderPasses            = nullptr;
+		Pipeline*      pPipelines               = nullptr;
+		Buffer*        pUniformBuffers          = nullptr;
+		DescriptorSet* pOffscreenDescriptorSets = nullptr;
+		DescriptorSet* pPostDescriptorSets      = nullptr;
+		DescriptorSet* pRtxDescriptorSets       = nullptr;
+		Camera*        pCamera                  = nullptr;
+		Gui*           pGui                     = nullptr;
 
-		Framebuffer* pPostFramebuffers;
-		Framebuffer* pOffscreenFramebuffer;
+		ShaderBindingTable* pRtSBT   = nullptr;
+		ShaderBindingTable* pPathSBT = nullptr;
+
+		Framebuffer* pPostFramebuffers     = nullptr;
+		Framebuffer* pOffscreenFramebuffer = nullptr;
 
 		uint32_t framesInFlight = 2;
+
+		bool enableRtx = false;
 	};
 
 	GlobalUniform     ubo;
 	MeshPushConstants pushConstants;
+	RtxPushConstants  rtxPushConstants;
+	PostPushConstants postPushConstants;
 
 	float deltaTime   = 0.0f;
 	float aspectRatio = 0.0f;
 
+	Renderer() = default;
 	Renderer(Renderer::CreateInfo info)
 		: m_swapchain              (info.pSwapchain),
 		  m_commandSystem          (info.pCommandSystem),
@@ -51,11 +61,15 @@ public:
 		  m_uniformBuffers         (info.pUniformBuffers),
 		  m_offscreenDescriptorSets(info.pOffscreenDescriptorSets),
 		  m_postDescriptorSets     (info.pPostDescriptorSets),
+		  m_rtxDescriptorSets      (info.pRtxDescriptorSets),
 		  m_camera                 (info.pCamera),
 		  m_framesInFlight         (info.framesInFlight),
           m_gui                    (info.pGui),
 		  m_postFramebuffers       (info.pPostFramebuffers),
-		  m_offScreenFramebuffer   (info.pOffscreenFramebuffer)
+		  m_offScreenFramebuffer   (info.pOffscreenFramebuffer),
+		  m_rtSBT                  (info.pRtSBT),
+		  m_pathSBT(info.pPathSBT),
+		  m_useRtx                 (info.enableRtx)
 	{}
 
 	void beginFrame();
@@ -68,12 +82,25 @@ public:
 	void bindPipeline(Pipeline::PipelineType pipeline);
 	void bindVertexBuffer(Buffer& vertexBuffer);
 	void bindIndexBuffer(Buffer& indexBuffer);
-	void bindDescriptorSets();
-	void bindPushConstants();
+	void bindDescriptorSets(Pipeline::PipelineType type);
+	void bindPushConstants(Pipeline::PipelineType type);
+
+	void bindRtxPipeline();
+	void bindRtxDescriptorSets();
+	void bindRtxPushConstants();
 
 	void drawVertex();
 	void drawIndexed();
 	void drawUI();
+
+	void traceRays();
+
+	void setDynamicStates();
+
+	bool isRtxEnabled() const { return m_useRtx; }
+
+	void onWindowResize(WindowResizeEvent event) { resetRtxFrame(); }
+	void onKeyPress(KeyPressEvent event);
 
 private:
 	Swapchain*     m_swapchain               = nullptr;
@@ -83,6 +110,7 @@ private:
 	Buffer*        m_uniformBuffers          = nullptr;
 	DescriptorSet* m_offscreenDescriptorSets = nullptr;
 	DescriptorSet* m_postDescriptorSets      = nullptr;
+	DescriptorSet* m_rtxDescriptorSets       = nullptr;
 	Camera*        m_camera                  = nullptr;
 	Gui*           m_gui                     = nullptr;
 
@@ -97,8 +125,26 @@ private:
 	uint32_t m_framesInFlight = 2;
 	float    m_lastFrameTime  = 0.0f;
 
+	uint32_t m_windowWidth  = 0;
+	uint32_t m_windowHeight = 0;
+
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 
 	Buffer m_vertexBuffer;
 	Buffer m_indexBuffer;
+
+	ShaderBindingTable* m_rtSBT   = nullptr;
+	ShaderBindingTable* m_pathSBT = nullptr;
+
+	bool m_useRtx = false;
+
+	glm::mat4 m_currentCameraView = glm::mat4(1.0f);
+
+	Gui::UiState m_ui;
+	bool         m_showUI = true;
+
+	void updateUI();
+
+	void updateRtxFrame();
+	void resetRtxFrame();
 };

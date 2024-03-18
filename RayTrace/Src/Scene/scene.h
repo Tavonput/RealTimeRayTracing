@@ -9,7 +9,7 @@ class Scene
 public:
 	virtual ~Scene() {}
 
-	virtual void onLoad(ModelLoader& modelLoader) = 0;
+	virtual void onLoad(SceneBuilder& scene) = 0;
 
 	virtual void onUpdate(Renderer& renderer) = 0;
 

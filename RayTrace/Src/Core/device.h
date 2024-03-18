@@ -2,14 +2,17 @@
 
 #include "Application/logging.h"
 
+#include "extensions.h"
+
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
+	std::optional<uint32_t> computeFamily;
 
 	bool isComplete() const
 	{
-		return graphicsFamily.has_value() && presentFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value();
 	}
 };
 
@@ -26,15 +29,29 @@ public:
 	void init(
 		VkInstance& instance,
 		VkSurfaceKHR& surface,
-		std::vector<const char*> instanceLayers);
+		std::vector<const char*> instanceLayers,
+		bool enableRaytracing);
 
-	const VkPhysicalDevice& getPhysical() const;
-	const VkDevice& getLogical() const;
-	const QueueFamilyIndices& getIndices() const;
-	const VkQueue& getGraphicsQueue() const;
-	const VkQueue& getPresentQueue() const;
+	/**
+	 * Getters.
+	 */
+	const VkPhysicalDevice& getPhysical() const { return m_physical; }
+	const VkDevice& getLogical() const { return m_logical; }
+	const QueueFamilyIndices& getIndices() const { return m_indices; }
+	const VkQueue& getGraphicsQueue() const { return m_graphicsQueue; }
+	const VkQueue& getPresentQueue() const { return m_presentQueue; }
+	const VkQueue& getComputeQueue() const { return m_computeQueue; }
+	const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& getRtxProperties() const { return m_rtxProperties; }
 
-	const void waitForGPU() const;
+	/**
+	 * Wait for the entire GPU to be idle.
+	 */
+	const void waitForGPU() const { vkDeviceWaitIdle(m_logical); }
+
+	/**
+	 * @return False if RTX is either not supported or disabled during initialization.
+	 */
+	bool isRtxSupported() const { return m_enabledRaytracing; }
 
 	VkFormat findSupportedFormat(
 		const std::vector<VkFormat>& candidates,
@@ -56,9 +73,13 @@ private:
 	QueueFamilyIndices m_indices;
 	VkQueue            m_graphicsQueue = VK_NULL_HANDLE;
 	VkQueue            m_presentQueue  = VK_NULL_HANDLE;
+	VkQueue            m_computeQueue  = VK_NULL_HANDLE;
 
 	std::vector<const char*> m_instanceLayers;
 	std::vector<const char*> m_deviceExtensions;
+
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR m_rtxProperties{};
+	bool                                            m_enabledRaytracing = false;
 
 	void pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	void createLogicalDevice();

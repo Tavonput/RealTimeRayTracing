@@ -1,26 +1,41 @@
 #include "pch.h"
 #include "simple_cube_scene.h"
 
-void SimpleCubeScene::onLoad(ModelLoader& modelLoader)
+void SimpleCubeScene::onLoad(SceneBuilder& scene)
 {
 	// Cube model
-	m_cubeModel = modelLoader.loadModel("../../../Assets/Cube/cube.obj");
+	m_cubeModel = scene.loadModel("../../../Assets/Cube/cube.obj");
 
 	// Cube instances
-	m_mainCube = m_cubeModel.createInstance();
-	m_mainCube.transform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+	glm::mat4 mainCubeTransform = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
+	m_mainCube = scene.createInstance(m_cubeModel, mainCubeTransform);
 
-	m_lightCube = m_cubeModel.createInstance();
-	m_lightCube.transform = glm::mat4(1.0f);
+	glm::mat4 lightCubeTransform = glm::mat4(1.0f);
+	m_lightCube = scene.createInstance(m_cubeModel, lightCubeTransform);
+
+	scene.setLightPosition(m_lightPosition);
 }
 
 void SimpleCubeScene::onUpdate(Renderer& renderer)
 {
 	renderer.beginFrame();
 
-	// Offscreen pass
+	if (renderer.isRtxEnabled())
+	{
+		renderer.rtxPushConstants.clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		updateLightCube(renderer);
+
+		renderer.bindPipeline(Pipeline::RTX_RT);
+		renderer.bindDescriptorSets(Pipeline::RTX_RT);
+		renderer.bindRtxPushConstants();
+		renderer.traceRays();
+	}
+	else
 	{
 		renderer.beginRenderPass(RenderPass::MAIN);
+
+		renderer.setDynamicStates();
 
 		// Bind buffers
 		renderer.bindVertexBuffer(m_cubeModel.getVertexBuffer());
@@ -28,29 +43,33 @@ void SimpleCubeScene::onUpdate(Renderer& renderer)
 
 		// Draw main cube
 		renderer.bindPipeline(Pipeline::LIGHTING);
-		renderer.bindDescriptorSets();
+		renderer.bindDescriptorSets(Pipeline::LIGHTING);
 
 		renderer.pushConstants.model = m_mainCube.transform;
 		renderer.pushConstants.objectID = m_mainCube.objectID;
-		renderer.bindPushConstants();
+		renderer.bindPushConstants(Pipeline::LIGHTING);
 		renderer.drawIndexed();
 
 
 		// Draw light cube
 		renderer.bindPipeline(Pipeline::FLAT);
 		updateLightCube(renderer);
-		renderer.bindPushConstants();
+		renderer.bindPushConstants(Pipeline::FLAT);
 		renderer.drawIndexed();
 
 		renderer.endRenderPass();
 	}
 
+
 	// Post pass
 	{
 		renderer.beginRenderPass(RenderPass::POST);
 
+		renderer.setDynamicStates();
+
 		renderer.bindPipeline(Pipeline::POST);
-		renderer.bindDescriptorSets();
+		renderer.bindDescriptorSets(Pipeline::POST);
+		renderer.bindPushConstants(Pipeline::POST);
 		renderer.drawVertex();
 		renderer.drawUI();
 

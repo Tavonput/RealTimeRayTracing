@@ -29,7 +29,7 @@ Texture::Texture(Texture::CreateInfo& info)
 	imgCreateInfo.layerCount = 1;
 	imgCreateInfo.numSamples = VK_SAMPLE_COUNT_1_BIT;
 	imgCreateInfo.tiling     = VK_IMAGE_TILING_OPTIMAL;
-	imgCreateInfo.usage      = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imgCreateInfo.usage      = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	imgCreateInfo.device     = info.pDevice;
 	imgCreateInfo.name       = info.name;
@@ -40,7 +40,13 @@ Texture::Texture(Texture::CreateInfo& info)
 		VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
 
 	m_image = Image::CreateImage(imgCreateInfo);
-	m_descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	m_descriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	// Transition image
+	// TODO: Make this feature better
+	VkCommandBuffer cmdBuf = info.pCommandSystem->beginSingleTimeCommands();
+	transitionImage(cmdBuf);
+	info.pCommandSystem->endSingleTimeCommands(cmdBuf, info.pDevice->getGraphicsQueue());
 
 	// Setup image view
 	Image::ImageViewSetupInfo viewSetupInfo{};
@@ -80,4 +86,28 @@ Texture::Texture(Texture::CreateInfo& info)
 		APP_LOG_CRITICAL("Failed to create sampler ({})", m_name);
 		throw;
 	}
+}
+
+void Texture::transitionImage(VkCommandBuffer cmdBuf)
+{
+	VkImageSubresourceRange subresourceRange{};
+	subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.levelCount     = VK_REMAINING_MIP_LEVELS;
+	subresourceRange.layerCount     = VK_REMAINING_ARRAY_LAYERS;
+	subresourceRange.baseMipLevel   = 0;
+	subresourceRange.baseArrayLayer = 0;
+
+	VkImageMemoryBarrier imageMemoryBarrier{};
+	imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarrier.oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageMemoryBarrier.newLayout           = VK_IMAGE_LAYOUT_GENERAL;
+	imageMemoryBarrier.image               = m_image.image;
+	imageMemoryBarrier.subresourceRange    = subresourceRange;
+	imageMemoryBarrier.srcAccessMask       = 0;
+	imageMemoryBarrier.dstAccessMask       = 0;
+	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	VkPipelineStageFlags srcStageMask      = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	VkPipelineStageFlags destStageMask     = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	vkCmdPipelineBarrier(cmdBuf, srcStageMask, destStageMask, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 }

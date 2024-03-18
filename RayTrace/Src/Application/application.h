@@ -10,6 +10,7 @@
 
 #include "Scene/simple_cube_scene.h"
 #include "Scene/cornell_box.h"
+#include "Scene/dragon.h"
 // #include "Scene/pyramid_scene.h"
 
 #include "Core/system_context.h"
@@ -26,6 +27,7 @@
 #include "Core/rendering_structures.h"
 #include "Core/framebuffer.h"
 #include "Core/texture.h"
+#include "Core/acceleration_structure.h"
 
 class Application
 {
@@ -40,6 +42,7 @@ public:
 
 		bool vSync         = true;
 		bool cpuRaytracing = false;
+		bool useRtx        = false;
 	};
 
 	void init(Application::Settings& settings);
@@ -52,6 +55,7 @@ private:
 	Window        m_window;
 	SystemContext m_context;
 	Gui           m_gui;
+	const Device* m_device = nullptr;
 
 	// Rendering components
 	Swapchain               m_swapchain;
@@ -60,6 +64,7 @@ private:
 	std::vector<Pipeline>   m_pipelines;
 	std::vector<RenderPass> m_renderPasses;
 	Camera                  m_camera;
+	Renderer                m_renderer;
 
 	// Post pass
 	std::vector<Framebuffer>   m_postFramebuffers;
@@ -75,16 +80,29 @@ private:
 	std::vector<Buffer>        m_uniformBuffers;
 	Buffer                     m_materialDescriptionBuffer;
 
-  // Scenes
+    // Scenes
 	CornellBoxScene m_scene;
-	// SimpleCubeScene m_scene;
+	// DragonScene     m_scene;
+	// SimpleCubeScene m_scene; Kind of broken right now.
 
+	// Cpu Raytracing
 	CpuRaytracer m_cpuRaytracer;
 
+	// Gpu Raytracing
+	AccelerationStructure m_accelerationStructure;
+	ShaderBindingTable    m_realTimeSBT;
+	ShaderBindingTable    m_pathSBT;
+	DescriptorPool        m_rtxDescriptorPool;
+	DescriptorSetLayout   m_rtxDescriptorLayout;
+	DescriptorSet         m_rtxDescriptorSet;
+	
 	void createRenderPasses();
 	void createPipelines();
 	void createDescriptorSets();
 	void createFramebuffers();
+
+	void createRtxDescriptorSets();
+	void createRtxPipeline();
 
 	void setupOffscreenRender();
 	void resetOffscreenRender();

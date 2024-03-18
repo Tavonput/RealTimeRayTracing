@@ -2,42 +2,16 @@
 
 #include "device.h"
 
-void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers)
+void Device::init(VkInstance& instance, VkSurfaceKHR& surface, std::vector<const char*> instanceLayers, bool enableRaytracing)
 {
 	m_instanceLayers = instanceLayers;
+	m_enabledRaytracing = enableRaytracing;
 
 	pickPhysicalDevice(instance, surface);
 	createLogicalDevice();
-}
 
-const VkPhysicalDevice& Device::getPhysical() const
-{
-	return m_physical;
-}
-
-const VkDevice& Device::getLogical() const
-{
-	return m_logical;
-}
-
-const QueueFamilyIndices& Device::getIndices() const
-{
-	return m_indices;
-}
-
-const VkQueue& Device::getGraphicsQueue() const
-{
-	return m_graphicsQueue;
-}
-
-const VkQueue& Device::getPresentQueue() const
-{
-	return m_presentQueue;
-}
-
-const void Device::waitForGPU() const
-{
-	vkDeviceWaitIdle(m_logical);
+	if (m_enabledRaytracing)
+		loadDeviceExtensionsRayTrace(m_logical);
 }
 
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
@@ -127,9 +101,6 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 {
 	APP_LOG_INFO("Choosing physical device");
 
-	// Extensions
-	m_deviceExtensions.push_back("VK_KHR_swapchain");
-
 	// Find GPUs
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -142,6 +113,43 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+	m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	if (m_enabledRaytracing)
+	{
+		m_deviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+
+		// Check for a GPU with RTX support
+		for (const auto& device : devices)
+		{
+			if (Device::isDeviceSuitable(device, surface))
+			{
+				m_physical = device;
+
+				m_indices = findQueueFamilies(m_physical, surface);
+
+				// Query for raytracing properties
+				m_rtxProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+				VkPhysicalDeviceProperties2 properties{};
+				properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+				properties.pNext = &m_rtxProperties;
+				vkGetPhysicalDeviceProperties2(m_physical, &properties);
+
+				return;
+			}
+		}
+
+		// No GPU with RTX support found
+		APP_LOG_ERROR("Requested RTX but it is not supported. Disabling RTX");
+		m_enabledRaytracing = false;
+		m_deviceExtensions.clear();
+		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	}
 
 	// Check for a GPU that has supported features
 	for (const auto& device : devices)
@@ -159,10 +167,9 @@ void Device::pickPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface)
 		throw;
 	}
 
-	APP_LOG_INFO("Physical device was found");
-
-	// Set indices
 	m_indices = findQueueFamilies(m_physical, surface);
+
+	APP_LOG_INFO("Physical device was found");
 }
 
 void Device::createLogicalDevice()
@@ -187,11 +194,37 @@ void Device::createLogicalDevice()
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
-	// Device features
+	// Buffer addresses
 	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceFeatures{};
-	bufferDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	bufferDeviceFeatures.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
 	bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
 
+	// Acceleration structure
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelFeatures{};
+	accelFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
+	// Rtx Pipeline
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtxPipelineFeatures{};
+	rtxPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+
+	// Shader clock
+	VkPhysicalDeviceShaderClockFeaturesKHR shaderClockFeatures{};
+	shaderClockFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
+
+	if (m_enabledRaytracing)
+	{
+		accelFeatures.accelerationStructure     = VK_TRUE;
+		rtxPipelineFeatures.rayTracingPipeline  = VK_TRUE;
+		shaderClockFeatures.shaderDeviceClock   = VK_TRUE;
+		shaderClockFeatures.shaderSubgroupClock = VK_TRUE;
+
+		bufferDeviceFeatures.pNext = &accelFeatures;
+		accelFeatures.pNext        = &rtxPipelineFeatures;
+		rtxPipelineFeatures.pNext  = &shaderClockFeatures;
+	}
+
+
+	// Device features
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext                      = &bufferDeviceFeatures;
@@ -217,6 +250,7 @@ void Device::createLogicalDevice()
 	// Store queues
 	vkGetDeviceQueue(m_logical, m_indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_logical, m_indices.presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_logical, m_indices.computeFamily.value(), 0, &m_computeQueue);
 
 	APP_LOG_INFO("Logical device initialization successful");
 }
@@ -255,16 +289,20 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device, VkSurfaceK
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-	// Find queue families for graphics and present
+	// Find queue families
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies)
 	{
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		// Graphics and compute
+		if ((queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
+		{
 			indices.graphicsFamily = i;
+			indices.computeFamily  = i;
+		}
 
+		// Present
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
 		if (presentSupport)
 			indices.presentFamily = i;
 

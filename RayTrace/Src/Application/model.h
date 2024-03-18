@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "logging.h"
+#include "Gui.h"
 
 #include "Core/device.h"
 #include "Core/buffer.h"
@@ -26,12 +27,26 @@ struct Material
 
 	glm::vec3 emission      = { 0.0f, 0.0f, 0.0f };
 	int32_t   textureID     = -1;
+
+	float roughness        = 1.0f;
+	float metallic         = 0.0f;
 };
 
-struct MaterialDescription
+struct ObjectDescription
 {
+	uint64_t vertexAddress;
+	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+};
+
+struct ModelInfo
+{
+	uint32_t id;
+	uint32_t vertexCount;
+	uint32_t indexCount;
+	uint64_t vertexAddress;
+	uint64_t indexAddress;
 };
 
 class Model
@@ -71,10 +86,9 @@ public:
 		  m_device             (info.device),
 	      m_index              (info.modelIndex){}
 
-	Model::Instance createInstance();
-
 	Buffer& getVertexBuffer() { return m_vertexBuffer; }
 	Buffer& getIndexBuffer() { return m_indexBuffer; }
+	uint32_t getIndex() const { return m_index; }
 
 	void cleanup();
 
@@ -89,16 +103,24 @@ private:
 	uint32_t m_index = 0;
 };
 
-class ModelLoader
+class SceneBuilder
 {
 public:
-	ModelLoader() = default;
-	ModelLoader(const Device& device, const CommandSystem& commandSystem)
-		: m_device(&device), m_commandSystem(&commandSystem) {}
+	SceneBuilder() = default;
+	SceneBuilder(const Device& device, const CommandSystem& commandSystem, Gui& gui)
+		: m_device(&device), m_commandSystem(&commandSystem), m_gui(&gui) {}
 
 	Model loadModel(const std::string& filename);
+	Model::Instance createInstance(const Model& model, glm::mat4 transform);
 
-	std::vector<MaterialDescription>& getMaterialDescriptions() { return m_materialDescriptions; }
+	void setLightPosition(glm::vec3 pos) { m_gui->setInitialLightPosition(pos); }
+	void setBackgroundColor(glm::vec3 color) { m_gui->setInitialBackground(color); }
+	
+	void addUICheckBox(const std::string& name, bool* button) { m_gui->addCustomCheckBox(name, button); }
+
+	const std::vector<ModelInfo>& getModelInformation() const { return m_modelInfos; }
+	const std::vector<ObjectDescription>& getObjectDescriptions() const { return m_objectDescriptions; }
+	const std::vector<Model::Instance>& getInstances() const { return m_instances; }
 
 private:
 	// Object loader
@@ -113,10 +135,13 @@ private:
 		void loadObj(const std::string& filename);
 	};
 
-	std::vector<MaterialDescription> m_materialDescriptions;
+	std::vector<ModelInfo>         m_modelInfos;
+	std::vector<ObjectDescription> m_objectDescriptions;
+	std::vector<Model::Instance>   m_instances;
 
 	uint32_t m_modelCount = 0;
 
 	const Device*        m_device        = nullptr;
 	const CommandSystem* m_commandSystem = nullptr;
+	Gui*                 m_gui           = nullptr;
 };

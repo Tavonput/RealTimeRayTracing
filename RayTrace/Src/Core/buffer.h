@@ -6,11 +6,14 @@
 
 enum class BufferType
 {
-	NONE    = 0,
-	VERTEX  = 1,
-	INDEX   = 2,
-	UNIFORM = 3,
-	STORAGE = 4
+	NONE = 0,
+	VERTEX,
+	INDEX,
+	UNIFORM,
+	STORAGE,
+	SCRATCH,
+	ACCEL,
+	SBT
 };
 
 class Buffer
@@ -24,6 +27,7 @@ public:
 		const Device*        device        = nullptr;
 		const CommandSystem* commandSystem = nullptr;
 		const char*          name          = "";
+		VkBufferUsageFlags   flags         = 0;
 	};
 
 	Buffer() {}
@@ -32,6 +36,13 @@ public:
 	static Buffer CreateIndexBuffer(CreateInfo& info);
 	static Buffer CreateUniformBuffer(CreateInfo& info);
 	static Buffer CreateStorageBuffer(CreateInfo& info);
+	static Buffer CreateScratchBuffer(CreateInfo& info);
+	static Buffer CreateAccelerationStructureBuffer(CreateInfo& info);
+	static Buffer CreateAccelerationStructureInstanceBuffer(CreateInfo& info);
+	static Buffer CreateShaderBindingTableBuffer(CreateInfo& info);
+
+	void map();
+	void unmap();
 
 	const VkBuffer& getBuffer() const { return m_buffer; }
 	const uint32_t getCount() const { return m_count; }
@@ -96,6 +107,4 @@ private:
 		m_count (count),
 		m_name  (name)
 	{}
-
-	void mapMemory();
 };

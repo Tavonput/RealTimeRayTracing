@@ -201,7 +201,8 @@ void Swapchain::setupSwapchain()
 	VkExtent2D scExtent = chooseSwapExtent(swapChainSupport.capabilities, *m_window);
 
 	// Get the image count
-	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	m_minImage = swapChainSupport.capabilities.minImageCount;
+	uint32_t imageCount = m_minImage + 1;
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 

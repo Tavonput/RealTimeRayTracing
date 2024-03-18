@@ -2,16 +2,17 @@
 
 #include "pipeline.h"
 
-// --------------------------------------------------------------------------
-// Builder
-//
-
+/*****************************************************************************************************************
+ *
+ * Pipeline Builder
+ *
+ */
 Pipeline::Builder::Builder(const Device& device)
 {
 	m_device = &device;
 }
 
-Pipeline Pipeline::Builder::buildPipeline(Pipeline::PipelineType type, const std::string name)
+Pipeline Pipeline::Builder::buildGraphicsPipeline(Pipeline::PipelineType type, const std::string name)
 {
 	APP_LOG_INFO("Building pipeline ({})", name);
 
@@ -46,6 +47,30 @@ Pipeline Pipeline::Builder::buildPipeline(Pipeline::PipelineType type, const std
 	// Build pipeline
 	VkPipeline pipeline;
 	if (vkCreateGraphicsPipelines(m_device->getLogical(), VK_NULL_HANDLE, 1, &m_pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+	{
+		APP_LOG_CRITICAL("Failed to create pipeline ({})", name);
+		throw;
+	}
+
+	return Pipeline(pipeline, layout, name);
+}
+
+Pipeline Pipeline::Builder::buildRtxPipeline(const std::string name)
+{
+	APP_LOG_INFO("Building pipeline ({})", name);
+
+	// Build layout
+	VkPipelineLayout layout;
+	if (vkCreatePipelineLayout(m_device->getLogical(), &m_pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS)
+	{
+		APP_LOG_CRITICAL("Failed to create pipeline layout ({})", name);
+		throw;
+	}
+	m_rtxPipelineInfo.layout = layout;
+
+	// Build pipeline
+	VkPipeline pipeline;
+	if (vkCreateRayTracingPipelinesKHR(m_device->getLogical(), {}, {}, 1, &m_rtxPipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 	{
 		APP_LOG_CRITICAL("Failed to create pipeline ({})", name);
 		throw;
@@ -150,21 +175,36 @@ void Pipeline::Builder::addGraphicsBase()
 	m_pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
 }
 
+void Pipeline::Builder::addRtxBase()
+{
+	m_pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	m_rtxPipelineInfo.sType    = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR props = m_device->getRtxProperties();
+	m_rtxPipelineInfo.maxPipelineRayRecursionDepth = 2;
+	
+	if (props.maxRayRecursionDepth <= 1)
+	{
+		APP_LOG_CRITICAL("GPU does not support ray recursion");
+		throw std::exception();
+	}
+}
+
 void Pipeline::Builder::linkRenderPass(RenderPass& pass)
 {
 	m_pipelineInfo.renderPass = pass.renderPass;
 }
 
-void Pipeline::Builder::linkShaders(RasterShaderSet& shaders)
+void Pipeline::Builder::linkShaders(ShaderSet& shaders)
 {
 	m_pipelineInfo.stageCount = 2;
 	m_pipelineInfo.pStages    = shaders.getStages();
 }
 
-void Pipeline::Builder::linkDescriptorSetLayout(DescriptorSetLayout& layout)
+void Pipeline::Builder::linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts, uint32_t count)
 {
-	m_pipelineLayoutInfo.setLayoutCount = 1;
-	m_pipelineLayoutInfo.pSetLayouts    = &layout.layout;
+	m_pipelineLayoutInfo.setLayoutCount = count;
+	m_pipelineLayoutInfo.pSetLayouts    = layouts;
 }
 
 void Pipeline::Builder::linkPushConstants(uint32_t size)
@@ -184,10 +224,30 @@ void Pipeline::Builder::enableMultisampling(VkSampleCountFlagBits sampleCount)
 	m_multisampling.rasterizationSamples = sampleCount;
 }
 
-// --------------------------------------------------------------------------
-// Pipeline
-//
+void Pipeline::Builder::linkRtxPushConstants(uint32_t size)
+{
+	m_pushConstantRange.offset     = 0;
+	m_pushConstantRange.size       = size;
+	m_pushConstantRange.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
 
+	m_pipelineLayoutInfo.pPushConstantRanges    = &m_pushConstantRange;
+	m_pipelineLayoutInfo.pushConstantRangeCount = 1;
+}
+
+void Pipeline::Builder::linkRtxShaders(ShaderSet& shaders)
+{
+	m_rtxPipelineInfo.stageCount = shaders.getStageCount();
+	m_rtxPipelineInfo.pStages    = shaders.getStages();
+
+	m_rtxPipelineInfo.groupCount = shaders.getGroupCount();
+	m_rtxPipelineInfo.pGroups    = shaders.getShaderGroup();
+}
+
+/*****************************************************************************************************************
+ *
+ * Pipeline
+ *
+ */
 void Pipeline::cleanup(const Device& device)
 {
 	APP_LOG_INFO("Destroying pipeline ({})", m_name);

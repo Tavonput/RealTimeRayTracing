@@ -8,11 +8,6 @@
 // Model
 //
 
-Model::Instance Model::createInstance()
-{
-	return Model::Instance(glm::mat4(1.0f), m_index);
-}
-
 void Model::cleanup()
 {
 	APP_LOG_INFO("Destroying model ({})", m_index);
@@ -27,10 +22,8 @@ void Model::cleanup()
 // Object Loader
 //
 
-void ModelLoader::ObjLoader::loadObj(const std::string& filename)
+void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 {
-	APP_LOG_INFO("Loading model: {}", filename);
-
 	tinyobj::ObjReader reader;
 
 	// Load model
@@ -54,15 +47,17 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 	for (const auto& material : materialsTOL)
 	{
 		Material mat;
-		mat.ambient = glm::vec3(material.ambient[0], material.ambient[1], material.ambient[2]);
-		mat.diffuse = glm::vec3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
-		mat.specular = glm::vec3(material.specular[0], material.specular[1], material.specular[2]);
-		mat.emission = glm::vec3(material.emission[0], material.emission[1], material.emission[2]);
+		mat.ambient       = glm::vec3(material.ambient[0], material.ambient[1], material.ambient[2]);
+		mat.diffuse       = glm::vec3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+		mat.specular      = glm::vec3(material.specular[0], material.specular[1], material.specular[2]);
+		mat.emission      = glm::vec3(material.emission[0], material.emission[1], material.emission[2]);
 		mat.transmittance = glm::vec3(material.transmittance[0], material.transmittance[1], material.transmittance[2]);
-		mat.dissolve = material.dissolve;
-		mat.ior = material.ior;
-		mat.shininess = material.shininess;
-		mat.illum = material.illum;
+		mat.dissolve      = material.dissolve;
+		mat.ior           = material.ior;
+		mat.shininess     = material.shininess;
+		mat.illum         = material.illum;
+		mat.roughness     = material.roughness;
+		mat.metallic      = material.metallic;
 
 		// Diffuse texture
 		if (!material.diffuse_texname.empty())
@@ -81,6 +76,9 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 	// Loop over all shapes
 	for (const auto& shape : shapes)
 	{
+		vertices.reserve(shape.mesh.indices.size() + vertices.size());
+		indices.reserve(shape.mesh.indices.size() + indices.size());
+
 		// Material indices
 		matIndex.insert(matIndex.end(), shape.mesh.material_ids.begin(), shape.mesh.material_ids.end());
 
@@ -128,6 +126,22 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 			index = 0;
 	}
 
+	// Compute normal when no normal were provided
+	if (attrib.normals.empty())
+	{
+		for (uint32_t i = 0; i < indices.size(); i += 3)
+		{
+			Vertex& v0 = vertices[indices[i + 0]];
+			Vertex& v1 = vertices[indices[i + 1]];
+			Vertex& v2 = vertices[indices[i + 2]];
+
+			glm::vec3 n = glm::normalize(glm::cross((v1.pos - v0.pos), (v2.pos - v0.pos)));
+			v0.normal = n;
+			v1.normal = n;
+			v2.normal = n;
+		}
+	}
+
 	APP_LOG_TRACE("Number of materials: {}", materialsTOL.size());
 	APP_LOG_TRACE("Number of shapes: {}", shapes.size());
 	APP_LOG_TRACE("Number of vertices: {}", attrib.vertices.size());
@@ -136,11 +150,13 @@ void ModelLoader::ObjLoader::loadObj(const std::string& filename)
 }
 
 // --------------------------------------------------------------------------
-// Model Loader
+// Scene Builder
 //
 
-Model ModelLoader::loadModel(const std::string& filename)
+Model SceneBuilder::loadModel(const std::string& filename)
 {
+	APP_LOG_INFO("Loading model {}", filename);
+
 	// Load model
 	ObjLoader loader;
 	loader.loadObj(filename);
@@ -164,6 +180,9 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.device        = m_device;
 	createInfo.commandSystem = m_commandSystem;
 
+	if (m_device->isRtxSupported())
+		createInfo.flags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
 	// Create vertex buffer
 	char vertexName[128];
 	sprintf(vertexName, "Vertex Buffer Model %d", m_modelCount);
@@ -181,7 +200,7 @@ Model ModelLoader::loadModel(const std::string& filename)
 	createInfo.name       = indexName;
 	createInfo.data       = loader.indices.data();
 	createInfo.dataSize   = sizeof(uint32_t) * numIndices;
-	createInfo.dataCount  = numIndices;
+	createInfo.dataCount  = numIndices;;
 	modelInfo.indexBuffer = Buffer::CreateIndexBuffer(createInfo);
 
 	// Create material buffer
@@ -198,19 +217,34 @@ Model ModelLoader::loadModel(const std::string& filename)
 	char materialIndexName[128];
 	sprintf(materialIndexName, "Material Index Storage Buffer Model %d", m_modelCount);
 
-	createInfo.name                = materialIndexName;
+	createInfo.name               = materialIndexName;
 	createInfo.data               = loader.matIndex.data();
 	createInfo.dataSize           = sizeof(int32_t) * loader.matIndex.size();
 	createInfo.dataCount          = static_cast<uint32_t>(loader.matIndex.size());
 	modelInfo.materialIndexBuffer = Buffer::CreateStorageBuffer(createInfo);
 
-	// Store material buffer addresses
-	MaterialDescription desc;
+	// Store buffer addresses
+	ObjectDescription desc;
+	desc.vertexAddress        = modelInfo.vertexBuffer.getDeviceAddress();
+	desc.indexAddress         = modelInfo.indexBuffer.getDeviceAddress();
 	desc.materialAddress      = modelInfo.materialBuffer.getDeviceAddress();
 	desc.materialIndexAddress = modelInfo.materialIndexBuffer.getDeviceAddress();
-	m_materialDescriptions.emplace_back(desc);
+	m_objectDescriptions.emplace_back(desc);
 
+	// Store model info
+	m_modelInfos.emplace_back(m_modelCount, numVertices, numIndices, desc.vertexAddress, desc.indexAddress);
 	m_modelCount++;
 
 	return Model(modelInfo);
+}
+
+Model::Instance SceneBuilder::createInstance(const Model& model, glm::mat4 transform)
+{
+	Model::Instance instance;
+	instance.transform = transform;
+	instance.objectID  = model.getIndex();
+
+	m_instances.emplace_back(instance);
+
+	return instance;
 }

@@ -6,7 +6,14 @@
 #include "rendering_structures.h"
 #include "render_pass.h"
 #include "descriptor.h"
+#include "buffer.h"
 
+/*****************************************************************************************************************
+ * 
+ * @class Pipeline
+ * 
+ *
+ */
 class Pipeline 
 {
 public:
@@ -14,8 +21,10 @@ public:
 	enum PipelineType
 	{
 		LIGHTING = 0,
-		FLAT = 1,
-		POST = 2
+		FLAT,
+		POST,
+		RTX_RT,
+		RTX_PATH
 	};
 
 	// Builder Class
@@ -24,15 +33,20 @@ public:
 	public:
 		Builder(const Device& device);
 
-		Pipeline buildPipeline(Pipeline::PipelineType type, const std::string name);
+		Pipeline buildGraphicsPipeline(Pipeline::PipelineType type, const std::string name);
+		Pipeline buildRtxPipeline(const std::string name);
 		void reset();
 
 		void addGraphicsBase();
+		void addRtxBase();
 
 		void linkRenderPass(RenderPass& pass);
-		void linkShaders(RasterShaderSet& shaders);
-		void linkDescriptorSetLayout(DescriptorSetLayout& layout);
+		void linkShaders(ShaderSet& shaders);
+		void linkDescriptorSetLayouts(VkDescriptorSetLayout* layouts, uint32_t count);
 		void linkPushConstants(uint32_t size);
+
+		void linkRtxPushConstants(uint32_t size);
+		void linkRtxShaders(ShaderSet& shaders);
 
 		void enableMultisampling(VkSampleCountFlagBits sampleCount);
 		void disableFaceCulling() { m_rasterizer.cullMode = VK_CULL_MODE_NONE; }
@@ -57,6 +71,8 @@ public:
 
 		VkPipelineLayoutCreateInfo   m_pipelineLayoutInfo{};
 		VkGraphicsPipelineCreateInfo m_pipelineInfo{};
+
+		VkRayTracingPipelineCreateInfoKHR m_rtxPipelineInfo{};
 	};
 
 	// Pipeline Class

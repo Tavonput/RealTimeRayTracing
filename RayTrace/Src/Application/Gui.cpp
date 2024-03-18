@@ -2,12 +2,11 @@
 
 #include "Gui.h"
 
-
-
-
-void Gui::init(ImGui_ImplVulkan_InitInfo init_info, Window& m_window) {
-
+void Gui::init(Gui::CreateInfo info)
+{
 	APP_LOG_INFO("Initializing ImGui");
+
+	m_device = &info.pSystemContext->getDevice();
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -15,36 +14,106 @@ void Gui::init(ImGui_ImplVulkan_InitInfo init_info, Window& m_window) {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows ***Causes memory crash. Needs further configuration
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows ***Causes memory crash. Needs further configuration
 	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForVulkan(m_window.getWindowGLFW(), true);
-	ImGui_ImplVulkan_Init(&init_info);
+	ImGui_ImplGlfw_InitForVulkan(info.pWindow->getWindowGLFW(), true);
 
+	// Setup descriptor pool
+	DescriptorPool::CreateInfo descriptorPoolInfo{};
+	descriptorPoolInfo.pDevice                   = m_device;
+	descriptorPoolInfo.flags                     = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	descriptorPoolInfo.name                      = "GUI Descriptor Pool";
+	descriptorPoolInfo.maxSets                   = 1;
+	descriptorPoolInfo.poolSize                  = 1;
+	descriptorPoolInfo.combinedImageSamplerCount = 1;
+	m_descriptorPool.init(descriptorPoolInfo);
+
+	// Setup ImGui Vulkan implementation
+	ImGui_ImplVulkan_InitInfo initInfo{};
+	initInfo.Instance       = info.pSystemContext->getInstance();
+	initInfo.PhysicalDevice = m_device->getPhysical();
+	initInfo.Device         = m_device->getLogical();
+	initInfo.QueueFamily    = m_device->getIndices().graphicsFamily.value();
+	initInfo.Queue          = m_device->getGraphicsQueue();
+	initInfo.DescriptorPool = m_descriptorPool.getPool();
+	initInfo.RenderPass     = info.pRenderPass->renderPass;
+	initInfo.ImageCount     = info.imageCount;
+	initInfo.MinImageCount  = info.minImageCount;
+	initInfo.MSAASamples    = info.msaaSamples;
+	ImGui_ImplVulkan_Init(&initInfo);
 }
 
 void Gui::beginUI()
 {
-	bool showDemoWindow = true;
+	// Start a new frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow(&showDemoWindow);
-	return;
+
+	m_state.changed = false;
+
+	// bool showDemoWindow = true;
+	// ImGui::ShowDemoWindow(&showDemoWindow);
+
+	{
+		ImGui::Begin("Settings");
+
+		// Scene settings
+		if (ImGui::CollapsingHeader("Scene"))
+		{
+			m_state.changed |= ImGui::ColorEdit3("Background", m_state.backgroundColor);
+			m_state.changed |= ImGui::SliderFloat("Exposure", &m_state.exposure, 0.1f, 5.0f);
+		}
+
+		// Lighting settings
+		if (ImGui::CollapsingHeader("Lighting"))
+		{
+			m_state.changed |= ImGui::ColorEdit3("Light Color", m_state.lightColor);
+			m_state.changed |= ImGui::DragFloat3("Light Position", m_state.lightPosition, 0.01f);
+			m_state.changed |= ImGui::SliderFloat("Light Intensity", &m_state.lightIntensity, 0.0f, 20.0f);
+		}
+
+		// RTX Settings
+		if (m_device->isRtxSupported())
+			renderRtxUI();
+
+		// Custom check boxes defined by the user
+		if (ImGui::CollapsingHeader("Custom Check Boxes"))
+		{
+			for (CheckBox& box : m_customCheckBoxes)
+				m_state.changed |= ImGui::Checkbox(box.name.c_str(), box.button);
+		}
+
+		// Framerate
+		ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		ImGui::End();
+	}
 }
 
-void Gui::renderUI(VkCommandBuffer m_commandBuffer)
+void Gui::renderUI(VkCommandBuffer commandBuffer)
 {
 	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer); //Third argument can be NULL.
-
-	return;
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer); //Third argument can be NULL.
 }
 
 void Gui::changeRenderMethod()
 {
 }
 
+void Gui::setInitialLightPosition(glm::vec3 pos)
+{
+	m_state.lightPosition[0] = pos.x;
+	m_state.lightPosition[1] = pos.y;
+	m_state.lightPosition[2] = pos.z;
+}
 
+void Gui::setInitialBackground(glm::vec3 color)
+{
+	m_state.backgroundColor[0] = color.x;
+	m_state.backgroundColor[1] = color.y;
+	m_state.backgroundColor[2] = color.z;
+}
 
 void Gui::cleanup() 
 {
@@ -53,5 +122,39 @@ void Gui::cleanup()
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+
+	m_descriptorPool.cleanup();
 }
 
+void Gui::renderRtxUI()
+{
+	if (ImGui::CollapsingHeader("RTX"))
+	{
+		const char* methods[3] = { "Raster", "RTX Real Time", "RTX Path" };
+		m_state.changed |= ImGui::Combo("Render Method", (int*)&m_state.renderMethod, methods, 3);
+
+		m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 100);
+		m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
+
+		if (ImGui::TreeNode("Real Time"))
+		{
+			m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+			ImGui::SetItemTooltip("Number of accumulation frames for TAA");
+
+			ImGui::TreePop();
+			ImGui::Spacing();
+		}
+
+		if (ImGui::TreeNode("Path Tracer"))
+		{
+			m_state.changed |= ImGui::SliderFloat("Russian Roulette", &m_state.russianRoulette, 0.0f, 1.0f);
+			ImGui::SetItemTooltip("Minimum Russian Roulette survival rate");
+
+			m_state.changed |= ImGui::SliderInt("Max Path Frame Count", &m_state.maxPathFrame, 0, 100);
+			ImGui::SetItemTooltip("Number of accumulation frames to compute for path tracing. Set to 0 for infinite");
+
+			ImGui::TreePop();
+			ImGui::Spacing();
+		}
+	}
+}

@@ -37,8 +37,9 @@ public:
 	void init(Camera::CreateInfo& info);
 
 	// Getters
-	const glm::mat4 getViewProjection() const { return m_projection * m_view; }
-	const glm::vec3 getPosition() const { return m_eye; }
+	const glm::mat4& getView() const { return m_view; }
+	const glm::mat4& getProjection() const { return m_projection; }
+	const glm::vec3& getPosition() const { return m_eye; }
 	const float getFov() const { return m_fov; }
 
 	void updatePosition();

@@ -37,6 +37,7 @@ public:
 	VkFormat getFormat();
 	VkFormat getDepthFormat();
 	VkExtent2D getExtent();
+	uint32_t getMinImageCount() const { return m_minImage; }
 	VkSampleCountFlagBits getMSAASampleCount();
 	const uint32_t getImageCount() const { return static_cast<uint32_t>(m_images.size()); }
 	const Image& getImage(uint32_t index) { return m_images[index]; }
@@ -53,6 +54,7 @@ private:
 
 	VkFormat   m_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_extent = { 0, 0 };
+	uint32_t   m_minImage = 0;
 
 	// Depth buffer
 	DepthBuffer m_depthBuffer;

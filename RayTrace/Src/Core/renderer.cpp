@@ -7,14 +7,14 @@
 
 void Renderer::beginFrame()
 {
-	m_gui->beginUI();
+	updateUI();
 
 	// Acquire image from swapchain
 	m_imageIndex = m_swapchain->acquireImage(m_frameIndex);
 
 	// Compute delta time
 	float currentFrameTime = static_cast<float>(glfwGetTime());
-	deltaTime = currentFrameTime - m_lastFrameTime;
+	deltaTime       = currentFrameTime - m_lastFrameTime;
 	m_lastFrameTime = currentFrameTime;
 
 	// Reset and begin command buffer
@@ -30,28 +30,19 @@ void Renderer::beginFrame()
 		throw;
 	}
 
-	// Update dynamic states
+	// Get window size
 	VkExtent2D extent = m_swapchain->getExtent();
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)extent.width;
-	viewport.height = (float)extent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = extent;
-	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
-
-	aspectRatio = extent.width / (float)extent.height;
+	m_windowWidth     = extent.width;
+	m_windowHeight    = extent.height;
+	aspectRatio       = (float)extent.width / (float)extent.height;
 
 	// Update uniform buffers
-	ubo.viewProjection = m_camera->getViewProjection();
-	ubo.viewPosition   = m_camera->getPosition();
+	const glm::mat4& view = m_camera->getView();
+	const glm::mat4& proj = m_camera->getProjection();
+	ubo.viewProjection    = proj * view;
+	ubo.viewInverse       = glm::inverse(view);
+	ubo.projInverse       = glm::inverse(proj);
+	ubo.viewPosition      = m_camera->getPosition();
 
 	Buffer::Update(BufferType::UNIFORM, m_uniformBuffers[m_frameIndex], &ubo);
 }
@@ -77,6 +68,8 @@ void Renderer::beginRenderPass(RenderPass::PassType pass)
 	beginInfo.renderArea.extent = m_swapchain->getExtent();
 	beginInfo.renderPass        = m_renderPasses[pass].renderPass;
 	beginInfo.clearValueCount   = static_cast<uint32_t>(m_renderPasses[pass].clearValues.size());
+
+	m_renderPasses[pass].clearValues[0].color = { m_ui.backgroundColor[0], m_ui.backgroundColor[1] , m_ui.backgroundColor[2], 1.0f };
 	beginInfo.pClearValues      = m_renderPasses[pass].clearValues.data();
 
 	switch (pass)
@@ -118,39 +111,111 @@ void Renderer::bindIndexBuffer(Buffer& indexBuffer)
 	m_indexBuffer = indexBuffer;
 }
 
-void Renderer::bindDescriptorSets()
+void Renderer::bindDescriptorSets(Pipeline::PipelineType type)
 {
-	if (m_pipelineIndex == Pipeline::POST)
+	switch (type)
 	{
-		vkCmdBindDescriptorSets(
-			m_commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			m_pipelines[m_pipelineIndex].layout,
-			0, 1,
-			&m_postDescriptorSets[m_frameIndex].getSet(),
-			0, nullptr);
-	}
-	else
-	{
-		vkCmdBindDescriptorSets(
-			m_commandBuffer, 
-			VK_PIPELINE_BIND_POINT_GRAPHICS, 
-			m_pipelines[m_pipelineIndex].layout, 
-			0, 1, 
-			&m_offscreenDescriptorSets[m_frameIndex].getSet(), 
-			0, nullptr);
+		case Pipeline::POST:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_postDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
+
+		case Pipeline::LIGHTING:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_offscreenDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
+
+		case Pipeline::FLAT:
+			vkCmdBindDescriptorSets(
+				m_commandBuffer,
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_pipelines[type].layout,
+				0, 1,
+				&m_offscreenDescriptorSets[m_frameIndex].getSet(),
+				0, nullptr);
+			break;
 	}
 }
 
-void Renderer::bindPushConstants()
+void Renderer::bindPushConstants(Pipeline::PipelineType type)
+{
+	switch (type)
+	{
+		case Pipeline::POST:
+			vkCmdPushConstants(
+				m_commandBuffer,
+				m_pipelines[m_pipelineIndex].layout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				0,
+				sizeof(PostPushConstants),
+				&postPushConstants);
+			break;
+
+		case Pipeline::LIGHTING:
+			vkCmdPushConstants(
+				m_commandBuffer,
+				m_pipelines[m_pipelineIndex].layout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				0,
+				sizeof(MeshPushConstants),
+				&pushConstants);
+			break;
+
+		case Pipeline::FLAT:
+			vkCmdPushConstants(
+				m_commandBuffer,
+				m_pipelines[m_pipelineIndex].layout,
+				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+				0,
+				sizeof(MeshPushConstants),
+				&pushConstants);
+			break;
+	}
+}
+
+void Renderer::bindRtxPipeline()
+{
+	switch (m_ui.renderMethod)
+	{
+		case Gui::RenderMethod::RTX_RT:   m_pipelineIndex = Pipeline::RTX_RT;   break;
+		case Gui::RenderMethod::RTX_PATH: m_pipelineIndex = Pipeline::RTX_PATH; break;
+	}
+
+	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_pipelines[m_pipelineIndex].pipeline);
+}
+
+void Renderer::bindRtxDescriptorSets()
+{
+	std::vector<VkDescriptorSet> rtxSets = { m_rtxDescriptorSets->getSet(), m_offscreenDescriptorSets[m_frameIndex].getSet() };
+	vkCmdBindDescriptorSets(
+		m_commandBuffer,
+		VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+		m_pipelines[m_pipelineIndex].layout,
+		0,
+		(uint32_t)rtxSets.size(),
+		rtxSets.data(),
+		0, nullptr);
+}
+
+void Renderer::bindRtxPushConstants()
 {
 	vkCmdPushConstants(
-		m_commandBuffer, 
-		m_pipelines[m_pipelineIndex].layout, 
-		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
-		0, 
-		sizeof(MeshPushConstants), 
-		&pushConstants);
+		m_commandBuffer,
+		m_pipelines[m_pipelineIndex].layout,
+		VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR,
+		0,
+		sizeof(RtxPushConstants),
+		&rtxPushConstants);
 }
 
 void Renderer::drawVertex()
@@ -164,10 +229,113 @@ void Renderer::drawVertex()
 void Renderer::drawIndexed()
 {
 	vkCmdDrawIndexed(m_commandBuffer, m_indexBuffer.getCount(), 1, 0, 0, 0);
-
 }
 
 void Renderer::drawUI()
 {
+	if (!m_showUI)
+		return;
+
 	m_gui->renderUI(m_commandBuffer);
+}
+
+void Renderer::traceRays()
+{
+	// Update TAA frame
+	updateRtxFrame();
+
+	// Stop if max TAA Frame has been reached
+	if (m_pipelineIndex == Pipeline::RTX_RT && rtxPushConstants.frame >= m_ui.TAAFrameCount)
+		return;
+
+	// Stop if max path tracing frame count has been reached
+	if (m_pipelineIndex == Pipeline::RTX_PATH && m_ui.maxPathFrame > 0 && rtxPushConstants.frame >= m_ui.maxPathFrame)
+		return;
+
+	// Ray trace
+	ShaderBindingTable* sbt = nullptr;
+	switch (m_pipelineIndex)
+	{
+		case Pipeline::RTX_RT:   sbt = m_rtSBT;   break;
+		case Pipeline::RTX_PATH: sbt = m_pathSBT; break;
+	}
+	auto& regions = sbt->getRegions();
+
+	vkCmdTraceRaysKHR(
+		m_commandBuffer,
+		&regions[ShaderBindingTable::RGEN],
+		&regions[ShaderBindingTable::MISS],
+		&regions[ShaderBindingTable::HIT],
+		&regions[ShaderBindingTable::CALL],
+		m_windowWidth, m_windowHeight, 1);
+}
+
+void Renderer::setDynamicStates()
+{
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)m_windowWidth;
+	viewport.height = (float)m_windowHeight;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = { m_windowWidth, m_windowHeight };
+	vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+}
+
+void Renderer::onKeyPress(KeyPressEvent event)
+{
+	if (event.key == GLFW_KEY_U)
+		m_showUI = !m_showUI;
+}
+
+void Renderer::updateUI()
+{
+	if (!m_showUI)
+		return;
+
+	// Update UI state
+	m_ui = m_gui->getUIState();
+
+	// RTX
+	m_useRtx                         = (m_ui.renderMethod != Gui::RenderMethod::RASTER);
+	rtxPushConstants.maxDepth        = m_ui.maxDepth;
+	rtxPushConstants.sampleCount     = m_ui.sampleCount;
+	rtxPushConstants.clearColor      = { m_ui.backgroundColor[0], m_ui.backgroundColor[1], m_ui.backgroundColor[2], 1.0f };
+	rtxPushConstants.russianRoulette = m_ui.russianRoulette;
+	if (m_ui.changed)
+		resetRtxFrame();
+
+	// Light
+	ubo.lightColor     = { m_ui.lightColor[0], m_ui.lightColor[1], m_ui.lightColor[2] };
+	ubo.lightPosition  = { m_ui.lightPosition[0], m_ui.lightPosition[1], m_ui.lightPosition[2] };
+	ubo.lightIntensity = m_ui.lightIntensity;
+
+	// Scene
+	postPushConstants.exposure = m_ui.exposure;
+
+	// Start UI
+	m_gui->beginUI();
+}
+
+void Renderer::updateRtxFrame()
+{
+	const glm::mat4& newView = m_camera->getView();
+
+	if (m_currentCameraView != newView)
+	{
+		resetRtxFrame();
+		m_currentCameraView = newView;
+	}
+
+	rtxPushConstants.frame++;
+}
+
+void Renderer::resetRtxFrame()
+{
+	rtxPushConstants.frame = -1;
 }
