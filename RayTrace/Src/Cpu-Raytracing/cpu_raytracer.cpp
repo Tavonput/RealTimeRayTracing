@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "cpu_raytracer.h"
-
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <GLFW/glfw3.h>
 #include "stb_image_usage.h"
 
 
@@ -35,7 +37,9 @@ void CpuRaytracer::init(uint32_t width, uint32_t height)
 	const int total = calculateSpace(width, height);
 	char* imageData = new char[total];
 	int pos = 0;
+	APP_LOG_INFO("Steps remaining:");
 	for (int xx = 0; xx < height; ++xx) {
+		if(xx%100==0) APP_LOG_INFO(height - xx);
 		for (int yy = 0; yy < width; ++yy) {
 			double red = double(yy) / (width - 1);
 			double green = double(xx) / (height - 1);
@@ -50,13 +54,15 @@ void CpuRaytracer::init(uint32_t width, uint32_t height)
 		}
 	}
 	stbi_write_png("cpuRayTraceObject.png",width, height,3,imageData,width*3);
-	
+	auto viewpointheight = 1.0;
+	auto viewpointwidth = viewpointheight * (double)width / height;
+	free(imageData);
 }
 
 void CpuRaytracer::render()
 {
 	APP_LOG_INFO("Render CPU raytraced scene");
-
+	glm::vec3 inital = {0.0f, 0.0f, 0.0f};
 	// NOTES: 
 	// Consider using stb_image to save the result as a png or something. The function is stbi_write_png()
 	// Consider using glm for linear algebra stuff.
