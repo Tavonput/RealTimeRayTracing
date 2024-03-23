@@ -7,6 +7,7 @@
     
     <!-- Link to external CSS file -->
     <link rel="stylesheet" href="styles.css">
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
    
@@ -16,15 +17,12 @@
             scroll-behavior: smooth;
         }
     </style>
-
+   
 </head>
-    <!-- Website header -->
-    <header>
-        <h1>Real-Time Ray Tracing Application</h1>
-    </header>
-    
+<body>
     <!-- Navigation bar -->
     <nav>
+        <div class="company-name"><a href="#">RAYTRACING</a></div>
         <ul>
             <li><a href="#about">About</a></li> <!-- Link to the About section -->
             <li><a href="#features">Features</a></li> <!-- Link to the Features section -->
@@ -42,16 +40,48 @@
         </ul>
     </nav>
     
+    <div class="backgroundImage">
+        <div class="text-box">
+            <h4>REALTIMERAYTRACING</h4>
+        </div>
+    </div>
+
     <!-- About section -->
     <section id="about">
-        <h2>Our Application</h2>
-        <h>At RayWizards,  we're very passionate about using real-time ray tracing to bring a new level of realism and 
-            depth to digital experiences.</h>
-    </section>
-
+        <div class="row">
+            <!-- Image column -->
+            <div class="column image-column">
+                <img src="image/ex.png"/>
+            </div>
+            <!-- Text column -->
+            <div class="column text-column">
+                <h2>What is RayTracing</h2>
+                <p>At RayWizards, we're very passionate about using real-time ray tracing to bring a new level of realism and 
+                    depth to digital experiences.The image depicts a ray tracing process where a camera directs a ray (view ray) towards an image plane, 
+                    intersecting a scene object, a sphere in this case. At the point of intersection, a shadow ray extends towards a light source to determine 
+                    if the point on the object is illuminated or in shadow. This technique allows for realistic rendering of light and shadow in 3D graphics by 
+                    simulating the physical behavior of light.</p>
+            </div>
+        </div>
+    <!-- About section -->
+    <section id="about">
+        
+        <div class="row">
+            <!-- Text column -->
+            <div class="column text-column">
+                <h2>What is RayTracing</h2>
+                <p>something something</p>
+            </div>
+            <!-- Image column -->
+            <div class="column image-column">
+                <img src="image/ex.png"/>
+            </div>
+            
+        </div>
+ 
     <!-- Features section -->
     <section id="features">
-        <h2>Features</h2>
+        <h1>Features</h1>
         <p>Our image slider feature provides users with an interactive 
             way to visualize the transformative power of our real-time ray tracing technology, 
             enabling a direct comparison between blurry rendering and our ray-traced graphics.</p>
@@ -85,7 +115,7 @@
 
     <!-- Demo section -->
     <section id="demo">
-        <h2>Demo</h2>
+        <h1>Demo</h1>
         <video width="10" height="1080" controls>
             <!-- path for video -->
             <source src="video/present.mp4" type="video/mp4">

@@ -28,5 +28,3 @@ document.getElementById('mode-slider').addEventListener('change', function(e) {
   localStorage.setItem('darkMode', e.target.checked);
 });
 
-
-
