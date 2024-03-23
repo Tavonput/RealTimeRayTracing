@@ -42,8 +42,13 @@ public:
 	const glm::vec3& getPosition() const { return m_eye; }
 	const float getFov() const { return m_fov; }
 
-	void updatePosition();
-
+	void updatePosition(float deltaT);
+	
+	void updateSensitivity(float newSense) { m_sensitivity = newSense; };
+	void updateSpeed(float newSpeed) { m_speed = newSpeed; }
+	void updateMode(int mode);
+	void saveCamera(int cameraSaves);
+	void switchCameras(int currentCamera);
 
 	void setWindowSize(uint32_t width, uint32_t height);
 
@@ -64,10 +69,15 @@ private:
 	glm::mat4 m_view{};
 	glm::mat4 m_projection{};
 
+	std::vector<glm::vec3> m_eyePositions;
+	std::vector<glm::vec3> m_centerPositions;
+
+
 	float m_nearPlane   = 0.01f;
 	float m_farPlane    = 100.0f;
 	float m_fov         = 45.0f;
 	float m_sensitivity = 1.0f;
+	float m_speed       = 3.0f;
 
 	uint32_t m_width  = 0;
 	uint32_t m_height = 0;
@@ -75,8 +85,6 @@ private:
 	CameraMode m_cameraMode = CameraMode::STATIONARY;
 	Window m_window;
 
-	float m_currentFrame = 0;
-	float m_lastFrame = 0;
 
 	// Input state
 	bool m_leftMouse     = false;
@@ -88,6 +96,10 @@ private:
 	bool m_dKey          = false;
 	bool m_lShift        = false;
 	bool m_space         = false;
+	bool m_mousePause    = false;
+
+	int m_cameraSaves = 0;
+	int m_currentIndex = 0;
 
 	glm::vec2 m_mousePos = { 0.0f, 0.0f };
 
@@ -99,4 +111,5 @@ private:
 	void dolly(float deltaX, float deltaY);
 	void resetPosition();
 	void updateDirection(float deltaX, float deltaY);
+	void pauseMouseMove();
 };

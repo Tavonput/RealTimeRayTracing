@@ -13,7 +13,7 @@
 #include "Core/pipeline.h"
 #include "Core/rendering_structures.h"
 
-class PyramidScene : public Scene
+/*class PyramidScene : public Scene
 {
 public:
 	virtual void onLoad(const Device& device, const CommandSystem& commandSystem) override;
@@ -31,4 +31,4 @@ private:
 	glm::vec3 m_cameraPosition = { 1.0f, 1.0f, 4.0f };
 
 	void updateRenderMatrix(float time, float aspectRatio);
-};
+}; */
