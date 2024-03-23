@@ -1,8 +1,41 @@
 /* Reset default margin and padding */
-body, h1, h2, p, ul {
+body, h1, p, ul {
     margin: 0;
     padding: 0;
     text-align: center
+}
+
+h2,p{
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+  font-size: 20px;
+}
+
+.text-box {
+  color: #fff;
+  position: absolute;
+  bottom: 8%; /* Positions the text box at the very bottom */
+  text-align: left; /* Centers the text within the text box */
+}
+
+.text-box h4 {
+  font-size: 100px;
+  margin: 0; 
+  margin-bottom: -10px; 
+  color: transparent;
+  -webkit-text-stroke: 1px #fff;
+  background: url(image/back.png);
+  -webkit-background-clip: text;
+  background-position: 0  0;
+  animation: back 20s linear infinite;
+}
+
+/* create the animation  */
+@keyframes back{
+  100%{
+    background-position: 2000px 0;
+  }
 }
 
 /* Set font family */
@@ -16,25 +49,26 @@ html {
   scroll-padding-top: 60px; /* Adjust the value to match the height of your fixed header */
 }
 
-/* Header styles */
-header {
-    background-color: #333;
-    color: #fff; /* header text color*/
-    padding: 20px;
-    text-align: center;
-}
-
 /* Navigation styles */
 nav {
-    position: sticky;
-    top: 0;
-    z-index: 100; /* Ensures the nav is above other content */
-    background-color: #ffffff; /* This sets the background color to a dark gray */
-    padding: 1px 0; /* This adds some vertical padding for visual spacing */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Soft shadow for depth to seperate the sections. */
-    
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background-color: #ffffff; /* This sets the background color to a dark gray */
+  padding: 3px ;
+  border-bottom: 1px solid #ccc;
+  
 }
 
+.company-name a {
+  text-decoration: none;
+  color: #000000; /* Company name text color */
+  font-weight: bold;
+  transition: color 0.1s ease;
+  font-size: 20px;
+}
 nav ul {
   display: flex;
   justify-content: center;
@@ -44,18 +78,17 @@ nav ul {
   list-style: none;
 }
 
-
 nav ul li {
-    display: inline;
-    margin-right: 20px;
+  margin: 0 20px; /* Adds margin to the left and right of each link for spacing */
 }
 
 nav ul li a {
-    text-decoration: none;
-    color: #000000; /* nav text color */
-    font-weight: bold;
-    transition: color 0.1s ease;
+  text-decoration: none;
+  color: #000000; /* nav text color */
+  font-weight: bold;
+  transition: color 0.1s ease;
 }
+
 
 nav ul li a:hover {
     color: #006eff;
@@ -63,11 +96,9 @@ nav ul li a:hover {
 
 /* Section styles */
 section {
-    padding: 40px; /* Increased padding for more space */
+    padding: 15px; /* Increased padding for more space */
     background-color: #fff; /* White background for content */
-    margin: 10px 0; /* Add some space between sections */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Soft shadow for depth to seperate the sections. */
-    border-radius: 60px; /* Rounded corners for aesthetics */
+    border-top: 1px solid #ccc;
 }
 
 section:nth-of-type(even) {
@@ -189,7 +220,7 @@ body.dark-mode {
 .mode-slider-container {
   position: relative;
   display: inline-block;
-  width: 70px;
+  width: 60px;
   height: 34px;
   margin: 10px;
 }
@@ -260,3 +291,31 @@ body.dark-mode {
   opacity: 0;
 }
 
+.backgroundImage{
+  width:100%;
+  height: 100vh;
+  background-image: url(image/raytracing.png);
+  background-size: cover;
+  background-position: center;
+  border-top: 1px solid #ccc;
+}
+
+.row {
+    width: 100%;
+    display: flex;
+}
+
+.column {
+    flex: 1; /* Each column takes up equal space */
+    padding: 10px;
+}
+
+.image-column img {
+    width: 100%; /* Make the image responsive */
+    height: 90%; /* Maintain aspect ratio */
+}
+
+.text-column {
+    padding-left: 20px; /* Add some spacing between the image and text */
+    
+}
