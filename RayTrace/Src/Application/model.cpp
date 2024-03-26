@@ -16,6 +16,9 @@ void Model::cleanup()
 	m_indexBuffer.cleanup();
 	m_materialBuffer.cleanup();
 	m_materialIndexBuffer.cleanup();
+
+	for (auto& texture : m_textures)
+		texture.cleanup();
 }
 
 // --------------------------------------------------------------------------
@@ -152,6 +155,12 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 // --------------------------------------------------------------------------
 // Scene Builder
 //
+void SceneBuilder::init(const Device& device, const CommandSystem& commandSystem, Gui& gui)
+{
+	m_device        = &device;
+	m_commandSystem = &commandSystem;
+	m_gui           = &gui;
+}
 
 Model SceneBuilder::loadModel(const std::string& filename)
 {
@@ -186,7 +195,6 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	// Create vertex buffer
 	char vertexName[128];
 	sprintf(vertexName, "Vertex Buffer Model %d", m_modelCount);
-
 	createInfo.name        = vertexName;
 	createInfo.data        = loader.vertices.data();
 	createInfo.dataSize    = sizeof(Vertex) * numVertices;
@@ -196,7 +204,6 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	// Create index buffer
 	char indexName[128];
 	sprintf(indexName, "Index Buffer Model %d", m_modelCount);
-
 	createInfo.name       = indexName;
 	createInfo.data       = loader.indices.data();
 	createInfo.dataSize   = sizeof(uint32_t) * numIndices;
@@ -206,7 +213,6 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	// Create material buffer
 	char materialName[128];
 	sprintf(materialName, "Material Storage Buffer Model %d", m_modelCount);
-
 	createInfo.name          = materialName;
 	createInfo.data          = loader.materials.data();
 	createInfo.dataSize      = sizeof(Material) * loader.materials.size();
@@ -216,7 +222,6 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	// Create material index buffer
 	char materialIndexName[128];
 	sprintf(materialIndexName, "Material Index Storage Buffer Model %d", m_modelCount);
-
 	createInfo.name               = materialIndexName;
 	createInfo.data               = loader.matIndex.data();
 	createInfo.dataSize           = sizeof(int32_t) * loader.matIndex.size();
@@ -229,7 +234,13 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	desc.indexAddress         = modelInfo.indexBuffer.getDeviceAddress();
 	desc.materialAddress      = modelInfo.materialBuffer.getDeviceAddress();
 	desc.materialIndexAddress = modelInfo.materialIndexBuffer.getDeviceAddress();
+	desc.textureOffset        = static_cast<uint32_t>(m_textureInfo.size());
 	m_objectDescriptions.emplace_back(desc);
+
+	// Create textures
+	createTextures(loader.textures, filename, modelInfo.textures);
+	for (const auto& texture : modelInfo.textures)
+		m_textureInfo.emplace_back(texture.getDescriptor());
 
 	// Store model info
 	m_modelInfos.emplace_back(m_modelCount, numVertices, numIndices, desc.vertexAddress, desc.indexAddress);
@@ -247,4 +258,47 @@ Model::Instance SceneBuilder::createInstance(const Model& model, glm::mat4 trans
 	m_instances.emplace_back(instance);
 
 	return instance;
+}
+
+void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, const std::string& objPath, std::vector<Texture>& textures)
+{
+	// TODO: No textures in entire scene?
+
+	// There are no textures to process
+	if (texturePaths.empty())
+		return;
+
+	// Find the root path from the obj path
+	size_t lastSlash = objPath.find_last_of("/\\");
+	std::string rootPath = objPath.substr(0, lastSlash);
+
+	std::vector<Texture::CreateInfo> infos(texturePaths.size());
+	std::vector<std::stringstream>   filenames(texturePaths.size());
+
+	// Fill out create infos. Name and filename are allocate on the heap so that they can exists outside
+	// of this for loop.
+	for (uint32_t i = 0; i < texturePaths.size(); i++)
+	{
+		char* name = new char[128];
+		sprintf(name, "Texture %d Model %d", i, m_modelCount);
+		infos[i].name = name;
+
+		filenames[i] << rootPath << "/" << texturePaths[i];
+		char* filename = new char[filenames[i].str().length() + 1];
+		strcpy(filename, filenames[i].str().c_str());
+		infos[i].filename = filename;
+
+		infos[i].pDevice        = m_device;
+		infos[i].pCommandSystem = m_commandSystem;
+	}
+
+	// Create textures
+	textures = std::move(Texture::CreateBatch(infos, infos.size()));
+
+	// Free names and filenames
+	for (auto& info : infos)
+	{
+		delete[] info.name;
+		delete[] info.filename;
+	}
 }

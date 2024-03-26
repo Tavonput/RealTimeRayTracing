@@ -19,6 +19,7 @@ struct ObjectDescription
 	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+	int txtOffset;
 };
 
 struct Vertex

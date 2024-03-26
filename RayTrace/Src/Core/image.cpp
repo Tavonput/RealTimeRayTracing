@@ -89,6 +89,75 @@ void Image::SetupImageView(Image& image, ImageViewSetupInfo& info)
     }
 }
 
+void Image::TransitionImage(VkCommandBuffer cmdBuf, VkImage image, TransitionInfo& info)
+{
+    VkImageMemoryBarrier imageMemoryBarrier{};
+    imageMemoryBarrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.oldLayout           = info.oldLayout;
+    imageMemoryBarrier.newLayout           = info.newLayout;
+    imageMemoryBarrier.image               = image;
+    imageMemoryBarrier.srcAccessMask       = info.srcAccessMask;
+    imageMemoryBarrier.dstAccessMask       = info.dstAccessMask;
+    imageMemoryBarrier.srcQueueFamilyIndex = info.srcQueueFamilyIndex;
+    imageMemoryBarrier.dstQueueFamilyIndex = info.dstQueueFamilyIndex;
+
+    imageMemoryBarrier.subresourceRange.aspectMask     = info.aspectMask;
+    imageMemoryBarrier.subresourceRange.levelCount     = info.levelCount;
+    imageMemoryBarrier.subresourceRange.layerCount     = info.layerCount;
+    imageMemoryBarrier.subresourceRange.baseMipLevel   = info.baseMipLevel;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = info.baseArrayLayer;
+
+    vkCmdPipelineBarrier(
+        cmdBuf, 
+        info.srcStageMask, info.dstStageMask, 
+        0, 
+        0, nullptr, 
+        0, nullptr, 
+        1, &imageMemoryBarrier);
+}
+
+void Image::CopyFromBuffer(VkCommandBuffer cmdBuf, VkImage image, VkBuffer buffer, uint32_t width, uint32_t height, VkImageSubresourceLayers subresource)
+{
+    VkBufferImageCopy region{};
+    region.bufferOffset      = 0;
+    region.bufferRowLength   = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource  = subresource;
+
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = { width, height, 1 };
+
+    vkCmdCopyBufferToImage(
+        cmdBuf,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
+}
+
+VkImageMemoryBarrier Image::CreateImageMemoryBarrier(VkImage image)
+{
+    VkImageMemoryBarrier barrier{};
+    barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.image               = image;
+    barrier.srcAccessMask       = 0;
+    barrier.dstAccessMask       = 0;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.baseArrayLayer = 0;
+
+    return barrier;
+}
+
 void Image::cleanup(const VkDevice& device)
 {
     APP_LOG_INFO("Destroying image ({})", m_name);

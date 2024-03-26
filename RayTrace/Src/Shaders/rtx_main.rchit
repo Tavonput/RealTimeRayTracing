@@ -6,6 +6,7 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "structures.glsl"
 #include "pbr.glsl"
@@ -31,6 +32,9 @@ layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 
 // Addresses to the object buffers
 layout (set = 1, binding = 1) buffer _ObjectDescription { ObjectDescription i[]; } objDesc;
+
+// Texture samplers
+layout (set = 1, binding = 2) uniform sampler2D[] textureSamplers;
 
 vec3 computeDiffuse(Material mat, vec3 normal, vec3 lightDirection)
 {
@@ -83,15 +87,22 @@ void main()
 	const vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
 	const vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
 
+	// Computing the texture coordinates at the hit position
+	vec2 texCoords = v0.texCoord * barycentrics.x + v1.texCoord * barycentrics.y + v2.texCoord * barycentrics.z;
+
+	vec3 albedo = material.diffuse;
+	if (material.textureID >= 0)
+	{
+		int txtId  = objDesc.i[gl_InstanceCustomIndexEXT].txtOffset + material.textureID;
+		albedo = texture(textureSamplers[nonuniformEXT(txtId)], texCoords).xyz;
+	}
+
 	// Lighting properties
 	vec3  viewDir        = -gl_WorldRayDirectionEXT;
 	vec3  lightDirection = uni.lightPosition - worldPos;
 	float lightDistance  = length(lightDirection);
 	float lightIntensity = uni.lightIntensity / (lightDistance * lightDistance);
 	lightDirection       = normalize(lightDirection);
-
-	// Diffuse
-	// vec3 diffuse = computeDiffuse(material, worldNormal, lightDirection);
 
 	const vec3  halfway = normalize(viewDir + lightDirection);
 	const float NdotL   = max(dot(worldNormal, lightDirection), 0.0);
@@ -148,13 +159,13 @@ void main()
 		shadowComponent = 0.3;
 	}
 
-	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
+	vec3 Lo = (kD * albedo / PI + specular) * NdotL * radiance;
 
 	vec3 ambient = material.ambient * vec3(0.01);
 	vec3 color   = Lo + ambient;
 
 	// Reflection
-	if (material.illum >= 3)
+	if (material.illum == 3)
 	{
 		color = vec3(0);
 		payload.attenuation *= material.specular;

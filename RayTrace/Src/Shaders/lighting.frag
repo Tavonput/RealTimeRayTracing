@@ -2,6 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference2 : require
@@ -26,6 +27,9 @@ layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 
 // Addresses to the storage buffers
 layout (binding = 1) buffer ObjectDescription_ { ObjectDescription i[]; } objDesc;
+
+// Texture samplers
+layout (binding = 2) uniform sampler2D[] textureSamplers;
 
 // Push constant
 layout (push_constant) uniform Constants { PushConstant pc; };
@@ -66,6 +70,17 @@ void main()
 	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];
 	Material material = materialBuffer.m[matIndex];
 
+	vec3 albedo = material.diffuse;
+	if (material.textureID >= 0)
+	{
+		int  txtOffset = objDesc.i[pc.objectID].txtOffset;
+		int  txtId     = txtOffset + material.textureID;
+		vec4 txt       = texture(textureSamplers[nonuniformEXT(txtId)], texCoords);
+		if (txt.a < 0.1)
+			discard;
+		albedo = txt.xyz;
+	}
+
 	float roughness = material.roughness;
 	float metallic  = material.metallic;
 
@@ -96,7 +111,7 @@ void main()
 
 	const float NdotL = max(dot(N, L), 0.0);
 
-	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
+	vec3 Lo = (kD * albedo / PI + specular) * NdotL * radiance;
 
 	vec3 ambient = material.ambient * vec3(0.01);
 	vec3 color = Lo + ambient;

@@ -10,6 +10,7 @@
 #include "Core/buffer.h"
 #include "Core/rendering_structures.h"
 #include "Core/command.h"
+#include "Core/texture.h"
 
 struct Material
 {
@@ -38,6 +39,7 @@ struct ObjectDescription
 	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+	uint32_t textureOffset;
 };
 
 struct ModelInfo
@@ -59,6 +61,8 @@ public:
 		Buffer indexBuffer;
 		Buffer materialBuffer;
 		Buffer materialIndexBuffer;
+
+		std::vector<Texture> textures;
 
 		uint32_t modelIndex  = 0;
 		const Device* device = nullptr;
@@ -84,7 +88,8 @@ public:
 		  m_materialBuffer     (info.materialBuffer),
 		  m_materialIndexBuffer(info.materialIndexBuffer),
 		  m_device             (info.device),
-	      m_index              (info.modelIndex){}
+	      m_index              (info.modelIndex),
+	      m_textures           (info.textures){}
 
 	Buffer& getVertexBuffer() { return m_vertexBuffer; }
 	Buffer& getIndexBuffer() { return m_indexBuffer; }
@@ -100,6 +105,8 @@ private:
 	Buffer m_materialBuffer;
 	Buffer m_materialIndexBuffer;
 
+	std::vector<Texture> m_textures;
+
 	uint32_t m_index = 0;
 };
 
@@ -107,8 +114,9 @@ class SceneBuilder
 {
 public:
 	SceneBuilder() = default;
-	SceneBuilder(const Device& device, const CommandSystem& commandSystem, Gui& gui)
-		: m_device(&device), m_commandSystem(&commandSystem), m_gui(&gui) {}
+	SceneBuilder(const Device& device, const CommandSystem& commandSystem, Gui& gui) { init(device, commandSystem, gui); }
+
+	void init(const Device& device, const CommandSystem& commandSystem, Gui& gui);
 
 	Model loadModel(const std::string& filename);
 	Model::Instance createInstance(const Model& model, glm::mat4 transform);
@@ -121,6 +129,7 @@ public:
 	const std::vector<ModelInfo>& getModelInformation() const { return m_modelInfos; }
 	const std::vector<ObjectDescription>& getObjectDescriptions() const { return m_objectDescriptions; }
 	const std::vector<Model::Instance>& getInstances() const { return m_instances; }
+	const std::vector<VkDescriptorImageInfo>& getTextureInfo() const { return m_textureInfo; }
 
 private:
 	// Object loader
@@ -135,13 +144,16 @@ private:
 		void loadObj(const std::string& filename);
 	};
 
-	std::vector<ModelInfo>         m_modelInfos;
-	std::vector<ObjectDescription> m_objectDescriptions;
-	std::vector<Model::Instance>   m_instances;
+	std::vector<ModelInfo>             m_modelInfos;
+	std::vector<ObjectDescription>     m_objectDescriptions;
+	std::vector<Model::Instance>       m_instances;
+	std::vector<VkDescriptorImageInfo> m_textureInfo;
 
 	uint32_t m_modelCount = 0;
 
 	const Device*        m_device        = nullptr;
 	const CommandSystem* m_commandSystem = nullptr;
 	Gui*                 m_gui           = nullptr;
+
+	void createTextures(const std::vector<std::string>& texturePaths, const std::string& objPath, std::vector<Texture>& textures);
 };
