@@ -29,8 +29,10 @@ struct Material
 	glm::vec3 emission      = { 0.0f, 0.0f, 0.0f };
 	int32_t   textureID     = -1;
 
-	float roughness        = 1.0f;
-	float metallic         = 0.0f;
+	float     roughness     = 1.0f;
+	float     metallic      = 0.0f;
+
+	uint32_t  textureCount  = 0;
 };
 
 struct ObjectDescription
@@ -135,11 +137,12 @@ private:
 	// Object loader
 	struct ObjLoader
 	{
-		std::vector<Vertex>      vertices;
-		std::vector<uint32_t>    indices;
-		std::vector<Material>    materials;
-		std::vector<int32_t>     matIndex;
-		std::vector<std::string> textures;
+		std::vector<Vertex>            vertices;
+		std::vector<uint32_t>          indices;
+		std::vector<Material>          materials;
+		std::vector<int32_t>           matIndex;
+		std::vector<std::string>       textures;
+		std::vector<Texture::FileType> textureTypes;
 
 		void loadObj(const std::string& filename);
 	};
@@ -155,5 +158,9 @@ private:
 	const CommandSystem* m_commandSystem = nullptr;
 	Gui*                 m_gui           = nullptr;
 
-	void createTextures(const std::vector<std::string>& texturePaths, const std::string& objPath, std::vector<Texture>& textures);
+	void createTextures(
+		const std::vector<std::string>&       texturePaths, 
+		const std::vector<Texture::FileType>& textureTypes, 
+		const std::string&                    objPath, 
+		std::vector<Texture>&                 textures);
 };

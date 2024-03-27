@@ -9,11 +9,13 @@
 
 #include "structures.glsl"
 #include "pbr.glsl"
+#include "random.glsl"
 
 // Inputs
 layout (location = 0) in vec3 fragNormal;
 layout (location = 1) in vec3 fragPos;
 layout (location = 2) in vec2 texCoords;
+layout (location = 3) in mat3 TBN;
 
 // Outputs
 layout (location = 0) out vec4 outColor;
@@ -71,21 +73,31 @@ void main()
 	Material material = materialBuffer.m[matIndex];
 
 	vec3 albedo = material.diffuse;
+	vec3 normal = fragNormal;
 	if (material.textureID >= 0)
 	{
-		int  txtOffset = objDesc.i[pc.objectID].txtOffset;
-		int  txtId     = txtOffset + material.textureID;
-		vec4 txt       = texture(textureSamplers[nonuniformEXT(txtId)], texCoords);
+		int txtID = objDesc.i[pc.objectID].txtOffset + material.textureID;
+
+		// Albedo
+		vec4 txt = texture(textureSamplers[nonuniformEXT(txtID + ALBEDO_IDX)], texCoords);
 		if (txt.a < 0.1)
 			discard;
 		albedo = txt.xyz;
+
+		// Normal
+		// if (material.textureCount > NORMAL_IDX)
+		// {
+		// 	normal = texture(textureSamplers[nonuniformEXT(txtID + NORMAL_IDX)], texCoords).xyz;
+		// 	normal = normal * 2.0 - 1.0;
+		// 	normal = TBN * normal;
+		// }
 	}
 
 	float roughness = material.roughness;
 	float metallic  = material.metallic;
 
 	// Lighting
-	vec3 N = normalize(fragNormal);
+	vec3 N = normalize(normal);
 	vec3 V = normalize(uni.viewPosition - fragPos);
 	vec3 L = normalize(uni.lightPosition - fragPos);
 	vec3 H = normalize(V + L);

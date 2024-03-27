@@ -4,6 +4,7 @@
 #extension GL_ARB_gpu_shader_int64 : require
 
 #include "structures.glsl"
+#include "random.glsl"
 
 // Input
 layout (location = 0) in vec3 inPosition;
@@ -15,6 +16,7 @@ layout (location = 3) in vec2 inTexCoord;
 layout (location = 0) out vec3 fragNormal;
 layout (location = 1) out vec3 fragPos;
 layout (location = 2) out vec2 texCoords;
+layout (location = 3) out mat3 TBN;
 
 // Global uniform
 layout (binding = 0) uniform _GlobalUniform{ GlobalUniform uni; };
@@ -31,4 +33,8 @@ void main()
 
 	texCoords  = inTexCoord;
 	fragNormal = mat3(transpose(inverse(pc.model))) * inNormal;	
+
+	vec3 T, B;
+	createCoordinateSystem(inNormal, T, B);
+	TBN = mat3(T, B, inNormal);
 }

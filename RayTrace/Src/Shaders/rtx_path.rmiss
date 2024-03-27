@@ -14,8 +14,14 @@ void main()
     const float rayDir = (payload.rayDir.y + 1.0) / 2.0;
     const vec3  color  = mix(vec3(0), pc.clearColor.xyz, rayDir);
 
-    payload.emission    = vec3(1.0);
-    payload.throughput *= color;
+    if (payload.depth == 0)
+    {
+        payload.emission = color;
+    }
+    else
+    {
+        payload.emission = pc.clearColor.xyz;
+    }
 
     payload.done = 1;
 }

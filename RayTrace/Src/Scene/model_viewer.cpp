@@ -3,8 +3,10 @@
 
 void ModelViewerScene::onLoad(SceneBuilder& scene)
 {
+	Logger::changeLogLevel(LogLevel::TRACE);
+
 	// Models
-	std::string modelPath = "../../../../Other-Assets/fireplace_room/fireplace_room.obj";
+	std::string modelPath = "../../../../Other-Assets/living_room/living_room.obj";
 	m_mainModel = scene.loadModel(modelPath);
 
 	glm::vec3 translation = { 0.0f, 0.0f, 0.0f };

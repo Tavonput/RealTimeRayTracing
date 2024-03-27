@@ -12,12 +12,21 @@
 class Texture
 {
 public:
+	enum class FileType
+	{
+		NONE = 0,
+		ALBEDO,
+		NORMAL,
+		ALPHA
+	};
+
 	struct CreateInfo 
 	{
 		const Device*        pDevice        = nullptr;
 		const CommandSystem* pCommandSystem = nullptr;
 		VkExtent2D           extent         = { 0, 0 };
 		const char*          filename       = nullptr;
+		FileType             fileType       = FileType::NONE;
 		const char*          name           = "";
 	};
 
@@ -26,7 +35,7 @@ public:
 	static Texture Create(Texture::CreateInfo& info);
 	static std::vector<Texture> CreateBatch(std::vector<Texture::CreateInfo>& infos, uint32_t numTextures);
 
-	static void LoadTexture(const char* file, int* width, int* height, int* channels, char** data);
+	static void LoadTexture(const char* file, FileType type, int* width, int* height, int* channels, char** data);
 	static void GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels);
 
 	const Image& getImage() const { return m_image; }

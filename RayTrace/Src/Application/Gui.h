@@ -108,7 +108,7 @@ public:
 		int          sampleCount     = 4;
 		int          TAAFrameCount   = 10;
 		int          maxPathFrame    = 0;
-		float        russianRoulette = 1.0f;
+		float        russianRoulette = 0.3f;
 	};
 
 	void init(Gui::CreateInfo info);

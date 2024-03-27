@@ -67,6 +67,14 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 		{
 			mat.textureID = static_cast<int>(textures.size());
 			textures.push_back(material.diffuse_texname);
+			textureTypes.push_back(Texture::FileType::ALBEDO);
+			mat.textureCount++;
+		}
+		if (!material.normal_texname.empty())
+		{
+			textures.push_back(material.normal_texname);
+			textureTypes.push_back(Texture::FileType::NORMAL);
+			mat.textureCount++;
 		}
 
 		materials.emplace_back(mat);
@@ -238,7 +246,7 @@ Model SceneBuilder::loadModel(const std::string& filename)
 	m_objectDescriptions.emplace_back(desc);
 
 	// Create textures
-	createTextures(loader.textures, filename, modelInfo.textures);
+	createTextures(loader.textures, loader.textureTypes, filename, modelInfo.textures);
 	for (const auto& texture : modelInfo.textures)
 		m_textureInfo.emplace_back(texture.getDescriptor());
 
@@ -260,7 +268,7 @@ Model::Instance SceneBuilder::createInstance(const Model& model, glm::mat4 trans
 	return instance;
 }
 
-void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, const std::string& objPath, std::vector<Texture>& textures)
+void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, const std::vector<Texture::FileType>& textureTypes, const std::string& objPath, std::vector<Texture>& textures)
 {
 	// TODO: No textures in entire scene?
 
@@ -269,7 +277,7 @@ void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, 
 		return;
 
 	// Find the root path from the obj path
-	size_t lastSlash = objPath.find_last_of("/\\");
+	size_t lastSlash     = objPath.find_last_of("/\\");
 	std::string rootPath = objPath.substr(0, lastSlash);
 
 	std::vector<Texture::CreateInfo> infos(texturePaths.size());
@@ -287,6 +295,8 @@ void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, 
 		char* filename = new char[filenames[i].str().length() + 1];
 		strcpy(filename, filenames[i].str().c_str());
 		infos[i].filename = filename;
+
+		infos[i].fileType = textureTypes[i];
 
 		infos[i].pDevice        = m_device;
 		infos[i].pCommandSystem = m_commandSystem;

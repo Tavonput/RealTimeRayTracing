@@ -45,11 +45,35 @@ std::vector<Texture> Texture::CreateBatch(std::vector<Texture::CreateInfo>& info
 	{
 		// Load texture
 		char* pixels;
-		int   width, height, channels;
-		Texture::LoadTexture(infos[i].filename, &width, &height, &channels, &pixels);
+		int width, height, channels;
+		Texture::LoadTexture(infos[i].filename, infos[i].fileType, &width, &height, &channels, &pixels);
 
-		VkDeviceSize imageSize = static_cast<uint64_t>(width) * height * 4;
-		uint32_t     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+		// Setup type specific parameters
+		VkFormat      format      = VK_FORMAT_UNDEFINED;
+		size_t        channelSize = sizeof uint8_t;
+		VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
+		uint32_t      mipLevels   = 1;
+		switch (infos[i].fileType)
+		{
+			case FileType::ALBEDO:
+				format    = VK_FORMAT_R8G8B8A8_SRGB;
+				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+				break;
+
+			case FileType::NORMAL:
+				format    = VK_FORMAT_R8G8B8A8_UNORM;
+				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+				break;
+
+			case FileType::NONE:
+				APP_LOG_CRITICAL("Invalid file type: NONE");
+				break;
+
+			default:
+				APP_LOG_CRITICAL("No file type was specified");
+		}
+
+		VkDeviceSize imageSize = static_cast<uint64_t>(width) * height * channels * channelSize;
 
 		// Create staging buffer
 		Buffer::CreateBuffer(
@@ -64,7 +88,6 @@ std::vector<Texture> Texture::CreateBatch(std::vector<Texture::CreateInfo>& info
 		vkMapMemory(device->getLogical(), stagingMemory[i], 0, imageSize, 0, &deviceData);
 		memcpy(deviceData, pixels, (size_t)imageSize);
 		vkUnmapMemory(device->getLogical(), stagingMemory[i]);
-		stbi_image_free(pixels);
 
 		// Create image
 		Image::CreateInfo imgCreateInfo{};
@@ -76,9 +99,10 @@ std::vector<Texture> Texture::CreateBatch(std::vector<Texture::CreateInfo>& info
 		imgCreateInfo.tiling     = VK_IMAGE_TILING_OPTIMAL;
 		imgCreateInfo.usage      = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		imgCreateInfo.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		imgCreateInfo.format     = VK_FORMAT_R8G8B8A8_UNORM;
+		imgCreateInfo.format     = format;
 		imgCreateInfo.device     = device;
 		imgCreateInfo.name       = infos[i].name;
+
 		Image image = Image::CreateImage(imgCreateInfo);
 
 		// Setup image view
@@ -230,16 +254,38 @@ Texture::Texture(Texture::CreateInfo& info)
 	}
 }
 
-void Texture::LoadTexture(const char* file, int* width, int* height, int* channels, char** data)
+void Texture::LoadTexture(const char* file, FileType type, int* width, int* height, int* channels, char** data)
 {
 	APP_LOG_TRACE("Loading texture {}", file);
 
-	*data = (char*)stbi_load(file, width, height, channels, STBI_rgb_alpha);
+	int loadFormat = 0;
+
+	switch (type)
+	{
+		case FileType::ALBEDO:
+		case FileType::NORMAL:
+			loadFormat = STBI_rgb_alpha;
+			break;
+
+		case FileType::NONE:
+			APP_LOG_CRITICAL("File type is NONE");
+			break;
+
+		default:
+			APP_LOG_CRITICAL("No file type was specified");
+	}
+
+	stbi_set_flip_vertically_on_load(true);
+	*data = (char*)stbi_load(file, width, height, channels, loadFormat);
 	if (!*data)
 	{
 		APP_LOG_CRITICAL("Failed to load texture");
 		throw std::exception();
 	}
+
+	// Force rgb textures to be rgba
+	if (*channels == 3)
+		*channels = 4;
 }
 
 void Texture::GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels)

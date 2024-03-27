@@ -1,4 +1,10 @@
+#ifndef STRUCTURES_GLSL
+#define STRUCTURES_GLSL 1
+
 #define PI 3.14159265
+
+#define ALBEDO_IDX 0
+#define NORMAL_IDX 1
 
 struct GlobalUniform
 {
@@ -32,23 +38,25 @@ struct Vertex
 
 struct Material
 {
-	vec3    ambient;
-	float   shininess;
+	vec3  ambient;
+	float shininess;
 
-	vec3    diffuse;
-	float   ior;
+	vec3  diffuse;
+	float ior;
 
-	vec3    specular;
-	float   dissolve;
+	vec3  specular;
+	float dissolve;
 
-	vec3    transmittance;
-	int     illum;
+	vec3  transmittance;
+	int   illum;
 
-	vec3    emission;
-	int     textureID;
+	vec3  emission;
+	int   textureID;
 
 	float roughness;
 	float metallic;
+
+	uint  textureCount;
 };
 
 struct PushConstant
@@ -100,3 +108,5 @@ struct hitPayloadPath
 	uint seed;
 	uint done;
 };
+
+#endif
