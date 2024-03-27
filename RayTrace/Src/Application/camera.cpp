@@ -161,7 +161,7 @@ void Camera::updateMode(int mode)
 void Camera::saveCamera(int cameraSaves)
 {
 	if (cameraSaves == m_cameraSaves || m_cameraMode == CameraMode::STATIONARY) return;
-
+	
 	m_eyePositions.push_back(m_eye);
 	m_centerPositions.push_back(m_center);
 

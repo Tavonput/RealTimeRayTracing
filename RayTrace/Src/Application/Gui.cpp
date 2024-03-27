@@ -97,8 +97,9 @@ void Gui::beginUI()
 			
 			if (ImGui::Button("Save Camera Position")) { m_state.cameraSaves++; }
 
-			ImGui::Text("Switch Camera");
-			if (m_state.changed = ImGui::ArrowButton("##left", ImGuiDir_Left)) { m_state.currentCamera--; }
+			ImGui::Text("Switch Camera: ");
+			ImGui::SameLine();
+			if (m_state.changed = ImGui::ArrowButton("##left", ImGuiDir_Left)) { m_state.currentCamera--; } //** If statement valid?
 			ImGui::SameLine();
 			if (m_state.changed = ImGui::ArrowButton("##right", ImGuiDir_Right)) { m_state.currentCamera++; }
 
