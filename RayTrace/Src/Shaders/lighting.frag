@@ -76,21 +76,33 @@ void main()
 	vec3 normal = fragNormal;
 	if (material.textureID >= 0)
 	{
+		// Note: Textures must be sourced in the same order they were added during loading
+
 		int txtID = objDesc.i[pc.objectID].txtOffset + material.textureID;
 
 		// Albedo
-		vec4 txt = texture(textureSamplers[nonuniformEXT(txtID + ALBEDO_IDX)], texCoords);
+		vec4 txt = texture(textureSamplers[nonuniformEXT(txtID)], texCoords);
 		if (txt.a < 0.1)
 			discard;
 		albedo = txt.xyz;
 
 		// Normal
-		// if (material.textureCount > NORMAL_IDX)
-		// {
-		// 	normal = texture(textureSamplers[nonuniformEXT(txtID + NORMAL_IDX)], texCoords).xyz;
-		// 	normal = normal * 2.0 - 1.0;
-		// 	normal = TBN * normal;
-		// }
+		if ((material.textureMask & NORMAL_BIT) == NORMAL_BIT)
+		{
+			txtID++;
+			normal = texture(textureSamplers[nonuniformEXT(txtID)], texCoords).xyz;
+			normal = normal * 2.0 - 1.0;
+			normal = TBN * normal;
+		}
+
+		// Alpha
+		if ((material.textureMask & ALPHA_BIT) == ALPHA_BIT)
+		{
+			txtID++;
+			float alpha = texture(textureSamplers[nonuniformEXT(txtID)], texCoords).a;
+			if (alpha < 0.1)
+				discard;
+		}
 	}
 
 	float roughness = material.roughness;
@@ -128,5 +140,19 @@ void main()
 	vec3 ambient = material.ambient * vec3(0.01);
 	vec3 color = Lo + ambient;
 
-	outColor = vec4(color, 1.0);
+	// Set final color
+	switch (uni.debugMode)
+	{
+		case DEBUG_NONE:
+			outColor = vec4(color, 1.0);
+			break;
+
+		case DEBUG_ALBEDO:
+			outColor = vec4(albedo, 1.0);
+			break;
+
+		case DEBUG_NORMAL:
+			outColor = vec4(N, 1.0);
+			break;
+	}
 }

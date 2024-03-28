@@ -58,6 +58,13 @@ void Gui::beginUI()
 	{
 		ImGui::Begin("Settings");
 
+		// Debug settings
+		if (ImGui::CollapsingHeader("Debug"))
+		{
+			const char* debugMethods[3] = { "None", "Albedo", "Normal" };
+			m_state.changed |= ImGui::Combo("Debug Maps", (int*)&m_state.debugMode, debugMethods, 3);
+		}
+
 		// Scene settings
 		if (ImGui::CollapsingHeader("Scene"))
 		{

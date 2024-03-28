@@ -65,16 +65,26 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 		// Diffuse texture
 		if (!material.diffuse_texname.empty())
 		{
+			// Set the texture ID. This is assuming every material with a texture will always have an albedo map
 			mat.textureID = static_cast<int>(textures.size());
+
 			textures.push_back(material.diffuse_texname);
 			textureTypes.push_back(Texture::FileType::ALBEDO);
-			mat.textureCount++;
+			mat.textureMask |= 0x00000001; // Bit 1
 		}
+
 		if (!material.normal_texname.empty())
 		{
 			textures.push_back(material.normal_texname);
 			textureTypes.push_back(Texture::FileType::NORMAL);
-			mat.textureCount++;
+			mat.textureMask |= 0x00000002; // Bit 2
+		}
+
+		if (!material.alpha_texname.empty())
+		{
+			textures.push_back(material.alpha_texname);
+			textureTypes.push_back(Texture::FileType::ALPHA);
+			mat.textureMask |= 0x00000004; // Bit 3
 		}
 
 		materials.emplace_back(mat);
@@ -270,15 +280,29 @@ Model::Instance SceneBuilder::createInstance(const Model& model, glm::mat4 trans
 
 void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, const std::vector<Texture::FileType>& textureTypes, const std::string& objPath, std::vector<Texture>& textures)
 {
-	// TODO: No textures in entire scene?
+	// We need to have at least one texture so that the pipeline does not complain. So we create a
+	// dummy texture if there are currently no textures to load and no previous textures loaded
+	if (texturePaths.empty() && m_textureInfo.empty())
+	{
+		Texture::CreateInfo textureInfo{};
+		textureInfo.pDevice        = m_device;
+		textureInfo.pCommandSystem = m_commandSystem;
+		textureInfo.extent         = {1, 1};
+		textureInfo.name           = "Dummy Texture";
 
-	// There are no textures to process
+		std::vector<Texture> texture; 
+		texture.emplace_back(Texture::Create(textureInfo));
+		textures = std::move(texture);
+		return;
+	}
+
+	// There are no textures to load
 	if (texturePaths.empty())
 		return;
 
 	// Find the root path from the obj path
-	size_t lastSlash     = objPath.find_last_of("/\\");
-	std::string rootPath = objPath.substr(0, lastSlash);
+	size_t      lastSlash = objPath.find_last_of("/\\");
+	std::string rootPath  = objPath.substr(0, lastSlash);
 
 	std::vector<Texture::CreateInfo> infos(texturePaths.size());
 	std::vector<std::stringstream>   filenames(texturePaths.size());

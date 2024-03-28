@@ -58,8 +58,6 @@ void CornellBoxScene::onUpdate(Renderer& renderer)
 
 		renderer.setDynamicStates();
 
-
-
 		// Cornell box
 		{
 			renderer.bindPipeline(Pipeline::LIGHTING);

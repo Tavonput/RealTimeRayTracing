@@ -318,6 +318,9 @@ void Renderer::updateUI()
 	// Scene
 	postPushConstants.exposure = m_ui.exposure;
 
+	// Debug
+	ubo.debugMode = (int)m_ui.debugMode;
+
 	// Start UI
 	m_gui->beginUI();
 }

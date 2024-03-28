@@ -3,8 +3,13 @@
 
 #define PI 3.14159265
 
-#define ALBEDO_IDX 0
-#define NORMAL_IDX 1
+#define ALBEDO_BIT 0x00000001u
+#define NORMAL_BIT 0x00000002u
+#define ALPHA_BIT  0x00000004u
+
+#define DEBUG_NONE   0
+#define DEBUG_ALBEDO 1
+#define DEBUG_NORMAL 2
 
 struct GlobalUniform
 {
@@ -12,10 +17,12 @@ struct GlobalUniform
 	mat4 viewInverse;
 	mat4 projInverse;
 
-	vec3 viewPosition;
+	vec3  viewPosition;
 	float lightIntensity;
 
 	vec3 lightPosition;
+	int  debugMode;
+
 	vec3 lightColor;
 };
 
@@ -56,7 +63,7 @@ struct Material
 	float roughness;
 	float metallic;
 
-	uint  textureCount;
+	uint  textureMask;
 };
 
 struct PushConstant

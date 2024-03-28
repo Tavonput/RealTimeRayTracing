@@ -86,7 +86,7 @@ private:
 	// CornellBoxScene m_scene;
 	// DragonScene      m_scene; // Requires "Chinese Dragon" from https://casual-effects.com/data/index.html
 	ModelViewerScene m_scene; // Check out models from https://casual-effects.com/data/index.html
-	// SimpleCubeScene  m_scene; Kind of broken right now.
+	// SimpleCubeScene  m_scene; // Kind of broken right now.
 
 	// Cpu Raytracing
 	CpuRaytracer m_cpuRaytracer;

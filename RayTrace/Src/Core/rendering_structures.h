@@ -37,8 +37,9 @@ struct GlobalUniform
 	float     lightIntensity = 1.0;
 
 	glm::vec3 lightPosition;
+	int       debugMode;
 
-	alignas(16) glm::vec3 lightColor;
+	glm::vec3 lightColor;
 };
 
 class Vertex

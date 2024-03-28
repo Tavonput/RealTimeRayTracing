@@ -79,6 +79,13 @@ public:
 		RTX_PATH
 	};
 
+	enum class DebugMode
+	{
+		NONE = 0,
+		ALBEDO,
+		NORMAL
+	};
+
 	struct CreateInfo
 	{
 		SystemContext*        pSystemContext;
@@ -92,6 +99,9 @@ public:
 	struct UiState
 	{
 		bool changed = false;
+
+		// Debug
+		DebugMode debugMode = DebugMode::NONE;
 
 		// Scene
 		float backgroundColor[3] = { 1.0f, 1.0f, 1.0f };

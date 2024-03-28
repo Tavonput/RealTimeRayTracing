@@ -32,7 +32,7 @@ struct Material
 	float     roughness     = 1.0f;
 	float     metallic      = 0.0f;
 
-	uint32_t  textureCount  = 0;
+	uint32_t  textureMask   = 0x00000000;
 };
 
 struct ObjectDescription

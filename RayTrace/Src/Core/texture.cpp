@@ -65,6 +65,11 @@ std::vector<Texture> Texture::CreateBatch(std::vector<Texture::CreateInfo>& info
 				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 				break;
 
+			case FileType::ALPHA:
+				format = VK_FORMAT_R8G8B8A8_UNORM;
+				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+				break;
+
 			case FileType::NONE:
 				APP_LOG_CRITICAL("Invalid file type: NONE");
 				break;
@@ -264,6 +269,7 @@ void Texture::LoadTexture(const char* file, FileType type, int* width, int* heig
 	{
 		case FileType::ALBEDO:
 		case FileType::NORMAL:
+		case FileType::ALPHA:
 			loadFormat = STBI_rgb_alpha;
 			break;
 
@@ -283,9 +289,8 @@ void Texture::LoadTexture(const char* file, FileType type, int* width, int* heig
 		throw std::exception();
 	}
 
-	// Force rgb textures to be rgba
-	if (*channels == 3)
-		*channels = 4;
+	// Force textures to be rgba
+	*channels = 4;
 }
 
 void Texture::GenerateMipMaps(VkCommandBuffer cmdBuf, VkImage image, uint32_t width, uint32_t height, uint32_t mipLevels)
