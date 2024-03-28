@@ -202,6 +202,7 @@ void Swapchain::setupSwapchain()
 
 	// Get the image count
 	m_minImage = swapChainSupport.capabilities.minImageCount;
+	//std::cout << m_minImage << std::endl;
 	uint32_t imageCount = m_minImage + 1;
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 		imageCount = swapChainSupport.capabilities.maxImageCount;

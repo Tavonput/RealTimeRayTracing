@@ -38,7 +38,8 @@ void Gui::init(Gui::CreateInfo info)
 	initInfo.DescriptorPool = m_descriptorPool.getPool();
 	initInfo.RenderPass     = info.pRenderPass->renderPass;
 	initInfo.ImageCount     = info.imageCount;
-	initInfo.MinImageCount  = info.minImageCount;
+	//initInfo.MinImageCount  = info.minImageCount;
+	initInfo.MinImageCount = 2;
 	initInfo.MSAASamples    = info.msaaSamples;
 	ImGui_ImplVulkan_Init(&initInfo);
 }
@@ -52,8 +53,9 @@ void Gui::beginUI()
 
 	m_state.changed = false;
 
-	// bool showDemoWindow = true;
-	// ImGui::ShowDemoWindow(&showDemoWindow);
+	bool showDemoWindow = true;
+	ImGui::ShowDemoWindow(&showDemoWindow);
+	//return;
 
 	{
 		ImGui::Begin("Settings");
@@ -91,6 +93,25 @@ void Gui::beginUI()
 				m_state.changed |= ImGui::Checkbox(box.name.c_str(), box.button);
 		}
 
+		// Camera Settings
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+			m_state.changed |= ImGui::SliderFloat("Camera Sensitivity", &m_state.sensitivity, 0.0f, 2.0f);
+			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
+			ImGui::Text("Camera Modes:"); ImGui::SameLine();
+			m_state.changed |= ImGui::RadioButton("Stationary", &m_state.mode, 0); ImGui::SameLine();
+			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1); 
+			
+			if (ImGui::Button("Save Camera Position")) { m_state.cameraSaves++; }
+
+			ImGui::Text("Switch Camera: ");
+			ImGui::SameLine();
+			if (m_state.changed = ImGui::ArrowButton("##left", ImGuiDir_Left)) { m_state.currentCamera--; } //** If statement valid?
+			ImGui::SameLine();
+			if (m_state.changed = ImGui::ArrowButton("##right", ImGuiDir_Right)) { m_state.currentCamera++; }
+
+
+		}
 		// Framerate
 		ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

@@ -162,7 +162,6 @@ void Application::run()
 		if (m_window.isWindowMinimized())
 			continue;
 		
-		m_camera.updatePosition();
 		m_scene.onUpdate(m_renderer);
 	}
 

@@ -119,6 +119,13 @@ public:
 		int          TAAFrameCount   = 10;
 		int          maxPathFrame    = 0;
 		float        russianRoulette = 0.3f;
+
+		// Camera
+		float sensitivity = 1.0f;
+		float speed = 3.0f;
+		int mode = 0;
+		int cameraSaves = 0;
+		int currentCamera = 0;
 	};
 
 	void init(Gui::CreateInfo info);

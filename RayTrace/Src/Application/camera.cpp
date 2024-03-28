@@ -57,7 +57,7 @@ void Camera::onMouseRelease(MouseReleaseEvent event)
 
 void Camera::onMouseMove(MouseMoveEvent event)
 {
-	if (!m_leftMouse && !m_rightMouse && m_cameraMode == CameraMode::STATIONARY)
+	if (!m_leftMouse && !m_rightMouse && m_cameraMode == CameraMode::STATIONARY || m_mousePause)
 	{
 		// No action, just update the mouse position
 		m_mousePos.x = static_cast<float>(event.xPos);
@@ -85,6 +85,21 @@ void Camera::onMouseMove(MouseMoveEvent event)
 	// Update mouse position
 	m_mousePos.x = static_cast<float>(event.xPos);
 	m_mousePos.y = static_cast<float>(event.yPos);
+}
+
+void Camera::pauseMouseMove()
+{
+	if (m_cameraMode == CameraMode::STATIONARY) return;
+	if (m_mousePause)
+	{
+		glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		m_mousePause = false;
+	}
+	else
+	{
+		glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		m_mousePause = true;
+	}
 }
 
 void Camera::resetPosition()
@@ -117,40 +132,65 @@ void Camera::onKeyRelease(KeyReleaseEvent event)
 		case GLFW_KEY_D: m_dKey = false; break;
 		case GLFW_KEY_LEFT_SHIFT: m_lShift = false; break;
 		case GLFW_KEY_SPACE: m_space = false; break;
-		case GLFW_KEY_ESCAPE: // Will likely change keybinds later on. 
-			// Switches between fly mode and stationary mode. 
-			if (m_cameraMode == CameraMode::STATIONARY) FPVMode();
-			else if (m_cameraMode == CameraMode::FPV) stationaryMode();
-			break;
+		case GLFW_KEY_ESCAPE:  pauseMouseMove(); break;
 	}
 }
 
 void Camera::FPVMode()
 {
+	m_mousePause = false;
 	glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	m_cameraMode = CameraMode::FPV;
 }
 
 void Camera::stationaryMode()
 {
+	m_mousePause = false;
 	glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	m_cameraMode = CameraMode::STATIONARY;
 	resetPosition();
 	updateViewMatrix();
 }
 
-void Camera::updatePosition() {
+void Camera::updateMode(int mode)
+{
+	if (mode == 0 && m_cameraMode != CameraMode::STATIONARY) Camera::stationaryMode();
+	else if (mode == 1 && m_cameraMode != CameraMode::FPV) Camera::FPVMode();
+}
+
+void Camera::saveCamera(int cameraSaves)
+{
+	if (cameraSaves == m_cameraSaves || m_cameraMode == CameraMode::STATIONARY) return;
+	
+	m_eyePositions.push_back(m_eye);
+	m_centerPositions.push_back(m_center);
+
+	m_cameraSaves++;
+}
+
+void Camera::switchCameras(int currentCamera)
+{
+	if (m_cameraSaves == 0 || m_cameraMode == CameraMode::STATIONARY) return;
+
+	if (currentCamera < 0) currentCamera *= -1;
+
+	int cameraIndex = currentCamera % m_cameraSaves;
+	if (cameraIndex == m_currentIndex) return;
+
+	m_eye = m_eyePositions[cameraIndex];
+	m_center = m_centerPositions[cameraIndex];
+	m_currentIndex = cameraIndex;
+
+}
+
+void Camera::updatePosition(float deltaT) {
 
 	if (m_cameraMode == CameraMode::STATIONARY) return;
-
-	m_currentFrame = glfwGetTime(); // Computes the change in time
-	float deltaT = m_currentFrame - m_lastFrame;
-	m_lastFrame = m_currentFrame;
 
 	glm::vec3 axisZ = glm::normalize(m_eye - m_center); // Normalized Z-axis relative to camera (Direction camera is looking)
 	glm::vec3 axisX = glm::normalize(glm::cross(m_up, axisZ)); // Normalized X-axis relative to camera
 
-	const float cameraSpeed = 3.0f * deltaT;
+	const float cameraSpeed = m_speed * deltaT;
 
 	if (m_wKey) {
 		//APP_LOG_INFO("W Key Down");
