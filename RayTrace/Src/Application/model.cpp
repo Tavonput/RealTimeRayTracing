@@ -87,6 +87,20 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 			mat.textureMask |= 0x00000004; // Bit 3
 		}
 
+		if (!material.metallic_texname.empty())
+		{
+			textures.push_back(material.metallic_texname);
+			textureTypes.push_back(Texture::FileType::METAL);
+			mat.textureMask |= 0x00000008; // Bit 4
+		}
+
+		if (!material.roughness_texname.empty())
+		{
+			textures.push_back(material.roughness_texname);
+			textureTypes.push_back(Texture::FileType::ROUGH);
+			mat.textureMask |= 0x00000010; // Bit 5
+		}
+
 		materials.emplace_back(mat);
 	}
 
@@ -161,6 +175,31 @@ void SceneBuilder::ObjLoader::loadObj(const std::string& filename)
 			v1.normal = n;
 			v2.normal = n;
 		}
+	}
+
+	// Compute tangents
+	for (uint32_t i = 0; i < indices.size(); i += 3)
+	{
+		Vertex& v0 = vertices[indices[i + 0]];
+		Vertex& v1 = vertices[indices[i + 1]];
+		Vertex& v2 = vertices[indices[i + 2]];
+
+		glm::vec3 edge1 = v1.pos - v0.pos;
+		glm::vec3 edge2 = v2.pos - v0.pos;
+		glm::vec2 dUV1  = v1.texCoord - v0.texCoord;
+		glm::vec2 dUV2  = v2.texCoord - v0.texCoord;
+
+		float f = 1.0f / (dUV1.x * dUV2.y - dUV2.x * dUV1.y);
+
+		glm::vec3 t = {
+			f * (dUV2.y * edge1.x - dUV1.y * edge2.x),
+			f * (dUV2.y * edge1.y - dUV1.y * edge2.y),
+			f * (dUV2.y * edge1.z - dUV1.y * edge2.z),
+		};
+
+		v0.tangent = t;
+		v1.tangent = t;
+		v2.tangent = t;
 	}
 
 	APP_LOG_TRACE("Number of materials: {}", materialsTOL.size());

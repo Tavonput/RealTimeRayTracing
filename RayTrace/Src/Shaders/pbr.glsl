@@ -41,4 +41,26 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 cookTorrance(vec3 N, vec3 V, vec3 L, vec3 H, vec4 albedo, float roughness, float metallic, vec3 radiance)
+{
+    vec3 F0 = vec3(0.04);
+    F0      = mix(F0, albedo.rgb, metallic);
+
+    float NDF = distributionGGX(N, H, roughness);
+    float G   = geometrySmith(N, V, L, roughness);
+    vec3  F   = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD     *= 1.0 - metallic;
+
+    vec3  num      = NDF * G * F;
+    float den      = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3  specular = num / den;
+
+    const float NdotL = max(dot(N, L), 0.0);
+
+    return (kD * albedo.rgb / PI + specular) * NdotL * radiance;
+}
+
 #endif

@@ -3,6 +3,8 @@
 
 void CornellBoxScene::onLoad(SceneBuilder& scene)
 {
+	Logger::changeLogLevel(LogLevel::TRACE);
+
 	// Models
 	m_cornellBoxModel = scene.loadModel("../../../Assets/Cornell-Box/CornellBox-PBR.obj");
 	m_mirrorModel     = scene.loadModel("../../../Assets/Cube/cube_mirror.obj");

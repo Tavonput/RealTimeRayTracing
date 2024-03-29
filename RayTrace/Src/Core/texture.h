@@ -17,7 +17,9 @@ public:
 		NONE = 0,
 		ALBEDO,
 		NORMAL,
-		ALPHA
+		ALPHA,
+		METAL,
+		ROUGH
 	};
 
 	struct CreateInfo 

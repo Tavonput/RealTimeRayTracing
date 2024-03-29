@@ -53,8 +53,8 @@ void Gui::beginUI()
 
 	m_state.changed = false;
 
-	bool showDemoWindow = true;
-	ImGui::ShowDemoWindow(&showDemoWindow);
+	//bool showDemoWindow = true;
+	//ImGui::ShowDemoWindow(&showDemoWindow);
 	//return;
 
 	{
@@ -63,8 +63,8 @@ void Gui::beginUI()
 		// Debug settings
 		if (ImGui::CollapsingHeader("Debug"))
 		{
-			const char* debugMethods[3] = { "None", "Albedo", "Normal" };
-			m_state.changed |= ImGui::Combo("Debug Maps", (int*)&m_state.debugMode, debugMethods, 3);
+			const char* debugMethods[6] = { "None", "Albedo", "Normal", "Metallic", "Roughness", "Extra"};
+			m_state.changed |= ImGui::Combo("Debug Modes (Raster & RTX Real Time)", (int*)&m_state.debugMode, debugMethods, 6);
 		}
 
 		// Scene settings

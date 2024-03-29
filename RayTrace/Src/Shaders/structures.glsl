@@ -6,10 +6,15 @@
 #define ALBEDO_BIT 0x00000001u
 #define NORMAL_BIT 0x00000002u
 #define ALPHA_BIT  0x00000004u
+#define METAL_BIT  0x00000008u
+#define ROUGH_BIT  0x00000010u
 
 #define DEBUG_NONE   0
 #define DEBUG_ALBEDO 1
 #define DEBUG_NORMAL 2
+#define DEBUG_METAL  3
+#define DEBUG_ROUGH  4
+#define DEBUG_EXTRA  5
 
 struct GlobalUniform
 {
@@ -40,6 +45,7 @@ struct Vertex
 	vec3 pos;
 	vec3 color;
 	vec3 normal;
+	vec3 tangent;
 	vec2 texCoord;
 };
 

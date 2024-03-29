@@ -52,22 +52,18 @@ std::vector<Texture> Texture::CreateBatch(std::vector<Texture::CreateInfo>& info
 		VkFormat      format      = VK_FORMAT_UNDEFINED;
 		size_t        channelSize = sizeof uint8_t;
 		VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
-		uint32_t      mipLevels   = 1;
+		uint32_t      mipLevels   = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 		switch (infos[i].fileType)
 		{
 			case FileType::ALBEDO:
 				format    = VK_FORMAT_R8G8B8A8_SRGB;
-				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 				break;
 
 			case FileType::NORMAL:
-				format    = VK_FORMAT_R8G8B8A8_UNORM;
-				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-				break;
-
 			case FileType::ALPHA:
+			case FileType::METAL:
+			case FileType::ROUGH:
 				format = VK_FORMAT_R8G8B8A8_UNORM;
-				mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 				break;
 
 			case FileType::NONE:
@@ -270,6 +266,8 @@ void Texture::LoadTexture(const char* file, FileType type, int* width, int* heig
 		case FileType::ALBEDO:
 		case FileType::NORMAL:
 		case FileType::ALPHA:
+		case FileType::METAL:
+		case FileType::ROUGH:
 			loadFormat = STBI_rgb_alpha;
 			break;
 
