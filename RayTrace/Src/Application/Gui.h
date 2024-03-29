@@ -79,6 +79,16 @@ public:
 		RTX_PATH
 	};
 
+	enum class DebugMode
+	{
+		NONE = 0,
+		ALBEDO,
+		NORMAL,
+		METAL,
+		ROUGH,
+		EXTRA
+	};
+
 	struct CreateInfo
 	{
 		SystemContext*        pSystemContext;
@@ -92,6 +102,9 @@ public:
 	struct UiState
 	{
 		bool changed = false;
+
+		// Debug
+		DebugMode debugMode = DebugMode::NONE;
 
 		// Scene
 		float backgroundColor[3] = { 1.0f, 1.0f, 1.0f };
@@ -108,14 +121,14 @@ public:
 		int          sampleCount     = 4;
 		int          TAAFrameCount   = 10;
 		int          maxPathFrame    = 0;
-		float        russianRoulette = 1.0f;
+		float        russianRoulette = 0.3f;
 
 		// Camera
-		float sensitivity = 1.0f;
-		float speed = 3.0f;
-		int mode = 0;
-		int cameraSaves = 0;
-		int currentCamera = 0;
+		float sensitivity   = 1.0f;
+		float speed         = 3.0f;
+		int   mode          = 0;
+		int   cameraSaves   = 0;
+		int   currentCamera = 0;
 	};
 
 	void init(Gui::CreateInfo info);

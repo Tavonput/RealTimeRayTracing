@@ -6,9 +6,9 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "structures.glsl"
-#include "pbr.glsl"
 
 // Payload in
 layout (location = 0) rayPayloadInEXT hitPayload payload;
@@ -31,6 +31,12 @@ layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 
 // Addresses to the object buffers
 layout (set = 1, binding = 1) buffer _ObjectDescription { ObjectDescription i[]; } objDesc;
+
+// Texture samplers
+layout (set = 1, binding = 2) uniform sampler2D[] textureSamplers;
+
+#include "pbr.glsl"
+#include "shade_state.glsl"
 
 vec3 computeDiffuse(Material mat, vec3 normal, vec3 lightDirection)
 {
@@ -75,57 +81,61 @@ void main()
 
 	const vec3 barycentrics = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
 
-	// Computing the coordinates of the hit position
-	const vec3 pos      = v0.pos * barycentrics.x + v1.pos * barycentrics.y + v2.pos * barycentrics.z;
-	const vec3 worldPos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
+	// Computing world position
+	vec3 pos      = v0.pos * barycentrics.x + v1.pos * barycentrics.y + v2.pos * barycentrics.z;
+	vec3 worldPos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
 
-	// Computing the normal at hit position
-	const vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
-	const vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
+	// Computing world normal
+	vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
+	vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
 
-	// Lighting properties
-	vec3  viewDir        = -gl_WorldRayDirectionEXT;
-	vec3  lightDirection = uni.lightPosition - worldPos;
-	float lightDistance  = length(lightDirection);
-	float lightIntensity = uni.lightIntensity / (lightDistance * lightDistance);
-	lightDirection       = normalize(lightDirection);
+	// Computing world tangent
+	vec3 tangent      = v0.tangent * barycentrics.x + v1.tangent * barycentrics.y + v2.tangent * barycentrics.z;
+	vec3 worldTangent = normalize(vec3(tangent * gl_WorldToObjectEXT));
 
-	// Diffuse
-	// vec3 diffuse = computeDiffuse(material, worldNormal, lightDirection);
+	// Computing world bitangent
+	vec3 worldBitangent = cross(worldNormal, worldTangent);
 
-	const vec3  halfway = normalize(viewDir + lightDirection);
-	const float NdotL   = max(dot(worldNormal, lightDirection), 0.0);
+	// Compute TBN
+	mat3 TBN = mat3(worldTangent, worldBitangent, worldNormal);
+
+	// Computing the texture coordinates at the hit position
+	vec2 texCoords = v0.texCoord * barycentrics.x + v1.texCoord * barycentrics.y + v2.texCoord * barycentrics.z;
+
+	vec4  albedo    = vec4(material.diffuse, 1.0);
+	float metallic  = material.metallic;
+	float roughness = material.roughness;
+
+	if (material.textureID >= 0)
+	{
+		int txtOffset = objDesc.i[gl_InstanceCustomIndexEXT].txtOffset;
+		sampleTextures(material, txtOffset, texCoords, albedo, worldNormal, TBN, metallic, roughness);
+	}
+
+	// Lighting
+	vec3  N = worldNormal;
+	vec3  V = -gl_WorldRayDirectionEXT;
+	vec3  L = normalize(uni.lightPosition - worldPos);
+	vec3  H = normalize(V + L);
 
 	float distance    = length(uni.lightPosition - worldPos);
 	float attenuation = uni.lightIntensity / (distance * distance);
 	vec3  radiance    = uni.lightColor * attenuation;
 
-	vec3 F0 = vec3(0.04);
-	F0      = mix(F0, material.diffuse, material.metallic);
-
-	float NDF = distributionGGX(worldNormal, halfway, material.roughness);
-	float G   = geometrySmith(worldNormal, viewDir, lightDirection, material.roughness);
-	vec3  F   = fresnelSchlick(clamp(dot(halfway, viewDir), 0.0, 1.0), F0);
-
-	vec3 kS = F;
-	vec3 kD = vec3(1.0) - kS;
-	kD *= 1.0 - material.metallic;
-
-	vec3  num      = NDF * G * F;
-	float den      = 4.0 * max(dot(worldNormal, viewDir), 0.0) * NdotL + 0.0001;
-	vec3  specular = num / den;
+	vec3 Lo      = cookTorrance(N, V, L, H, albedo, roughness, metallic, radiance);
+	vec3 ambient = albedo.rgb * vec3(0.01);
+	vec3 color   = Lo + ambient;
 
 	// Initialize shadow and specular components before tracing
-	float shadowComponent = 1;
-	// vec3  specular = vec3(0);
+	float shadowComponent = 1.0;
 
 	// Trace shadow ray if we are visible
-	if (dot(worldNormal, lightDirection) > 0)
+	if (dot(N, L) > 0)
 	{
 		float tMin   = 0.001;
-		float tMax   = lightDistance;
+		float tMax   = distance;
 		vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-		vec3  rayDir = lightDirection;
+		vec3  rayDir = L;
 		uint  flags  = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 		isShadowed   = true;
 		traceRayEXT(
@@ -144,25 +154,43 @@ void main()
 	}
 	if (isShadowed)
 	{
-		specular = vec3(0);
 		shadowComponent = 0.3;
 	}
 
-	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
-
-	vec3 ambient = material.ambient * vec3(0.01);
-	vec3 color   = Lo + ambient;
-
 	// Reflection
-	if (material.illum >= 3)
+	if (material.illum == 3)
 	{
 		color = vec3(0);
 		payload.attenuation *= material.specular;
 		payload.done         = 0;
 		payload.rayOrigin    = worldPos;
-		payload.rayDir       = reflect(gl_WorldRayDirectionEXT, worldNormal);
+		payload.rayDir       = reflect(gl_WorldRayDirectionEXT, N);
 	}
 
-	// payload.hitValue = lightIntensity * shadowComponent * (diffuse + specular);
-	payload.hitValue = shadowComponent * color;
+	// Set final color
+	switch (uni.debugMode)
+	{
+		case DEBUG_NONE:
+			payload.hitValue = shadowComponent * color;
+			break;
+
+		case DEBUG_ALBEDO:
+			payload.hitValue = albedo.rgb;
+			break;
+
+		case DEBUG_NORMAL:
+			payload.hitValue = N;
+			break;
+
+		case DEBUG_METAL:
+			payload.hitValue = vec3(metallic);
+			break;
+
+		case DEBUG_ROUGH:
+			payload.hitValue = vec3(roughness);
+			break;
+
+		default:
+			payload.hitValue = shadowComponent * color;
+	}
 }

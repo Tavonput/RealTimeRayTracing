@@ -1,3 +1,6 @@
+#ifndef RANDOM_GLSL
+#define RANDOM_GLSL 1
+
 // "GPU Random Numbers via the Tiny Encryption Algorithm"
 // https://dl.acm.org/doi/10.5555/1921479.1921500
 uint tea(uint val0, uint val1)
@@ -52,3 +55,5 @@ void createCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
         Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z);
     Nb = cross(N, Nt);
 }
+
+#endif

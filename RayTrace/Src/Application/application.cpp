@@ -76,7 +76,23 @@ void Application::init(Application::Settings& settings)
 	m_gui.init(guiInfo);
 
 	// Load scene
-	loadScene();
+	m_sceneBuilder.init(*m_device, m_commandSystem, m_gui);
+	m_scene.onLoad(m_sceneBuilder);
+
+	// Create object description buffer
+	std::vector<ObjectDescription> objectDescriptions = m_sceneBuilder.getObjectDescriptions();
+	Buffer::CreateInfo createInfo{};
+	createInfo.device           = m_device;
+	createInfo.commandSystem    = &m_commandSystem;
+	createInfo.data             = objectDescriptions.data();
+	createInfo.dataSize         = sizeof(ObjectDescription) * objectDescriptions.size();
+	createInfo.dataCount        = static_cast<uint32_t>(objectDescriptions.size());
+	createInfo.name             = "Object Description Storage Buffer";
+	m_objectDescBuffer = Buffer::CreateStorageBuffer(createInfo);
+
+	// Create acceleration structure
+	if (m_device->isRtxSupported())
+		m_accelerationStructure.init(m_sceneBuilder.getModelInformation(), m_sceneBuilder.getInstances(), *m_device, m_commandSystem);
 
 	// Descriptor Sets
 	createDescriptorSets();
@@ -272,16 +288,19 @@ void Application::createPipelines()
 
 void Application::createDescriptorSets()
 {
+	uint32_t imageCount   = m_swapchain.getImageCount();
+	uint32_t textureCount = m_sceneBuilder.getTextureInfo().size();
+
 	// Initialize descriptor pool
 	DescriptorPool::CreateInfo poolInfo{};
 	poolInfo.pDevice  = m_device;
 	poolInfo.name     = "Main Descriptor Pool";
-	poolInfo.maxSets  = 2 * m_settings.framesInFlight;
+	poolInfo.maxSets  = 2 * imageCount;
 	poolInfo.poolSize = 3;
 
-	poolInfo.uniformBufferCount        = m_settings.framesInFlight;
-	poolInfo.storageBufferCount        = m_settings.framesInFlight;
-	poolInfo.combinedImageSamplerCount = m_settings.framesInFlight;
+	poolInfo.uniformBufferCount        = imageCount;
+	poolInfo.storageBufferCount        = imageCount;
+	poolInfo.combinedImageSamplerCount = imageCount + imageCount * m_sceneBuilder.getTextureInfo().size();
 
 	m_descriptorPool.init(poolInfo);
 
@@ -302,6 +321,12 @@ void Application::createDescriptorSets()
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
 			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 
+		// Add image samplers for each texture
+		layoutBuilder.addBinding(
+			(uint32_t)SceneBinding::TEXTURE,
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount,
+			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+
 		m_offscreenDescriptorLayout = layoutBuilder.buildLayout("Offscreen Descriptor Set Layout");
 	}
 
@@ -319,13 +344,14 @@ void Application::createDescriptorSets()
 	}
 	
 	// Allocate and update descriptors set for each frame in flight
-	for (uint8_t i = 0; i < m_swapchain.getImageCount(); i++)
+	for (uint8_t i = 0; i < imageCount; i++)
 	{
 		// Offscreen set
 		m_offscreenDescriptorSets.push_back(m_descriptorPool.allocateDescriptorSet(m_offscreenDescriptorLayout));
-		m_offscreenDescriptorSets[i].setTotalWriteCounts(2, 0, 0);
+		m_offscreenDescriptorSets[i].setTotalWriteCounts(2, textureCount, 0);
 		m_offscreenDescriptorSets[i].addBufferWrite(m_uniformBuffers[i], BufferType::UNIFORM, 0, (uint32_t)SceneBinding::GLOBAL);
-		m_offscreenDescriptorSets[i].addBufferWrite(m_materialDescriptionBuffer, BufferType::STORAGE, 0, (uint32_t)SceneBinding::OBJ_DESC);
+		m_offscreenDescriptorSets[i].addBufferWrite(m_objectDescBuffer, BufferType::STORAGE, 0, (uint32_t)SceneBinding::OBJ_DESC);
+		m_offscreenDescriptorSets[i].addImageWriteArray(m_sceneBuilder.getTextureInfo(), (uint32_t)SceneBinding::TEXTURE);
 		m_offscreenDescriptorSets[i].update(*m_device);
 
 		// Post set
@@ -522,32 +548,6 @@ void Application::resetOffscreenRender()
 	createFramebuffers();
 }
 
-void Application::loadScene()
-{
-	APP_LOG_INFO("Loading scene");
-
-	// Load scene
-	SceneBuilder loader(*m_device, m_commandSystem, m_gui);
-	m_scene.onLoad(loader);
-
-	// Create object description buffer
-	std::vector<ObjectDescription> objectDescriptions = loader.getObjectDescriptions();
-
-	Buffer::CreateInfo createInfo{};
-	createInfo.device           = m_device;
-	createInfo.commandSystem    = &m_commandSystem;
-	createInfo.data             = objectDescriptions.data();
-	createInfo.dataSize         = sizeof(ObjectDescription) * objectDescriptions.size();
-	createInfo.dataCount        = static_cast<uint32_t>(objectDescriptions.size());
-	createInfo.name             = "Object Description Storage Buffer";
-
-	m_materialDescriptionBuffer = Buffer::CreateStorageBuffer(createInfo);
-
-	// Create acceleration structure
-	if (m_device->isRtxSupported())
-		m_accelerationStructure.init(loader.getModelInformation(), loader.getInstances(), *m_device, m_commandSystem);
-}
-
 void Application::pollEvents()
 {
 	glfwPollEvents();
@@ -674,7 +674,7 @@ void Application::cleanup()
 	// Buffers
 	for (auto& buffer : m_uniformBuffers)
 		buffer.cleanup();
-	m_materialDescriptionBuffer.cleanup();
+	m_objectDescBuffer.cleanup();
 
 	// Render passes
 	for (auto& renderPass : m_renderPasses)

@@ -11,6 +11,7 @@
 #include "Scene/simple_cube_scene.h"
 #include "Scene/cornell_box.h"
 #include "Scene/dragon.h"
+#include "Scene/model_viewer.h"
 // #include "Scene/pyramid_scene.h"
 
 #include "Core/system_context.h"
@@ -55,6 +56,7 @@ private:
 	Window        m_window;
 	SystemContext m_context;
 	Gui           m_gui;
+	SceneBuilder  m_sceneBuilder;
 	const Device* m_device = nullptr;
 
 	// Rendering components
@@ -78,12 +80,13 @@ private:
 	DescriptorSetLayout        m_offscreenDescriptorLayout;
 	std::vector<DescriptorSet> m_offscreenDescriptorSets;
 	std::vector<Buffer>        m_uniformBuffers;
-	Buffer                     m_materialDescriptionBuffer;
+	Buffer                     m_objectDescBuffer;
 
     // Scenes
 	CornellBoxScene m_scene;
-	// DragonScene     m_scene;
-	// SimpleCubeScene m_scene; Kind of broken right now.
+	// ModelViewerScene m_scene; // Check out models from https://casual-effects.com/data/index.html
+	// DragonScene      m_scene; // Requires "Chinese Dragon" from https://casual-effects.com/data/index.html
+	// SimpleCubeScene  m_scene; // Kind of broken right now.
 
 	// Cpu Raytracing
 	CpuRaytracer m_cpuRaytracer;
@@ -106,8 +109,6 @@ private:
 
 	void setupOffscreenRender();
 	void resetOffscreenRender();
-
-	void loadScene();
 
 	void pollEvents();
 

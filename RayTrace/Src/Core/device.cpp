@@ -199,6 +199,12 @@ void Device::createLogicalDevice()
 	bufferDeviceFeatures.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
 	bufferDeviceFeatures.bufferDeviceAddress = VK_TRUE;
 
+	VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+	descriptorIndexingFeatures.sType                                     = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	descriptorIndexingFeatures.runtimeDescriptorArray                    = VK_TRUE;
+	descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	descriptorIndexingFeatures.pNext                                     = &bufferDeviceFeatures;
+
 	// Acceleration structure
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelFeatures{};
 	accelFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -227,7 +233,7 @@ void Device::createLogicalDevice()
 	// Device features
 	VkPhysicalDeviceFeatures2 deviceFeatures{};
 	deviceFeatures.sType                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext                      = &bufferDeviceFeatures;
+	deviceFeatures.pNext                      = &descriptorIndexingFeatures;
 	setDeviceFeatures(deviceFeatures);
 
 	// Device create
@@ -237,8 +243,6 @@ void Device::createLogicalDevice()
 	createInfo.pQueueCreateInfos       = queueCreateInfos.data();
 	createInfo.enabledExtensionCount   = static_cast<uint32_t>(m_deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-	createInfo.enabledLayerCount       = static_cast<uint32_t>(m_instanceLayers.size());
-	createInfo.ppEnabledLayerNames     = m_instanceLayers.data();
 	createInfo.pNext                   = &deviceFeatures;
 
 	if (vkCreateDevice(m_physical, &createInfo, nullptr, &m_logical) != VK_SUCCESS)

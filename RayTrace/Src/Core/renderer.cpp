@@ -319,11 +319,16 @@ void Renderer::updateUI()
 	// Scene
 	postPushConstants.exposure = m_ui.exposure;
 
+	// Camera
 	m_camera->updateSensitivity(m_ui.sensitivity);
 	m_camera->updateSpeed(m_ui.speed);
 	m_camera->updateMode(m_ui.mode);
 	m_camera->saveCamera(m_ui.cameraSaves);
 	m_camera->switchCameras(m_ui.currentCamera);
+
+	// Debug
+	ubo.debugMode = (int)m_ui.debugMode;
+
 	// Start UI
 	m_gui->beginUI();
 }
