@@ -298,9 +298,9 @@ void Application::createDescriptorSets()
 	poolInfo.maxSets  = 2 * imageCount;
 	poolInfo.poolSize = 3;
 
-	poolInfo.uniformBufferCount        = 1;
-	poolInfo.storageBufferCount        = 1;
-	poolInfo.combinedImageSamplerCount = 1 + m_sceneBuilder.getTextureInfo().size();
+	poolInfo.uniformBufferCount        = imageCount;
+	poolInfo.storageBufferCount        = imageCount;
+	poolInfo.combinedImageSamplerCount = imageCount + imageCount * m_sceneBuilder.getTextureInfo().size();
 
 	m_descriptorPool.init(poolInfo);
 

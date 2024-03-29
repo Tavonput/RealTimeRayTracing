@@ -104,8 +104,6 @@ void main()
 
 	// Find the albedo to use
 	vec4  albedo    = vec4(material.diffuse, 1.0);
-	// vec3  N         = normalize(TBN * worldNormal); normal mapping is not working
-	vec3  N         = normalize(worldNormal);
 	float metallic  = material.metallic;
 	float roughness = material.roughness;
 
@@ -114,13 +112,13 @@ void main()
 	{
 		int txtOffset = objDesc.i[gl_InstanceCustomIndexEXT].txtOffset;
 		vec3 dummyNormal;
-		sampleTextures(material, txtOffset, texCoords, albedo, dummyNormal, metallic, roughness);
+		sampleTextures(material, txtOffset, texCoords, albedo, dummyNormal, TBN, metallic, roughness);
 	}
 
 	if (material.illum == 2 || material.illum == 4)
-		lambertian(albedo.xyz, N);
+		lambertian(albedo.xyz, worldNormal);
 	else if (material.illum == 3)
-		mirror(N);
+		mirror(worldNormal);
 
 	payload.rayOrigin = worldPos;
 	payload.emission  = material.emission * uni.lightIntensity * uni.lightColor;

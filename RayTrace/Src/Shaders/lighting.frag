@@ -82,8 +82,7 @@ void main()
 	if (material.textureID >= 0)
 	{
 		int txtOffset = objDesc.i[pc.objectID].txtOffset;
-		vec3 dummyNormal;
-		sampleTextures(material, txtOffset, texCoords, albedo, dummyNormal, metallic, roughness);
+		sampleTextures(material, txtOffset, texCoords, albedo, normal, TBN, metallic, roughness);
 	}
 
 	// Throw out transparent pixels
@@ -91,8 +90,7 @@ void main()
 		discard;
 
 	// Lighting
-	// vec3 N = normalize(TBN * normal); normal mapping is not working
-	vec3 N = normalize(normal);
+	vec3 N = normal;
 	vec3 V = normalize(uni.viewPosition - fragPos);
 	vec3 L = normalize(uni.lightPosition - fragPos);
 	vec3 H = normalize(V + L);

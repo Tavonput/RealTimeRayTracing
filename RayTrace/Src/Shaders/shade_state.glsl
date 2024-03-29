@@ -3,7 +3,7 @@
 
 #include "structures.glsl"
 
-void sampleTextures(Material mat, int txtOffset, vec2 txtCoord, inout vec4 albedo, inout vec3 normal, inout float metallic, inout float roughness)
+void sampleTextures(Material mat, int txtOffset, vec2 txtCoord, inout vec4 albedo, inout vec3 normal, mat3 TBN, inout float metallic, inout float roughness)
 {
 	// Note: Textures must be sourced in the same order they were added during loading
 
@@ -22,6 +22,7 @@ void sampleTextures(Material mat, int txtOffset, vec2 txtCoord, inout vec4 albed
 		txtID++;
 		normal = texture(textureSamplers[nonuniformEXT(txtID)], txtCoord).xyz;
 		normal = normal * 2.0 - 1.0;
+		normal = normalize(TBN * normal);
 	}
 
 	// Alpha

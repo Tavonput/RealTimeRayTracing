@@ -109,13 +109,11 @@ void main()
 	if (material.textureID >= 0)
 	{
 		int txtOffset = objDesc.i[gl_InstanceCustomIndexEXT].txtOffset;
-		vec3 dummyNormal;
-		sampleTextures(material, txtOffset, texCoords, albedo, dummyNormal, metallic, roughness);
+		sampleTextures(material, txtOffset, texCoords, albedo, worldNormal, TBN, metallic, roughness);
 	}
 
 	// Lighting
-	// vec3  N = normalize(TBN * worldNormal); Normal mapping is not working
-	vec3  N = normalize(worldNormal);
+	vec3  N = worldNormal;
 	vec3  V = -gl_WorldRayDirectionEXT;
 	vec3  L = normalize(uni.lightPosition - worldPos);
 	vec3  H = normalize(V + L);
