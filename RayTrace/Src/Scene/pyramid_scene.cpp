@@ -2,7 +2,7 @@
 #include "pyramid_scene.h"
 
 
-void PyramidScene::onLoad(const Device& device, const CommandSystem& commandSystem)
+/*void PyramidScene::onLoad(const Device& device, const CommandSystem& commandSystem)
 {
 	
 	
@@ -89,4 +89,4 @@ void PyramidScene::updateRenderMatrix(float time, float aspectRatio)
 
 	m_cameraMatrix.renderMatrix = projection * view * m_model;
 	m_cameraMatrix.model = m_model;
-}
+} */

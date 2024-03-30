@@ -15,7 +15,8 @@
 enum class SceneBinding
 {
 	GLOBAL   = 0,
-	OBJ_DESC = 1
+	OBJ_DESC = 1,
+	TEXTURE
 };
 
 enum class RtxBinding
@@ -165,6 +166,15 @@ public:
 	 */
 	void addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t binding, bool storage = false);
 	 
+	/**
+	 * Add multiple image writes for an array of samplers.
+	 *
+	 * @param imageInfos: A vector of VkDescriptorImageInfo that specifies the sampler, view, and layout.
+	 * @param binding: The binding of the image.
+	 * @param storage: Is the image a storage image (default false).
+	 */
+	void addImageWriteArray(const std::vector<VkDescriptorImageInfo>& imageInfos, uint32_t binding, bool storage = false);
+
 	/**
 	 * Add an acceleration structure write.
 	 *

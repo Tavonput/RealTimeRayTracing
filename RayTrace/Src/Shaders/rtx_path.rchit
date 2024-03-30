@@ -6,6 +6,7 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "structures.glsl"
 #include "random.glsl"
@@ -29,30 +30,32 @@ layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 // Addresses to the object buffers
 layout (set = 1, binding = 1) buffer _ObjectDescription { ObjectDescription i[]; } objDesc;
 
+// Texture samplers
+layout (set = 1, binding = 2) uniform sampler2D[] textureSamplers;
+
 // Push constant
 layout (push_constant) uniform _RtxPushConstant { RtxPushConstant pc; };
 
-void lambertian(Material mat, vec3 normal)
-{
-	vec3 tangent, bitangent;
-	createCoordinateSystem(normal, tangent, bitangent);
-	vec3 rayDirection = samplingHemisphere(payload.seed, tangent, bitangent, normal);
+#include "shade_state.glsl"
 
-	const float cosTheta = dot(rayDirection, normal);
+void lambertian(vec3 albedo, vec3 N)
+{
+	vec3 t, b;
+	createCoordinateSystem(N, t, b);
+	vec3 rayDirection = samplingHemisphere(payload.seed, t, b, N);
+
+	const float cosTheta = dot(rayDirection, N);
 	const float p        = cosTheta / PI;
 
-	vec3 BRDF = mat.diffuse / PI;
+	vec3 BRDF = albedo / PI;
 
 	payload.rayDir      = rayDirection;
 	payload.throughput *= BRDF * cosTheta / p;
 }
 
-void mirror(Material mat, vec3 normal)
+void mirror(vec3 normal)
 {
-	vec3 rayDirection = reflect(gl_WorldRayDirectionEXT, normal);
-
-	payload.rayDir      = rayDirection;
-	// payload.throughput *= mat.specular;
+	payload.rayDir = reflect(gl_WorldRayDirectionEXT, normal);
 }
 
 void main()
@@ -83,13 +86,39 @@ void main()
 	const vec3 worldPos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
 
 	// Computing the normal at hit position
-	const vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
-	const vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
+	vec3 normal      = v0.normal * barycentrics.x + v1.normal * barycentrics.y + v2.normal * barycentrics.z;
+	vec3 worldNormal = normalize(vec3(normal * gl_WorldToObjectEXT));
 
-	if (material.illum == 2)
-		lambertian(material, worldNormal);
-	else if (material.illum >= 3)
-		mirror(material, worldNormal);
+	// Computing world tangent
+	vec3 tangent      = v0.tangent * barycentrics.x + v1.tangent * barycentrics.y + v2.tangent * barycentrics.z;
+	vec3 worldTangent = normalize(vec3(tangent * gl_WorldToObjectEXT));
+
+	// Computing world bitangent
+	vec3 worldBitangent = cross(worldNormal, worldTangent);
+
+	// Compute TBN
+	mat3 TBN = mat3(worldTangent, worldBitangent, worldNormal);
+
+	// Computing the texture coordinates at the hit position
+	vec2 texCoords = v0.texCoord * barycentrics.x + v1.texCoord * barycentrics.y + v2.texCoord * barycentrics.z;
+
+	// Find the albedo to use
+	vec4  albedo    = vec4(material.diffuse, 1.0);
+	float metallic  = material.metallic;
+	float roughness = material.roughness;
+
+	// Sample textures
+	if (material.textureID >= 0)
+	{
+		int txtOffset = objDesc.i[gl_InstanceCustomIndexEXT].txtOffset;
+		vec3 dummyNormal;
+		sampleTextures(material, txtOffset, texCoords, albedo, dummyNormal, TBN, metallic, roughness);
+	}
+
+	if (material.illum == 2 || material.illum == 4)
+		lambertian(albedo.xyz, worldNormal);
+	else if (material.illum == 3)
+		mirror(worldNormal);
 
 	payload.rayOrigin = worldPos;
 	payload.emission  = material.emission * uni.lightIntensity * uni.lightColor;

@@ -37,8 +37,9 @@ struct GlobalUniform
 	float     lightIntensity = 1.0;
 
 	glm::vec3 lightPosition;
+	int       debugMode;
 
-	alignas(16) glm::vec3 lightColor;
+	glm::vec3 lightColor;
 };
 
 class Vertex
@@ -47,9 +48,10 @@ public:
 	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec3 normal;
+	glm::vec3 tangent;
 	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription();
 
-	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions();
+	static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions();
 };

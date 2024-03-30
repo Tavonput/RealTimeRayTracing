@@ -1,5 +1,5 @@
 # Real Time Ray Tracing
-This project is still in its initial phases.
+Vulkan rendering engine with hardware acceleration for real-time ray tracing and interactive path tracing.
 
 ## Getting Started
 This application was developed in Visual Studio 2022, so it is recommended to use Visual Studio 2022 (Also we only have a build option for Visual Studio 2022, so you should probably use it). We currently do not have any support for other platforms.
@@ -20,7 +20,7 @@ Download the latest [VulkanSDK](https://vulkan.lunarg.com/). The directory shoul
 VulkanSDK / <version> / <all of the SDK directories and files>
 ```
 
-Make sure that the root directory of the SDK is **VulkanSDK** and there is only one subdirectory in it which should be named the version that you downloaded. Then move the entire VulkanSDK directory into Vendor.
+Make sure that the root directory of the SDK is **VulkanSDK** and there is only one subdirectory in it which should be named the version that you downloaded. Then move the entire VulkanSDK directory into Vendor.![alt text]
 
 ```
 /
@@ -76,3 +76,12 @@ Download the latest version 5 of [premake](https://premake.github.io/). Grab jus
 ```
 
 Run `build_windows.bat` in the Scripts directory to build the Visual Studio 2022 solution. Now you should be able to open the solution `RayTrace.sln` and build the project. Try pressing `F5` to build and run the project. Also note, all binaries (executables, objs, ...) will be sent to the directory Bin.
+
+## Gallery
+Models from [https://casual-effects.com/data/index.html](https://casual-effects.com/data/index.html).
+
+![Fire place](Images/fireplace_room.png)
+
+![Living Room](Images/living_room.png)
+
+![Cornell Box](Images/cornell_box.png)

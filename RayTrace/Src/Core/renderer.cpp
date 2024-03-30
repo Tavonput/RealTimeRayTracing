@@ -17,6 +17,7 @@ void Renderer::beginFrame()
 	deltaTime       = currentFrameTime - m_lastFrameTime;
 	m_lastFrameTime = currentFrameTime;
 
+	m_camera->updatePosition(deltaTime);
 	// Reset and begin command buffer
 	m_commandBuffer = m_commandSystem->getCommandBuffer(m_frameIndex);
 	vkResetCommandBuffer(m_commandBuffer, 0);
@@ -317,6 +318,16 @@ void Renderer::updateUI()
 
 	// Scene
 	postPushConstants.exposure = m_ui.exposure;
+
+	// Camera
+	m_camera->updateSensitivity(m_ui.sensitivity);
+	m_camera->updateSpeed(m_ui.speed);
+	m_camera->updateMode(m_ui.mode);
+	m_camera->saveCamera(m_ui.cameraSaves);
+	m_camera->switchCameras(m_ui.currentCamera);
+
+	// Debug
+	ubo.debugMode = (int)m_ui.debugMode;
 
 	// Start UI
 	m_gui->beginUI();

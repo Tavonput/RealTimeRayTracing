@@ -2,17 +2,18 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_scalar_block_layout : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference2 : require
 
 #include "structures.glsl"
-#include "pbr.glsl"
 
 // Inputs
 layout (location = 0) in vec3 fragNormal;
 layout (location = 1) in vec3 fragPos;
 layout (location = 2) in vec2 texCoords;
+layout (location = 3) in mat3 TBN;
 
 // Outputs
 layout (location = 0) out vec4 outColor;
@@ -27,8 +28,15 @@ layout (buffer_reference, scalar) buffer MatIndexBuffer { int i[]; };
 // Addresses to the storage buffers
 layout (binding = 1) buffer ObjectDescription_ { ObjectDescription i[]; } objDesc;
 
+// Texture samplers
+layout (binding = 2) uniform sampler2D[] textureSamplers;
+
 // Push constant
 layout (push_constant) uniform Constants { PushConstant pc; };
+
+#include "pbr.glsl"
+#include "random.glsl"
+#include "shade_state.glsl"
 
 vec3 computeLighting(Material mat, vec3 normal, vec3 viewDirection, vec3 lightDirection)
 {
@@ -66,40 +74,63 @@ void main()
 	int      matIndex = matIndexBuffer.i[gl_PrimitiveID];
 	Material material = materialBuffer.m[matIndex];
 
-	float roughness = material.roughness;
+	vec4  albedo    = vec4(material.diffuse, 1.0);
+	vec3  normal    = fragNormal;
 	float metallic  = material.metallic;
+	float roughness = material.roughness;
+
+	if (material.textureID >= 0)
+	{
+		int txtOffset = objDesc.i[pc.objectID].txtOffset;
+		sampleTextures(material, txtOffset, texCoords, albedo, normal, TBN, metallic, roughness);
+	}
+
+	// Throw out transparent pixels
+	if (albedo.a < 0.1)
+		discard;
 
 	// Lighting
-	vec3 N = normalize(fragNormal);
+	vec3 N = normal;
 	vec3 V = normalize(uni.viewPosition - fragPos);
 	vec3 L = normalize(uni.lightPosition - fragPos);
 	vec3 H = normalize(V + L);
-
-	vec3 F0 = vec3(0.04);
-	F0      = mix(F0, material.diffuse, metallic);
 
 	float distance    = length(uni.lightPosition - fragPos);
 	float attenuation = uni.lightIntensity / (distance * distance);
 	vec3  radiance    = uni.lightColor * attenuation;
 
-	float NDF = distributionGGX(N, H, roughness);
-	float G   = geometrySmith(N, V, L, roughness);
-	vec3  F   = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+	vec3 Lo      = cookTorrance(N, V, L, H, albedo, roughness, metallic, radiance);
+	vec3 ambient = albedo.rgb * vec3(0.01);
+	vec3 color   = Lo + ambient;
 
-	vec3 kS = F;
-	vec3 kD = vec3(1.0) - kS;
-	kD     *= 1.0 - metallic;
+	// Set final color
+	switch (uni.debugMode)
+	{
+		case DEBUG_NONE:
+			outColor = vec4(color, 1.0);
+			break;
 
-	vec3  num      = NDF * G * F;
-	float den      = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-	vec3  specular = num / den;
+		case DEBUG_ALBEDO:
+			outColor = vec4(albedo.rgb, 1.0);
+			break;
 
-	const float NdotL = max(dot(N, L), 0.0);
+		case DEBUG_NORMAL:
+			outColor = vec4(N, 1.0);
+			break;
 
-	vec3 Lo = (kD * material.diffuse / PI + specular) * NdotL * radiance;
+		case DEBUG_METAL:
+			outColor = vec4(vec3(metallic), 1.0);
+			break;
 
-	vec3 ambient = material.ambient * vec3(0.01);
-	vec3 color = Lo + ambient;
+		case DEBUG_ROUGH:
+			outColor = vec4(vec3(roughness), 1.0);
+			break;
 
-	outColor = vec4(color, 1.0);
+		case DEBUG_EXTRA:
+			outColor = vec4(N, 1.0);
+			break;
+
+		default:
+			outColor = vec4(color, 1.0);
+	}
 }

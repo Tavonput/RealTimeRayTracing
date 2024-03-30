@@ -128,6 +128,23 @@ void DescriptorSet::addImageWrite(VkDescriptorImageInfo imageInfo, uint32_t bind
 	m_imageCount++;
 }
 
+void DescriptorSet::addImageWriteArray(const std::vector<VkDescriptorImageInfo>& imageInfos, uint32_t binding, bool storage)
+{
+	VkWriteDescriptorSet descriptorWrite{};
+	descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet          = m_set;
+	descriptorWrite.dstBinding      = binding;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+	descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrite.pImageInfo      = imageInfos.data();
+
+	if (storage)
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+	m_descriptorWrites.push_back(descriptorWrite);
+}
+
 void DescriptorSet::addAccelerationStructureWrite(const VkAccelerationStructureKHR& accelerationStructure, uint32_t count, uint32_t binding)
 {
 	VkWriteDescriptorSetAccelerationStructureKHR accelWrite{};

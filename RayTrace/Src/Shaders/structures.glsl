@@ -1,4 +1,20 @@
+#ifndef STRUCTURES_GLSL
+#define STRUCTURES_GLSL 1
+
 #define PI 3.14159265
+
+#define ALBEDO_BIT 0x00000001u
+#define NORMAL_BIT 0x00000002u
+#define ALPHA_BIT  0x00000004u
+#define METAL_BIT  0x00000008u
+#define ROUGH_BIT  0x00000010u
+
+#define DEBUG_NONE   0
+#define DEBUG_ALBEDO 1
+#define DEBUG_NORMAL 2
+#define DEBUG_METAL  3
+#define DEBUG_ROUGH  4
+#define DEBUG_EXTRA  5
 
 struct GlobalUniform
 {
@@ -6,10 +22,12 @@ struct GlobalUniform
 	mat4 viewInverse;
 	mat4 projInverse;
 
-	vec3 viewPosition;
+	vec3  viewPosition;
 	float lightIntensity;
 
 	vec3 lightPosition;
+	int  debugMode;
+
 	vec3 lightColor;
 };
 
@@ -19,6 +37,7 @@ struct ObjectDescription
 	uint64_t indexAddress;
 	uint64_t materialAddress;
 	uint64_t materialIndexAddress;
+	int txtOffset;
 };
 
 struct Vertex
@@ -26,28 +45,31 @@ struct Vertex
 	vec3 pos;
 	vec3 color;
 	vec3 normal;
+	vec3 tangent;
 	vec2 texCoord;
 };
 
 struct Material
 {
-	vec3    ambient;
-	float   shininess;
+	vec3  ambient;
+	float shininess;
 
-	vec3    diffuse;
-	float   ior;
+	vec3  diffuse;
+	float ior;
 
-	vec3    specular;
-	float   dissolve;
+	vec3  specular;
+	float dissolve;
 
-	vec3    transmittance;
-	int     illum;
+	vec3  transmittance;
+	int   illum;
 
-	vec3    emission;
-	int     textureID;
+	vec3  emission;
+	int   textureID;
 
 	float roughness;
 	float metallic;
+
+	uint  textureMask;
 };
 
 struct PushConstant
@@ -99,3 +121,5 @@ struct hitPayloadPath
 	uint seed;
 	uint done;
 };
+
+#endif
