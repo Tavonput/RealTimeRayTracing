@@ -15,7 +15,7 @@ layout (location = 0) rayPayloadInEXT hitPayload payload;
 hitAttributeEXT vec3 attribs;
 
 // Payload out
-layout (location = 1) rayPayloadEXT bool isShadowed;
+layout (location = 1) rayPayloadEXT shadowPayload payloadShadow;
 
 // Acceleration structure
 layout (set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
@@ -118,6 +118,9 @@ void main()
 	vec3  L = normalize(uni.lightPosition - worldPos);
 	vec3  H = normalize(V + L);
 
+	// Correct normal
+	N = faceForwardNormal(N, V);
+
 	float distance    = length(uni.lightPosition - worldPos);
 	float attenuation = uni.lightIntensity / (distance * distance);
 	vec3  radiance    = uni.lightColor * attenuation;
@@ -126,8 +129,10 @@ void main()
 	vec3 ambient = albedo.rgb * vec3(0.01);
 	vec3 color   = Lo + ambient;
 
-	// Initialize shadow and specular components before tracing
+	// Initialize shadow payload before tracing
 	float shadowComponent = 1.0;
+	payloadShadow.isHit   = true;
+	payloadShadow.seed    = payload.seed;
 
 	// Trace shadow ray if we are visible
 	if (dot(N, L) > 0)
@@ -136,13 +141,12 @@ void main()
 		float tMax   = distance;
 		vec3  origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 		vec3  rayDir = L;
-		uint  flags  = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-		isShadowed   = true;
+		uint  flags  = gl_RayFlagsSkipClosestHitShaderEXT;
 		traceRayEXT(
 			topLevelAS,  // acceleration structure
 			flags,       // rayFlags
 			0xFF,        // cullMask
-			0,           // sbtRecordOffset
+			1,           // sbtRecordOffset
 			0,           // sbtRecordStride
 			1,           // missIndex
 			origin,      // ray origin
@@ -152,7 +156,10 @@ void main()
 			1            // payload (location = 1)
 		);
 	}
-	if (isShadowed)
+
+	payload.seed = payloadShadow.seed;
+
+	if (payloadShadow.isHit)
 	{
 		shadowComponent = 0.3;
 	}

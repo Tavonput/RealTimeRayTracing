@@ -52,7 +52,7 @@ void AccelerationStructure::createBlas(const std::vector<ModelInfo>& models)
 		VkAccelerationStructureGeometryKHR geometry{};
 		geometry.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry.geometryType       = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		geometry.flags              = VK_GEOMETRY_OPAQUE_BIT_KHR;
+		geometry.flags              = VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
 		geometry.geometry.triangles = triangles;
 
 		VkAccelerationStructureBuildRangeInfoKHR offset{};
