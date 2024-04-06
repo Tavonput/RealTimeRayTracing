@@ -66,6 +66,7 @@ void Gui::beginUI()
 	// Determine the size of the main window 
 	ImVec2 screenSize = ImGui::GetMainViewport()->Size;
 
+
 	// Define the percentage of screen width and height for the settings window
 	float widthPercentage = 0.2f;  // For example, 20% of the screen width
 	float heightOffset = 26;  // Assuming 26 is the height of the main menu bar or top margin
@@ -77,12 +78,24 @@ void Gui::beginUI()
 	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
 	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, heightOffset);
 
+	// Set the UI window size.
+	ImVec2 window_size = ImVec2(300, 300);
+
+	// Set position of the Ui to the top right corner
+	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
+	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, 0); 
+
+
 	// Apply the calculated position and size to the next window (the "Settings" window).
 	// ImGuiCond_Always means this size setting will be applied every time without any conditions.
 	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 
 	{
+
+		// Creating the settings window 
+		// ImGuiWindowFlags_NoResize prevents the user from resizing the window. 
+
 		ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoResize);
 
 		// Debug settings

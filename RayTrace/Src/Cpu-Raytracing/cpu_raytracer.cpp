@@ -54,8 +54,6 @@ void CpuRaytracer::init(uint32_t width, uint32_t height)
 		}
 	}
 	stbi_write_png("cpuRayTraceObject.png",width, height,3,imageData,width*3);
-	auto viewpointheight = 1.0;
-	auto viewpointwidth = viewpointheight * (double)width / height;
 	free(imageData);
 }
 
@@ -63,6 +61,17 @@ void CpuRaytracer::render()
 {
 	APP_LOG_INFO("Render CPU raytraced scene");
 	glm::vec3 inital = {0.0f, 0.0f, 0.0f};
+	double viewpointheight = 1.0;
+	double viewpointwidth = viewpointheight * (double)width / height;
+	double fLength = 1.0;
+	glm::vec3 cameraCenter = { 0,0,0 };
+	glm::vec3 viewportU = { viewpointwidth,0,0 };
+	glm::vec3 viewportV = { 0,-viewpointheight,0 };
+	
+	/*glm::vec3 deltaU =  viewportU / width;*/
+	/*glm::vec3 deltaV = viewportV / height*/
+
+
 	// NOTES: 
 	// Consider using stb_image to save the result as a png or something. The function is stbi_write_png()
 	// Consider using glm for linear algebra stuff.
