@@ -126,6 +126,7 @@ public:
 		// Camera
 		float sensitivity   = 1.0f;
 		float speed         = 3.0f;
+		float ground        = 0.0f;
 		int   mode          = 0;
 		int   cameraSaves   = 0;
 		int   currentCamera = 0;
