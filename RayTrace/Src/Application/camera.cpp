@@ -119,6 +119,7 @@ void Camera::onKeyPress(KeyPressEvent event)
 		case GLFW_KEY_D: m_dKey = true; break;
 		case GLFW_KEY_LEFT_SHIFT: m_lShift = true; break;
 		case GLFW_KEY_SPACE: m_space = true; break;
+		case GLFW_KEY_LEFT_CONTROL: m_lCtrl = true; break;
 	}
 }
 
@@ -132,6 +133,7 @@ void Camera::onKeyRelease(KeyReleaseEvent event)
 		case GLFW_KEY_D: m_dKey = false; break;
 		case GLFW_KEY_LEFT_SHIFT: m_lShift = false; break;
 		case GLFW_KEY_SPACE: m_space = false; break;
+		case GLFW_KEY_LEFT_CONTROL: m_lCtrl = false; break;
 		case GLFW_KEY_ESCAPE:  pauseMouseMove(); break;
 	}
 }
@@ -189,8 +191,14 @@ void Camera::updatePosition(float deltaT) {
 
 	glm::vec3 axisZ = glm::normalize(m_eye - m_center); // Normalized Z-axis relative to camera (Direction camera is looking)
 	glm::vec3 axisX = glm::normalize(glm::cross(m_up, axisZ)); // Normalized X-axis relative to camera
+	
+	float cameraSpeed = m_speed * deltaT;
+	float yCenter = m_center[1]; 
+	if (m_lCtrl) { // Sprint
+		cameraSpeed *= 3;
+	}
 
-	const float cameraSpeed = m_speed * deltaT;
+	bool isGrounded = m_eye[1] == m_ground;
 
 	if (m_wKey) {
 		//APP_LOG_INFO("W Key Down");
@@ -221,6 +229,10 @@ void Camera::updatePosition(float deltaT) {
 		//APP_LOG_INFO("Space Key Down"); 
 		m_eye += cameraSpeed * m_worldUp; // Moves camera up
 		m_center += cameraSpeed * m_worldUp;
+	}
+	if (m_eye[1] <= m_ground || (isGrounded && !m_space)) {
+		m_eye[1] = m_ground;
+		m_center[1] = yCenter;
 	}
 	updateViewMatrix();
 }
@@ -256,6 +268,16 @@ void Camera::updateDirection(float deltaX, float deltaY)
 		eyeToCenter = rotationXVec;
 
 	m_center = m_eye + eyeToCenter * length;
+}
+
+void Camera::updateGround(float ground)
+{
+	if (m_eye[1] <= m_ground)
+	{
+		m_eye[1] = ground; // Sets the eye's y-coordinate to be ground height
+		m_center[1] = m_center[1] + (ground - m_ground); // Adjusts camera center by change in ground height
+	}
+	m_ground = ground;
 }
 
 void Camera::orbit(float deltaX, float deltaY)

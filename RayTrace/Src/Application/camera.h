@@ -47,6 +47,7 @@ public:
 	void updateSensitivity(float newSense) { m_sensitivity = newSense; };
 	void updateSpeed(float newSpeed) { m_speed = newSpeed; }
 	void updateMode(int mode);
+	void updateGround(float ground);
 	void saveCamera(int cameraSaves);
 	void switchCameras(int currentCamera);
 
@@ -72,6 +73,7 @@ private:
 	std::vector<glm::vec3> m_eyePositions;
 	std::vector<glm::vec3> m_centerPositions;
 
+	float m_ground = 0.0f;
 
 	float m_nearPlane   = 0.01f;
 	float m_farPlane    = 100.0f;
@@ -97,6 +99,7 @@ private:
 	bool m_lShift        = false;
 	bool m_space         = false;
 	bool m_mousePause    = false;
+	bool m_lCtrl         = false;
 
 	int m_cameraSaves = 0;
 	int m_currentIndex = 0;
