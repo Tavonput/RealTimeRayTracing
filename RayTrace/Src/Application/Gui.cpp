@@ -11,12 +11,18 @@ void Gui::init(Gui::CreateInfo info)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows ***Causes memory crash. Needs further configuration
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForVulkan(info.pWindow->getWindowGLFW(), true);
+
+	// Load and set font
+	const char* fontPath = "../../../Assets/fonts/SourceSansPro-Black.otf";
+	float fontSize = 20.0f;
+	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
 
 	// Setup descriptor pool
 	DescriptorPool::CreateInfo descriptorPoolInfo{};
@@ -27,7 +33,7 @@ void Gui::init(Gui::CreateInfo info)
 	descriptorPoolInfo.poolSize                  = 1;
 	descriptorPoolInfo.combinedImageSamplerCount = 1;
 	m_descriptorPool.init(descriptorPoolInfo);
-
+	
 	// Setup ImGui Vulkan implementation
 	ImGui_ImplVulkan_InitInfo initInfo{};
 	initInfo.Instance       = info.pSystemContext->getInstance();
@@ -42,10 +48,14 @@ void Gui::init(Gui::CreateInfo info)
 	initInfo.MinImageCount = 2;
 	initInfo.MSAASamples    = info.msaaSamples;
 	ImGui_ImplVulkan_Init(&initInfo);
+
 }
+
+
 
 void Gui::beginUI()
 {
+
 	// Start a new frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -53,17 +63,45 @@ void Gui::beginUI()
 
 	m_state.changed = false;
 
-	//bool showDemoWindow = true;
-	//ImGui::ShowDemoWindow(&showDemoWindow);
-	//return;
+	// Determine the size of the main window 
+	ImVec2 screenSize = ImGui::GetMainViewport()->Size;
+
+
+	// Define the percentage of screen width and height for the settings window
+	float widthPercentage = 0.2f;  // For example, 20% of the screen width
+	float heightOffset = 26;  // Assuming 26 is the height of the main menu bar or top margin
+
+	// Calculate the UI window size to be a percentage of the screen size
+	ImVec2 window_size = ImVec2(screenSize.x * widthPercentage, screenSize.y - heightOffset);
+
+	// Set position of the Ui to the top right corner
+	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
+	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, heightOffset);
+
+	// Set the UI window size.
+	ImVec2 window_size = ImVec2(300, 300);
+
+	// Set position of the Ui to the top right corner
+	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
+	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, 0); 
+
+
+	// Apply the calculated position and size to the next window (the "Settings" window).
+	// ImGuiCond_Always means this size setting will be applied every time without any conditions.
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 
 	{
-		ImGui::Begin("Settings");
+
+		// Creating the settings window 
+		// ImGuiWindowFlags_NoResize prevents the user from resizing the window. 
+
+		ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoResize);
 
 		// Debug settings
 		if (ImGui::CollapsingHeader("Debug"))
 		{
-			const char* debugMethods[6] = { "None", "Albedo", "Normal", "Metallic", "Roughness", "Extra"};
+			const char* debugMethods[6] = { "None", "Albedo", "Normal", "Metallic", "Roughness", "Extra" };
 			m_state.changed |= ImGui::Combo("Debug Modes (Raster & RTX Real Time)", (int*)&m_state.debugMode, debugMethods, 6);
 		}
 
@@ -100,8 +138,8 @@ void Gui::beginUI()
 			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
 			ImGui::Text("Camera Modes:"); ImGui::SameLine();
 			m_state.changed |= ImGui::RadioButton("Stationary", &m_state.mode, 0); ImGui::SameLine();
-			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1); 
-			
+			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1);
+
 			if (ImGui::Button("Save Camera Position")) { m_state.cameraSaves++; }
 
 			ImGui::Text("Switch Camera: ");
@@ -109,11 +147,50 @@ void Gui::beginUI()
 			if (m_state.changed = ImGui::ArrowButton("##left", ImGuiDir_Left)) { m_state.currentCamera--; } //** If statement valid?
 			ImGui::SameLine();
 			if (m_state.changed = ImGui::ArrowButton("##right", ImGuiDir_Right)) { m_state.currentCamera++; }
-
-
 		}
-		// Framerate
-		ImGui::Text("Render Time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+		if (ImGui::BeginMainMenuBar()) {
+			if (ImGui::BeginMenu("RenderTime")) {
+				// Display render time and FPS
+				float framerate = ImGui::GetIO().Framerate;
+				float renderTime = 1000.0f / framerate;
+				ImGui::Text("Render Time: %.3f ms/frame", renderTime);
+				ImGui::Text("FPS: %.1f", framerate);
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("UI Custom")) {
+				ImGuiStyle& style = ImGui::GetStyle();
+
+				ImGui::ColorEdit4("Menu Bar Background", (float*)&style.Colors[ImGuiCol_MenuBarBg]);	
+				ImGui::ColorEdit4("Header Background", (float*)&style.Colors[ImGuiCol_Header]);				
+				ImGui::ColorEdit4("Header Hovered", (float*)&style.Colors[ImGuiCol_HeaderHovered]);				
+				ImGui::ColorEdit4("Header Active", (float*)&style.Colors[ImGuiCol_HeaderActive]);				
+				ImGui::ColorEdit4("Text Color", (float*)&style.Colors[ImGuiCol_Text]);				
+				ImGui::ColorEdit4("Window Background", (float*)&style.Colors[ImGuiCol_WindowBg]);			
+				ImGui::ColorEdit4("Title Background Active", (float*)&style.Colors[ImGuiCol_TitleBgActive]);				
+				ImGui::ColorEdit4("Button Background", (float*)&style.Colors[ImGuiCol_Button]);
+				ImGui::ColorEdit4("Button Hovered", (float*)&style.Colors[ImGuiCol_ButtonHovered]);
+				ImGui::ColorEdit4("Button Active", (float*)&style.Colors[ImGuiCol_ButtonActive]);
+				ImGui::ColorEdit4("Frame Background", (float*)&style.Colors[ImGuiCol_FrameBg]);
+				ImGui::ColorEdit4("Frame Background Hovered", (float*)&style.Colors[ImGuiCol_FrameBgHovered]);
+				ImGui::ColorEdit4("Frame Background Active", (float*)&style.Colors[ImGuiCol_FrameBgActive]);
+				ImGui::ColorEdit4("Slider Grab", (float*)&style.Colors[ImGuiCol_SliderGrab]);
+				ImGui::ColorEdit4("Slider Grab Active", (float*)&style.Colors[ImGuiCol_SliderGrabActive]);
+				ImGui::ColorEdit4("Check Mark", (float*)&style.Colors[ImGuiCol_CheckMark]);
+				ImGui::ColorEdit4("Scrollbar Background", (float*)&style.Colors[ImGuiCol_ScrollbarBg]);
+				ImGui::ColorEdit4("Scrollbar Grab", (float*)&style.Colors[ImGuiCol_ScrollbarGrab]);
+				ImGui::ColorEdit4("Scrollbar Grab Hovered", (float*)&style.Colors[ImGuiCol_ScrollbarGrabHovered]);
+				ImGui::ColorEdit4("Scrollbar Grab Active", (float*)&style.Colors[ImGuiCol_ScrollbarGrabActive]);
+
+				ImGui::EndMenu();
+			}
+
+
+			ImGui::EndMainMenuBar();
+		}
 
 		ImGui::End();
 	}
