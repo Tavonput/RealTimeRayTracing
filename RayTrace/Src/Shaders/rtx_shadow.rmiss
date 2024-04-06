@@ -1,10 +1,13 @@
 #version 460
 
 #extension GL_EXT_ray_tracing : require
+#extension GL_ARB_gpu_shader_int64 : require
 
-layout(location = 1) rayPayloadInEXT bool isShadowed;
+#include "structures.glsl"
+
+layout(location = 1) rayPayloadInEXT shadowPayload payload;
 
 void main()
 {
-	isShadowed = false;
+	payload.isHit = false;
 }

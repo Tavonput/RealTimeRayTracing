@@ -47,4 +47,9 @@ void sampleTextures(Material mat, int txtOffset, vec2 txtCoord, inout vec4 albed
 	}
 }
 
+vec3 faceForwardNormal(vec3 N, vec3 V)
+{
+	return (dot(N, V) < 0.0) ? -N : N;
+}
+
 #endif

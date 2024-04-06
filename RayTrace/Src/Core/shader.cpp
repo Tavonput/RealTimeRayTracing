@@ -7,7 +7,13 @@
  * Shader Set
  *
  */
-void ShaderSet::addShader(ShaderStage type, const char* filepath)
+void ShaderSet::init(const Device& device, uint32_t numHitGroups)
+{
+	m_device = &device;
+	m_hitGroups = std::vector<HitGroup>(numHitGroups);
+}
+
+void ShaderSet::addShader(ShaderStage type, const char* filepath, uint32_t hitGroup)
 {
 	APP_LOG_INFO("Loading shaders {}", filepath);
 
@@ -46,6 +52,13 @@ void ShaderSet::addShader(ShaderStage type, const char* filepath)
 		case ShaderStage::CHIT:
 			stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 			m_stageCount[(size_t)ShaderStage::CHIT]++;
+			m_hitGroups[hitGroup].chitIndex = m_shaderStages.size();
+			break;
+
+		case ShaderStage::AHIT:
+			stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+			m_stageCount[(size_t)ShaderStage::AHIT]++;
+			m_hitGroups[hitGroup].ahitIndex = m_shaderStages.size();
 			break;
 	}
 
@@ -54,35 +67,38 @@ void ShaderSet::addShader(ShaderStage type, const char* filepath)
 
 void ShaderSet::setupRtxShaderGroup()
 {
+	// Ray gen and miss groups
 	for (uint32_t i = 0; i < m_shaderStages.size(); i++)
 	{
-		VkRayTracingShaderGroupCreateInfoKHR group{};
-		group.sType              = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-		group.generalShader      = VK_SHADER_UNUSED_KHR;
-		group.closestHitShader   = VK_SHADER_UNUSED_KHR;
-		group.anyHitShader       = VK_SHADER_UNUSED_KHR;
-		group.intersectionShader = VK_SHADER_UNUSED_KHR;
-
 		switch (m_shaderStages[i].stage)
 		{
 			case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
-				group.type          = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-				group.generalShader = i;
-				m_shaderGroup.emplace_back(group);
-				break;
-
 			case VK_SHADER_STAGE_MISS_BIT_KHR:
-				group.type          = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-				group.generalShader = i;
-				m_shaderGroup.emplace_back(group);
-				break;
+				VkRayTracingShaderGroupCreateInfoKHR group{};
+				group.sType              = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+				group.type               = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+				group.generalShader      = i;
+				group.closestHitShader   = VK_SHADER_UNUSED_KHR;
+				group.anyHitShader       = VK_SHADER_UNUSED_KHR;
+				group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-			case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
-				group.type             = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-				group.closestHitShader = i;
 				m_shaderGroup.emplace_back(group);
 				break;
 		}
+	}
+
+	// Hit groups
+	for (const auto& hitGroup : m_hitGroups)
+	{
+		VkRayTracingShaderGroupCreateInfoKHR group{};
+		group.sType              = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+		group.type               = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+		group.generalShader      = VK_SHADER_UNUSED_KHR;
+		group.closestHitShader   = hitGroup.chitIndex;
+		group.anyHitShader       = hitGroup.ahitIndex;
+		group.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+		m_shaderGroup.emplace_back(group);
 	}
 }
 
@@ -147,7 +163,7 @@ void ShaderBindingTable::build(const Device& device, VkPipeline& rtxPipeline, Sh
 
 	auto& shaderCounts = shaders.getStageCounts();
 	uint32_t missCount   = shaderCounts[(size_t)ShaderStage::MISS];
-	uint32_t hitCount    = shaderCounts[(size_t)ShaderStage::CHIT];
+	uint32_t hitCount    = shaders.getHitGroupCount();
 	uint32_t handleCount = shaderCounts[(size_t)ShaderStage::RGEN] + missCount + hitCount;
 
 	uint32_t handleSize        = rtxProps.shaderGroupHandleSize;

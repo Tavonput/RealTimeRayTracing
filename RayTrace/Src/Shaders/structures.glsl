@@ -109,6 +109,12 @@ struct hitPayload
 	vec3 rayDir;
 };
 
+struct shadowPayload
+{
+	bool isHit;
+	uint seed;
+};
+
 struct hitPayloadPath
 {
 	vec3 throughput;

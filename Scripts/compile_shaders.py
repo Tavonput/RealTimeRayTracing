@@ -14,7 +14,7 @@ class ShaderCompiler:
         executable = f"../Vendor/VulkanSDK/{vulkan_version}/Bin/glslc.exe"
         source_dir = "../RayTrace/Src/Shaders"
         bin_dir    = "../Bin/Shaders"
-        extensions = ["*.vert", "*.frag", "*.rgen", "*.rchit", "*.rmiss"]
+        extensions = ["*.vert", "*.frag", "*.rgen", "*.rchit", "*.rmiss", "*.rahit"]
 
         # Find all shader sources to compile
         source_paths = []
