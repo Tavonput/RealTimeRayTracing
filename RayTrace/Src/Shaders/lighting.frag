@@ -95,6 +95,9 @@ void main()
 	vec3 L = normalize(uni.lightPosition - fragPos);
 	vec3 H = normalize(V + L);
 
+	// Correct normal for double sided rendering
+	N = faceForwardNormal(N, V);
+
 	float distance    = length(uni.lightPosition - fragPos);
 	float attenuation = uni.lightIntensity / (distance * distance);
 	vec3  radiance    = uni.lightColor * attenuation;

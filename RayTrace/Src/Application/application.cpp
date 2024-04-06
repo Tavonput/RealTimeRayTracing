@@ -313,19 +313,19 @@ void Application::createDescriptorSets()
 		layoutBuilder.addBinding(
 			(uint32_t)SceneBinding::GLOBAL,
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 
 		// Add a storage buffer for the scene objects
 		layoutBuilder.addBinding(
 			(uint32_t)SceneBinding::OBJ_DESC,
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 
 		// Add image samplers for each texture
 		layoutBuilder.addBinding(
 			(uint32_t)SceneBinding::TEXTURE,
 			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount,
-			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+			VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 
 		m_offscreenDescriptorLayout = layoutBuilder.buildLayout("Offscreen Descriptor Set Layout");
 	}
@@ -463,11 +463,13 @@ void Application::createRtxPipeline()
 
 	// Real time
 	{
-		ShaderSet rtxRtShaders(*m_device);
+		ShaderSet rtxRtShaders(*m_device, 2);
 		rtxRtShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_main_rgen.spv");
 		rtxRtShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_main_rmiss.spv");
 		rtxRtShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_shadow_rmiss.spv");
-		rtxRtShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_main_rchit.spv");
+		rtxRtShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_main_rchit.spv", 0);
+		rtxRtShaders.addShader(ShaderStage::AHIT, "../../Shaders/rtx_main_0_rahit.spv", 0);
+		rtxRtShaders.addShader(ShaderStage::AHIT, "../../Shaders/rtx_main_1_rahit.spv", 1);
 		rtxRtShaders.setupRtxShaderGroup();
 		builder.linkRtxShaders(rtxRtShaders);
 
@@ -480,10 +482,11 @@ void Application::createRtxPipeline()
 	
 	// Path	
 	{
-		ShaderSet rtxPathShaders(*m_device);
+		ShaderSet rtxPathShaders(*m_device, 1);
 		rtxPathShaders.addShader(ShaderStage::RGEN, "../../Shaders/rtx_path_rgen.spv");
 		rtxPathShaders.addShader(ShaderStage::MISS, "../../Shaders/rtx_path_rmiss.spv");
-		rtxPathShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_path_rchit.spv");
+		rtxPathShaders.addShader(ShaderStage::CHIT, "../../Shaders/rtx_path_rchit.spv", 0);
+		rtxPathShaders.addShader(ShaderStage::AHIT, "../../Shaders/rtx_path_rahit.spv", 0);
 		rtxPathShaders.setupRtxShaderGroup();
 		builder.linkRtxShaders(rtxPathShaders);
 

@@ -79,11 +79,11 @@ void Gui::beginUI()
 	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, heightOffset);
 
 	// Set the UI window size.
-	ImVec2 window_size = ImVec2(300, 300);
+	// ImVec2 window_size = ImVec2(300, 300);
 
 	// Set position of the Ui to the top right corner
 	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
-	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, 0); 
+	// ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, 0); 
 
 
 	// Apply the calculated position and size to the next window (the "Settings" window).

@@ -11,7 +11,7 @@ int main()
 	settings.framesInFlight = 3;
 	settings.vSync          = false;
 	settings.cpuRaytracing  = false;
-	settings.useRtx         = false;
+	settings.useRtx         = true;
 
 	// Initialize application
 	Application app;
