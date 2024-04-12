@@ -55,20 +55,28 @@ void Gui::init(Gui::CreateInfo info)
 
 void Gui::beginUI()
 {
-
 	// Start a new frame
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+
+	// Set custom style as default
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	// Custom theme colors
+	style.Colors[ImGuiCol_FrameBg] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f); // Frame background
+	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f); // Title background active
+	style.Colors[ImGuiCol_Header] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Header background
+	style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.25f, 0.26f, 1.00f); // Button hovered
+	style.Colors[ImGuiCol_Button] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Button background
 
 	m_state.changed = false;
 
 	// Determine the size of the main window 
 	ImVec2 screenSize = ImGui::GetMainViewport()->Size;
 
-
 	// Define the percentage of screen width and height for the settings window
-	float widthPercentage = 0.2f;  // For example, 20% of the screen width
+	float widthPercentage = 0.25f;  // For example, 20% of the screen width
 	float heightOffset = 26;  // Assuming 26 is the height of the main menu bar or top margin
 
 	// Calculate the UI window size to be a percentage of the screen size
@@ -78,52 +86,75 @@ void Gui::beginUI()
 	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
 	ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, heightOffset);
 
-	// Set the UI window size.
-
-	//ImVec2 window_size = ImVec2(300, 300);
-
-	// Set position of the Ui to the top right corner
-	// x is the screen width minus the window width to align to the right, Y is 0 to align to the top.
-	//ImVec2 window_pos = ImVec2(screenSize.x - window_size.x, 0); 
-
-
 	// Apply the calculated position and size to the next window (the "Settings" window).
 	// ImGuiCond_Always means this size setting will be applied every time without any conditions.
-	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always); 
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
-	// bool demo = true;
-
-	// ImGui::ShowDemoWindow(&demo);
 
 	{
-
-		// Creating the settings window 
-		// ImGuiWindowFlags_NoResize prevents the user from resizing the window. 
-
-		//ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoResize);
-
+		// Creating the settings window
 		ImGui::Begin("Settings");
-
+		
 		// Debug settings
 		if (ImGui::CollapsingHeader("Debug"))
 		{
 			const char* debugMethods[6] = { "None", "Albedo", "Normal", "Metallic", "Roughness", "Extra" };
 			m_state.changed |= ImGui::Combo("Debug Modes (Raster & RTX Real Time)", (int*)&m_state.debugMode, debugMethods, 6);
+
+			// Tooltip for the Debug Modes 
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Choose a mode to debug different surface properties in the rendering.");
+			}
 		}
 
 		// Scene settings
 		if (ImGui::CollapsingHeader("Scene"))
 		{
 			m_state.changed |= ImGui::ColorEdit3("Background", m_state.backgroundColor);
+
+			// Tooltip for Background color editor
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Adjust the background color of the scene.");
+			}
+
 			m_state.changed |= ImGui::SliderFloat("Exposure", &m_state.exposure, 0.1f, 5.0f);
+
+			// Tooltip for Exposure slider
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Change the exposure to control the scene's overall brightness.");
+			}
 		}
 
 		// Lighting settings
 		if (ImGui::CollapsingHeader("Lighting"))
 		{
 			m_state.changed |= ImGui::ColorEdit3("Light Color", m_state.lightColor);
+
+			// Tooltip for Light Color editor
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Change the color of the scene's light source.");
+			}
+
 			m_state.changed |= ImGui::DragFloat3("Light Position", m_state.lightPosition, 0.01f);
+
+			// Tooltip for Light Position control
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Drag to change the position of the scene's light source.");
+			}
+
+
 			m_state.changed |= ImGui::SliderFloat("Light Intensity", &m_state.lightIntensity, 0.0f, 20.0f);
+
+			// Tooltip for Light Intensity slider
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Adjust the intensity of the light within the scene.");
+			}
 		}
 
 		// RTX Settings
@@ -134,56 +165,96 @@ void Gui::beginUI()
 		if (ImGui::CollapsingHeader("Custom Check Boxes"))
 		{
 			for (CheckBox& box : m_customCheckBoxes)
+			{
 				m_state.changed |= ImGui::Checkbox(box.name.c_str(), box.button);
+				// Tooltip for Custom Check Boxes
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Toggle custom user-defined settings.");
+				}
+			}
 		}
 
 		// Camera Settings
 		if (ImGui::CollapsingHeader("Camera"))
 		{
 			m_state.changed |= ImGui::SliderFloat("Camera Sensitivity", &m_state.sensitivity, 0.0f, 2.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Adjust the camera's sensitivity to input. Higher values mean faster response to control movements."); // Tooltip for Camera Sensitivity slider
+			}
+
 			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Change how fast the camera moves through the scene. Higher values result in faster camera movement."); // Tooltip for Camera Speed slider
+			}
+
 			m_state.changed |= ImGui::InputFloat("Ground Height", &m_state.ground, 0.01f, 1.0f, "%.3f");
-		 
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Set the ground height for the camera. This may affect how the camera collides or interacts with the scene terrain."); // Tooltip for Ground Height input
+			}
+
 			ImGui::SeparatorText("Camera Modes");
 			m_state.changed |= ImGui::RadioButton("Stationary", &m_state.mode, 0); 
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Set the camera to remain fixed in one place. Use this mode for a static view of the scene."); // Tooltip for view of scene
+			}
+
 			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Set the camera to a first person viewpoint. Use this for an immersive experience as if you're moving within the scene."); // Tooltip for First Person View mode radio button
+			}
 
 			ImGui::SeparatorText("Camera Positions");
 			if (ImGui::Button("Save Position")) { m_state.cameraSaves++; }
 
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Save the current camera position. You can return to this position later if you need to."); // Tooltip for Save Position button
+			}
+
 			ImGui::Text("Switch Position: ");
 			ImGui::SameLine();
 			if (m_state.changed = ImGui::ArrowButton("##left", ImGuiDir_Left)) { m_state.currentCamera--; } //** If statement valid?
-			ImGui::SameLine();
-			if (m_state.changed = ImGui::ArrowButton("##right", ImGuiDir_Right)) { m_state.currentCamera++; }
-		}
-
-
-		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::BeginMenu("RenderTime")) {
-				// Display render time and FPS
-				float framerate = ImGui::GetIO().Framerate;
-				float renderTime = 1000.0f / framerate;
-				ImGui::Text("Render Time: %.3f ms/frame", renderTime);
-				ImGui::Text("FPS: %.1f", framerate);
-
-				ImGui::EndMenu();
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Switch to the previous saved camera position."); // Tooltip for Left Arrow button
 			}
 
-			if (ImGui::BeginMenu("UI Custom")) {
-				ImGuiStyle& style = ImGui::GetStyle();
+			ImGui::SameLine();
+			if (m_state.changed = ImGui::ArrowButton("##right", ImGuiDir_Right)) { m_state.currentCamera++; }
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Switch to the next saved camera position."); // Tooltip for Right Arrow button
+			}
+		}
+	
+		if (ImGui::CollapsingHeader("RenderTime")) 
+		{
+			// Display render time and FPS
+			float framerate = ImGui::GetIO().Framerate;
+			float renderTime = 1000.0f / framerate;
+			ImGui::Text("Render Time: %.3f ms/frame", renderTime);
+			ImGui::Text("FPS: %.1f", framerate);
+		}
 
-				ImGui::ColorEdit4("Menu Bar Background", (float*)&style.Colors[ImGuiCol_MenuBarBg]);	
-				ImGui::ColorEdit4("Header Background", (float*)&style.Colors[ImGuiCol_Header]);				
+		if (ImGui::BeginMainMenuBar()) 
+		{
+
+			if (ImGui::BeginMenu("UI Custom")) 
+			{
+				ImGuiStyle& style = ImGui::GetStyle();
+				// Color editors for different UI components
+				ImGui::ColorEdit4("Menu Bar Background", (float*)&style.Colors[ImGuiCol_MenuBarBg]);				
 				ImGui::ColorEdit4("Header Hovered", (float*)&style.Colors[ImGuiCol_HeaderHovered]);				
 				ImGui::ColorEdit4("Header Active", (float*)&style.Colors[ImGuiCol_HeaderActive]);				
 				ImGui::ColorEdit4("Text Color", (float*)&style.Colors[ImGuiCol_Text]);				
 				ImGui::ColorEdit4("Window Background", (float*)&style.Colors[ImGuiCol_WindowBg]);			
-				ImGui::ColorEdit4("Title Background Active", (float*)&style.Colors[ImGuiCol_TitleBgActive]);				
-				ImGui::ColorEdit4("Button Background", (float*)&style.Colors[ImGuiCol_Button]);
-				ImGui::ColorEdit4("Button Hovered", (float*)&style.Colors[ImGuiCol_ButtonHovered]);
-				ImGui::ColorEdit4("Button Active", (float*)&style.Colors[ImGuiCol_ButtonActive]);
-				ImGui::ColorEdit4("Frame Background", (float*)&style.Colors[ImGuiCol_FrameBg]);
+				ImGui::ColorEdit4("Button Active", (float*)&style.Colors[ImGuiCol_ButtonActive]);				
 				ImGui::ColorEdit4("Frame Background Hovered", (float*)&style.Colors[ImGuiCol_FrameBgHovered]);
 				ImGui::ColorEdit4("Frame Background Active", (float*)&style.Colors[ImGuiCol_FrameBgActive]);
 				ImGui::ColorEdit4("Slider Grab", (float*)&style.Colors[ImGuiCol_SliderGrab]);
@@ -196,11 +267,8 @@ void Gui::beginUI()
 
 				ImGui::EndMenu();
 			}
-
-
 			ImGui::EndMainMenuBar();
 		}
-
 		ImGui::End();
 	}
 }
