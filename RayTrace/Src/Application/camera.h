@@ -11,7 +11,7 @@
 enum class CameraMode // Makes adding new camera modes easy
 {
 	NONE = 0,
-	FPV, STATIONARY
+	FPV, STATIONARY, CREATIVE
 };
 
 
@@ -48,6 +48,8 @@ public:
 	void updateSpeed(float newSpeed) { m_speed = newSpeed; }
 	void updateMode(int mode);
 	void updateGround(float ground);
+	void updateGravity(float newGravity) { m_gravity = newGravity; }
+	void updateJumpSpeed(float newJumpSpeed) { m_jumpSpeed = newJumpSpeed; }
 	void saveCamera(int cameraSaves);
 	void switchCameras(int currentCamera);
 
@@ -67,6 +69,8 @@ private:
 	glm::vec3 m_center   = { 0.0f, 0.0f,  0.0f };
 	glm::vec3 m_worldUp  = { 0.0f, 1.0f,  0.0f };
 
+	glm::vec3 m_velocity = { 0.0f, 0.0f,  0.0f };
+
 	glm::mat4 m_view{};
 	glm::mat4 m_projection{};
 
@@ -80,6 +84,8 @@ private:
 	float m_fov         = 45.0f;
 	float m_sensitivity = 1.0f;
 	float m_speed       = 3.0f;
+	float m_gravity     = 1.0f;
+	float m_jumpSpeed   = 0.5f;
 
 	uint32_t m_width  = 0;
 	uint32_t m_height = 0;
@@ -101,6 +107,10 @@ private:
 	bool m_mousePause    = false;
 	bool m_lCtrl         = false;
 
+	bool m_fly = false;
+
+	float m_lastSpacePressTime = 0.0f;
+
 	int m_cameraSaves = 0;
 	int m_currentIndex = 0;
 
@@ -110,6 +120,8 @@ private:
 
 	void FPVMode();
 	void stationaryMode();
+	void creativeMode();
+	void spacePress();
 	void orbit(float deltaX, float deltaY);
 	void dolly(float deltaX, float deltaY);
 	void resetPosition();

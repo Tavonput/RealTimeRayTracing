@@ -183,8 +183,11 @@ void Gui::beginUI()
 			{
 				ImGui::SetTooltip("Adjust the camera's sensitivity to input. Higher values mean faster response to control movements."); // Tooltip for Camera Sensitivity slider
 			}
-
+      m_state.changed |= ImGui::SliderFloat("Gravity", &m_state.gravity, 0.0f, 2.0f);
+			m_state.changed |= ImGui::SliderFloat("Jump Speed", &m_state.jumpSpeed, 0.0f, 1.0f);
+      
 			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
+
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::SetTooltip("Change how fast the camera moves through the scene. Higher values result in faster camera movement."); // Tooltip for Camera Speed slider
@@ -196,6 +199,7 @@ void Gui::beginUI()
 				ImGui::SetTooltip("Set the ground height for the camera. This may affect how the camera collides or interacts with the scene terrain."); // Tooltip for Ground Height input
 			}
 
+
 			ImGui::SeparatorText("Camera Modes");
 			m_state.changed |= ImGui::RadioButton("Stationary", &m_state.mode, 0); 
 			if (ImGui::IsItemHovered())
@@ -204,10 +208,13 @@ void Gui::beginUI()
 			}
 
 			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1);
+
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::SetTooltip("Set the camera to a first person viewpoint. Use this for an immersive experience as if you're moving within the scene."); // Tooltip for First Person View mode radio button
 			}
+
+       m_state.changed |= ImGui::RadioButton("Creative Mode", &m_state.mode, 2);
 
 			ImGui::SeparatorText("Camera Positions");
 			if (ImGui::Button("Save Position")) { m_state.cameraSaves++; }
