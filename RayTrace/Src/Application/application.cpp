@@ -289,7 +289,7 @@ void Application::createPipelines()
 void Application::createDescriptorSets()
 {
 	uint32_t imageCount   = m_swapchain.getImageCount();
-	uint32_t textureCount = m_sceneBuilder.getTextureInfo().size();
+	uint32_t textureCount = static_cast<uint32_t>(m_sceneBuilder.getTextureInfo().size());
 
 	// Initialize descriptor pool
 	DescriptorPool::CreateInfo poolInfo{};
@@ -300,7 +300,7 @@ void Application::createDescriptorSets()
 
 	poolInfo.uniformBufferCount        = imageCount;
 	poolInfo.storageBufferCount        = imageCount;
-	poolInfo.combinedImageSamplerCount = imageCount + imageCount * m_sceneBuilder.getTextureInfo().size();
+	poolInfo.combinedImageSamplerCount = imageCount + imageCount * static_cast<uint32_t>(m_sceneBuilder.getTextureInfo().size());
 
 	m_descriptorPool.init(poolInfo);
 

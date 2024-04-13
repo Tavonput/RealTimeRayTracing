@@ -366,7 +366,7 @@ void SceneBuilder::createTextures(const std::vector<std::string>& texturePaths, 
 	}
 
 	// Create textures
-	textures = std::move(Texture::CreateBatch(infos, infos.size()));
+	textures = std::move(Texture::CreateBatch(infos, static_cast<uint32_t>(infos.size())));
 
 	// Free names and filenames
 	for (auto& info : infos)

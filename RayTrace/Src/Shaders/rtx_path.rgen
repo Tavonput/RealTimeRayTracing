@@ -21,6 +21,27 @@ layout (set = 1, binding = 0) uniform _GlobalUniform { GlobalUniform uni; };
 // Push constant
 layout (push_constant) uniform _RtxPushConstant { RtxPushConstant pc; };
 
+vec2 sampleUniformDiskConcentric(vec2 u)
+{
+    vec2 uOffset = 2 * u - vec2(1, 1);
+    if (uOffset.x == 0 && uOffset.y == 0)
+        return vec2(0.0, 0.0);
+
+    float theta, r;
+    if (abs(uOffset.x) > abs(uOffset.y))
+    {
+        r = uOffset.x;
+        theta = PI * (uOffset.y / uOffset.x) / 4;
+    }
+    else
+    {
+        r = uOffset.y;
+        theta = (PI / 2) - (PI * (uOffset.x / uOffset.y) / 4);
+    }
+    
+    return r * vec2(cos(theta), sin(theta));
+}
+
 void main() 
 {
     // Random number seed
@@ -44,7 +65,20 @@ void main()
         vec4 target    = uni.projInverse * vec4(coord.x, coord.y, 1, 1);
         vec4 direction = uni.viewInverse * vec4(normalize(target.xyz), 0);
 
-        uint  rayFlags = gl_RayFlagsOpaqueEXT;
+        float lensRadius    = 0.0;
+        float focalDistance = 5.0;
+        float r3 = rnd(payload.seed);
+        float r4 = rnd(payload.seed);
+        float r5 = rnd(payload.seed);
+        vec2  defocusLens   = lensRadius * sampleUniformDiskConcentric(coord);
+
+        float ft    = focalDistance / direction.z;
+        vec3  focus = origin.xyz + direction.xyz * ft;
+
+        // origin    = vec4(defocusLens.xy, 0.0, 1.0);
+        // direction = vec4(normalize(focus - origin.xyz), 0);
+
+        uint  rayFlags = gl_RayFlagsNoneEXT;
         float tMin     = 0.001;
         float tMax     = 10000.0;
 

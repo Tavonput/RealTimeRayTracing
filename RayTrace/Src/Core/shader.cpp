@@ -52,13 +52,13 @@ void ShaderSet::addShader(ShaderStage type, const char* filepath, uint32_t hitGr
 		case ShaderStage::CHIT:
 			stage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
 			m_stageCount[(size_t)ShaderStage::CHIT]++;
-			m_hitGroups[hitGroup].chitIndex = m_shaderStages.size();
+			m_hitGroups[hitGroup].chitIndex = static_cast<uint32_t>(m_shaderStages.size());
 			break;
 
 		case ShaderStage::AHIT:
 			stage.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
 			m_stageCount[(size_t)ShaderStage::AHIT]++;
-			m_hitGroups[hitGroup].ahitIndex = m_shaderStages.size();
+			m_hitGroups[hitGroup].ahitIndex = static_cast<uint32_t>(m_shaderStages.size());
 			break;
 	}
 
