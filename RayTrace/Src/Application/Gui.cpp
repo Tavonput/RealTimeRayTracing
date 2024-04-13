@@ -142,12 +142,14 @@ void Gui::beginUI()
 		{
 			m_state.changed |= ImGui::SliderFloat("Camera Sensitivity", &m_state.sensitivity, 0.0f, 2.0f);
 			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
+			m_state.changed |= ImGui::SliderFloat("Gravity", &m_state.gravity, 0.0f, 2.0f);
+			m_state.changed |= ImGui::SliderFloat("Jump Speed", &m_state.jumpSpeed, 0.0f, 1.0f);
 			m_state.changed |= ImGui::InputFloat("Ground Height", &m_state.ground, 0.01f, 1.0f, "%.3f");
-		 
 			ImGui::SeparatorText("Camera Modes");
 			m_state.changed |= ImGui::RadioButton("Stationary", &m_state.mode, 0); 
 			m_state.changed |= ImGui::RadioButton("First Person View (FPV)", &m_state.mode, 1);
-
+			m_state.changed |= ImGui::RadioButton("Creative Mode", &m_state.mode, 2);
+			
 			ImGui::SeparatorText("Camera Positions");
 			if (ImGui::Button("Save Position")) { m_state.cameraSaves++; }
 
