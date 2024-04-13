@@ -326,7 +326,8 @@ void Renderer::updateUI()
 	m_camera->saveCamera(m_ui.cameraSaves);
 	m_camera->switchCameras(m_ui.currentCamera);
 	m_camera->updateGround(m_ui.ground);
-
+	m_camera->updateGravity(m_ui.gravity);
+	m_camera->updateJumpSpeed(m_ui.jumpSpeed);
 	// Debug
 	ubo.debugMode = (int)m_ui.debugMode;
 

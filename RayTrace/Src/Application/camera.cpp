@@ -76,7 +76,7 @@ void Camera::onMouseMove(MouseMoveEvent event)
 	else if (m_rightMouse && m_cameraMode == CameraMode::STATIONARY)
 		dolly(deltaX, deltaY);
 
-	else if (m_cameraMode == CameraMode::FPV)
+	else if (m_cameraMode != CameraMode::STATIONARY)
 		updateDirection(deltaX, deltaY);
 		//orbit(deltaX, deltaY);
 
@@ -118,7 +118,7 @@ void Camera::onKeyPress(KeyPressEvent event)
 		case GLFW_KEY_S: m_sKey = true; break;
 		case GLFW_KEY_D: m_dKey = true; break;
 		case GLFW_KEY_LEFT_SHIFT: m_lShift = true; break;
-		case GLFW_KEY_SPACE: m_space = true; break;
+		case GLFW_KEY_SPACE: spacePress(); break;
 		case GLFW_KEY_LEFT_CONTROL: m_lCtrl = true; break;
 	}
 }
@@ -136,6 +136,24 @@ void Camera::onKeyRelease(KeyReleaseEvent event)
 		case GLFW_KEY_LEFT_CONTROL: m_lCtrl = false; break;
 		case GLFW_KEY_ESCAPE:  pauseMouseMove(); break;
 	}
+}
+
+void Camera::spacePress() // Computes time between space presses. Used for toggling flying
+{
+	m_space = true;
+	float currentTime = static_cast<float>(glfwGetTime());
+	float deltaT = currentTime - m_lastSpacePressTime;
+	if (deltaT <= 0.25f)
+		m_fly = !m_fly;
+	m_lastSpacePressTime = currentTime;
+}
+
+void Camera::creativeMode()
+{
+	m_cameraMode = CameraMode::CREATIVE;
+	glfwSetInputMode(m_window.getWindowGLFW(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	m_fly = false;
+	m_lastSpacePressTime = 0;
 }
 
 void Camera::FPVMode()
@@ -158,6 +176,7 @@ void Camera::updateMode(int mode)
 {
 	if (mode == 0 && m_cameraMode != CameraMode::STATIONARY) Camera::stationaryMode();
 	else if (mode == 1 && m_cameraMode != CameraMode::FPV) Camera::FPVMode();
+	else if (mode == 2 && m_cameraMode != CameraMode::CREATIVE) Camera::creativeMode();
 }
 
 void Camera::saveCamera(int cameraSaves)
@@ -188,52 +207,70 @@ void Camera::switchCameras(int currentCamera)
 void Camera::updatePosition(float deltaT) {
 
 	if (m_cameraMode == CameraMode::STATIONARY) return;
-
+	
 	glm::vec3 axisZ = glm::normalize(m_eye - m_center); // Normalized Z-axis relative to camera (Direction camera is looking)
 	glm::vec3 axisX = glm::normalize(glm::cross(m_up, axisZ)); // Normalized X-axis relative to camera
-	
+
 	float cameraSpeed = m_speed * deltaT;
 	float yCenter = m_center[1]; 
+
+	if (m_cameraMode == CameraMode::CREATIVE)
+	{
+		axisZ[1] = 0; // Changes z-axis so the z-direction is relative to world instead of camera
+		axisZ = glm::normalize(axisZ);
+		m_velocity[0] = 0;
+		m_velocity[2] = 0;
+		if (!m_fly) m_velocity[1] -= m_gravity * deltaT; // Accelerates the camera downwards with gravity
+		else m_velocity[1] = 0;
+	}
+	else m_velocity = glm::vec3(0); // Resets velocity vector
+
 	if (m_lCtrl) { // Sprint
 		cameraSpeed *= 3;
-	}
-
-	bool isGrounded = m_eye[1] == m_ground;
+	}	
 
 	if (m_wKey) {
 		//APP_LOG_INFO("W Key Down");
-		m_eye -= cameraSpeed * axisZ; // Moves camera position forwards (Z-axis represents forward and backwards for camera)
-		m_center -= cameraSpeed * axisZ; // Moves camera center point forwards
+		m_velocity -= cameraSpeed * axisZ;
 	}
 	if (m_aKey) {
 		//APP_LOG_INFO("A Key Down");
-		m_eye -= cameraSpeed * axisX; // Moves camera to the left (X-axis represents left and right of camera)
-		m_center -= cameraSpeed * axisX; // Moves point that camera is looking at to the left
+		m_velocity -= cameraSpeed * axisX;
 	}
 	if (m_sKey) {
 		//APP_LOG_INFO("S Key Down");
-		m_eye += cameraSpeed * axisZ; // Moves camera position backwards (Z-axis represents forward and backwards of camera)
-		m_center += cameraSpeed * axisZ; // Moves camera center point backwards.
+		m_velocity += cameraSpeed * axisZ;
 	}
 	if (m_dKey) {
 		//APP_LOG_INFO("D Key Down");
-		m_eye += cameraSpeed * axisX; // Moves camera to the right (X-axis represents left and right of camera)
-		m_center += cameraSpeed * axisX; // Moves point that camera is looking at to the right
+		m_velocity += cameraSpeed * axisX;
 	}
-	if (m_lShift) {
+
+	cameraSpeed = m_speed * deltaT; // Sets cameraSpeed back to default so sprinting doesn't change vertical speed. 
+	if (m_lShift && m_cameraMode == CameraMode::FPV) {
 		//APP_LOG_INFO("Left-Shift Key Down");
-		m_eye -= cameraSpeed * m_worldUp; // Moves camera down
-		m_center -= cameraSpeed * m_worldUp; 
+		m_velocity -= cameraSpeed * m_worldUp;
 	}
-	if (m_space) {
+	else if (m_lShift && m_fly) { // Creative mode
+		m_velocity -= cameraSpeed * m_worldUp;
+	}
+	if (m_space && m_cameraMode == CameraMode::FPV) {
 		//APP_LOG_INFO("Space Key Down"); 
-		m_eye += cameraSpeed * m_worldUp; // Moves camera up
-		m_center += cameraSpeed * m_worldUp;
+		m_velocity += cameraSpeed * m_worldUp;
 	}
-	if (m_eye[1] <= m_ground || (isGrounded && !m_space)) {
+	else if (m_space && m_fly) { // Creative mode
+		m_velocity += cameraSpeed * m_worldUp;
+	}
+
+	if (m_cameraMode == CameraMode::CREATIVE && m_eye[1] <= m_ground )
+	{
 		m_eye[1] = m_ground;
 		m_center[1] = yCenter;
+		if (m_space) m_velocity[1] = m_jumpSpeed;
+		else m_velocity[1] = 0;
 	}
+	m_eye += m_velocity;
+	m_center += m_velocity;
 	updateViewMatrix();
 }
 
@@ -272,7 +309,7 @@ void Camera::updateDirection(float deltaX, float deltaY)
 
 void Camera::updateGround(float ground)
 {
-	if (m_eye[1] <= m_ground)
+	if (m_cameraMode == CameraMode::CREATIVE && m_eye[1] <= m_ground)
 	{
 		m_eye[1] = ground; // Sets the eye's y-coordinate to be ground height
 		m_center[1] = m_center[1] + (ground - m_ground); // Adjusts camera center by change in ground height
