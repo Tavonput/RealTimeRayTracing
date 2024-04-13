@@ -28,13 +28,26 @@ double CpuRaytracer::vecHorizontal()
 	return 0.0;
 }
 
+bool rectangle(int CurrentWidth, int CurrentHeight, uint32_t width, uint32_t height) {
+	double size = 0.85;
+	uint32_t rangeWidth = width * size;
+	uint32_t rangeHeight = height * size;
+	int heightRatio = CurrentHeight / height;
+	if (CurrentWidth > width - rangeWidth and CurrentWidth < rangeWidth) {
+		if (CurrentHeight > height - rangeHeight and CurrentHeight < rangeHeight) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void CpuRaytracer::init(uint32_t width, uint32_t height)
 {
 	APP_LOG_INFO("Initialize CPU raytracer");
 	APP_LOG_INFO(width);
 	APP_LOG_INFO(height);
 	int inWidth = width;
-	const int total = calculateSpace(width, height);
+	int total = calculateSpace(width, height);
 	char* imageData = new char[total];
 	int pos = 0;
 	APP_LOG_INFO("Steps remaining:");
@@ -44,13 +57,19 @@ void CpuRaytracer::init(uint32_t width, uint32_t height)
 			double red = double(yy) / (width - 1);
 			double green = double(xx) / (height - 1);
 			double blue = 1;
-
 			int iRed = static_cast<int>(255.999 * red);
 			int igreen = static_cast<int>(255.999 * green);
 			int iblue = static_cast<int>(255.999 * blue);
-			imageData[pos++] = iRed;
-			imageData[pos++] = igreen;
-			imageData[pos++] = iblue;
+			if (rectangle(yy,xx, width,height)) {
+				imageData[pos++] = 255;
+				imageData[pos++] = 0;
+				imageData[pos++] = 0;
+			}
+			else {
+				imageData[pos++] = iRed;
+				imageData[pos++] = igreen;
+				imageData[pos++] = iblue;
+			}
 		}
 	}
 	stbi_write_png("cpuRayTraceObject.png",width, height,3,imageData,width*3);
@@ -70,6 +89,7 @@ void CpuRaytracer::render()
 	
 	/*glm::vec3 deltaU =  viewportU / width;*/
 	/*glm::vec3 deltaV = viewportV / height*/
+	
 
 
 	// NOTES: 
