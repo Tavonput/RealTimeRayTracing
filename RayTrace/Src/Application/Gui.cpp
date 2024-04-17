@@ -183,7 +183,8 @@ void Gui::beginUI()
 			{
 				ImGui::SetTooltip("Adjust the camera's sensitivity to input. Higher values mean faster response to control movements."); // Tooltip for Camera Sensitivity slider
 			}
-      m_state.changed |= ImGui::SliderFloat("Gravity", &m_state.gravity, 0.0f, 2.0f);
+			m_state.changed |= ImGui::SliderFloat("FOV", &m_state.fov, 1.0f, 120.0f);
+			m_state.changed |= ImGui::SliderFloat("Gravity", &m_state.gravity, 0.0f, 2.0f);
 			m_state.changed |= ImGui::SliderFloat("Jump Speed", &m_state.jumpSpeed, 0.0f, 1.0f);
       
 			m_state.changed |= ImGui::SliderFloat("Camera Speed", &m_state.speed, 0.0f, 6.0f);
@@ -214,7 +215,7 @@ void Gui::beginUI()
 				ImGui::SetTooltip("Set the camera to a first person viewpoint. Use this for an immersive experience as if you're moving within the scene."); // Tooltip for First Person View mode radio button
 			}
 
-       m_state.changed |= ImGui::RadioButton("Creative Mode", &m_state.mode, 2);
+			m_state.changed |= ImGui::RadioButton("Creative Mode", &m_state.mode, 2);
 
 			ImGui::SeparatorText("Camera Positions");
 			if (ImGui::Button("Save Position")) { m_state.cameraSaves++; }
@@ -238,6 +239,9 @@ void Gui::beginUI()
 			{
 				ImGui::SetTooltip("Switch to the next saved camera position."); // Tooltip for Right Arrow button
 			}
+
+			if (m_device->isRtxSupported())
+				renderRtxCamera();
 		}
 	
 		if (ImGui::CollapsingHeader("RenderTime")) 
@@ -323,11 +327,11 @@ void Gui::renderRtxUI()
 		m_state.changed |= ImGui::Combo("Render Method", (int*)&m_state.renderMethod, methods, 3);
 
 		m_state.changed |= ImGui::SliderInt("Max Depth", &m_state.maxDepth, 1, 100);
-		m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 16);
+		m_state.changed |= ImGui::SliderInt("Samples Per Pixel", &m_state.sampleCount, 1, 32);
 
 		if (ImGui::TreeNode("Real Time"))
 		{
-			m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 100);
+			m_state.changed |= ImGui::SliderInt("TAA Frame Count", &m_state.TAAFrameCount, 1, 1000);
 			ImGui::SetItemTooltip("Number of accumulation frames for TAA");
 
 			ImGui::TreePop();
@@ -346,4 +350,15 @@ void Gui::renderRtxUI()
 			ImGui::Spacing();
 		}
 	}
+}
+
+void Gui::renderRtxCamera()
+{
+	ImGui::SeparatorText("Depth of Field");
+
+	m_state.changed |= ImGui::SliderFloat("Focal Distance", &m_state.focalDistance, 0.1f, 10.0f);
+	ImGui::SetItemTooltip("Depth of field focal distance");
+
+	m_state.changed |= ImGui::SliderFloat("Lens Radius", &m_state.lensRadius, 0.0f, 0.5f);
+	ImGui::SetItemTooltip("Adjust the aperture size of the lens");
 }

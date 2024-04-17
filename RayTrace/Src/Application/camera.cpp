@@ -18,7 +18,7 @@ void Camera::init(Camera::CreateInfo& info)
 	updateViewMatrix();
 
 	// Set projection matrix
-	m_projection = glm::perspective(m_fov, m_width / (float)m_height, m_nearPlane, m_farPlane);
+	m_projection = glm::perspective(glm::radians(m_fov), m_width / (float)m_height, m_nearPlane, m_farPlane);
 	m_projection[1][1] *= -1;
 }
 
@@ -33,7 +33,7 @@ void Camera::onWindowResize(WindowResizeEvent event)
 	m_width  = event.width;
 	m_height = event.height;
 
-	m_projection = glm::perspective(m_fov, m_width / (float)m_height, m_nearPlane, m_farPlane);
+	m_projection = glm::perspective(glm::radians(m_fov), m_width / (float)m_height, m_nearPlane, m_farPlane);
 	m_projection[1][1] *= -1;
 }
 
@@ -177,6 +177,14 @@ void Camera::updateMode(int mode)
 	if (mode == 0 && m_cameraMode != CameraMode::STATIONARY) Camera::stationaryMode();
 	else if (mode == 1 && m_cameraMode != CameraMode::FPV) Camera::FPVMode();
 	else if (mode == 2 && m_cameraMode != CameraMode::CREATIVE) Camera::creativeMode();
+}
+
+void Camera::updateFov(float newFov)
+{
+	m_fov = newFov;
+
+	m_projection = glm::perspective(glm::radians(m_fov), m_width / (float)m_height, m_nearPlane, m_farPlane);
+	m_projection[1][1] *= -1;
 }
 
 void Camera::saveCamera(int cameraSaves)

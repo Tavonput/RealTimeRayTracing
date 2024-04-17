@@ -24,6 +24,8 @@ struct RtxPushConstants
 	int frame           = 0;
 
 	float russianRoulette = 1.0f;
+	float focalDistance   = 1.0f;
+	float lensRadius      = 0.0f;
 };
 
 struct GlobalUniform
