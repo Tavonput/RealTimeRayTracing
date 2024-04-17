@@ -308,6 +308,8 @@ void Renderer::updateUI()
 	rtxPushConstants.sampleCount     = m_ui.sampleCount;
 	rtxPushConstants.clearColor      = { m_ui.backgroundColor[0], m_ui.backgroundColor[1], m_ui.backgroundColor[2], 1.0f };
 	rtxPushConstants.russianRoulette = m_ui.russianRoulette;
+	rtxPushConstants.focalDistance   = m_ui.focalDistance;
+	rtxPushConstants.lensRadius      = m_ui.lensRadius;
 	if (m_ui.changed)
 		resetRtxFrame();
 
@@ -321,6 +323,7 @@ void Renderer::updateUI()
 
 	// Camera
 	m_camera->updateSensitivity(m_ui.sensitivity);
+	m_camera->updateFov(m_ui.fov);
 	m_camera->updateSpeed(m_ui.speed);
 	m_camera->updateMode(m_ui.mode);
 	m_camera->saveCamera(m_ui.cameraSaves);

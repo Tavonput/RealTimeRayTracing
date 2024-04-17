@@ -50,6 +50,7 @@ public:
 	void updateGround(float ground);
 	void updateGravity(float newGravity) { m_gravity = newGravity; }
 	void updateJumpSpeed(float newJumpSpeed) { m_jumpSpeed = newJumpSpeed; }
+	void updateFov(float newFov);
 	void saveCamera(int cameraSaves);
 	void switchCameras(int currentCamera);
 
@@ -91,6 +92,7 @@ private:
 	uint32_t m_height = 0;
 
 	CameraMode m_cameraMode = CameraMode::STATIONARY;
+
 	Window m_window;
 
 

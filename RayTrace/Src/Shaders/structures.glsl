@@ -93,6 +93,8 @@ struct RtxPushConstant
 	int frame;
 
 	float russianRoulette;
+	float focalDistance;
+	float lensRadius;
 };
 
 struct hitPayload

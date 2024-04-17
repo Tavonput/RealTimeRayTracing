@@ -122,9 +122,12 @@ public:
 		int          TAAFrameCount   = 10;
 		int          maxPathFrame    = 0;
 		float        russianRoulette = 0.3f;
+		float focalDistance          = 1.0f;
+		float lensRadius             = 0.0f;
 
 		// Camera
 		float sensitivity   = 1.0f;
+		float fov           = 45.0f;
 		float speed         = 3.0f;
 		float jumpSpeed     = 0.5f;
 		float gravity       = 1.0f;
@@ -132,7 +135,6 @@ public:
 		int   mode          = 0;
 		int   cameraSaves   = 0;
 		int   currentCamera = 0;
-
 	};
 
 	void init(Gui::CreateInfo info);
@@ -190,4 +192,5 @@ private:
 	std::vector<CheckBox> m_customCheckBoxes;
 
 	void renderRtxUI();
+	void renderRtxCamera();
 };
