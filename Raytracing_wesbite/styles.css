@@ -2,14 +2,63 @@
 body, h1, p, ul {
     margin: 0;
     padding: 0;
-    text-align: center
+    text-align: center;
+    font-family: 'Alegreya Sans', sans-serif;
+    font-size: 25px;
+}   
+
+h1{
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  font-size: 25px;
+  
 }
 
-h2,p{
+h2{
   margin: 0;
-  padding: 10px;
+  padding: 20px;
   text-align: left;
-  font-size: 20px;
+  font-size: 25px;
+  font-family: 'Alegreya Sans', sans-serif;
+}
+
+p{
+  margin: 0;
+  padding: 20px;
+  text-align: left;
+  font-size: 25px;
+  font-family: 'Alegreya', serif;
+  
+}
+
+
+.company-name img {
+  height: 80px; /* Or the height you want your logo to be */
+  width: auto; /* To maintain aspect ratio */
+  margin-left: 150px;
+}
+
+#features {
+  background-color: #e6e5e5; /* This sets the background color of the features section to grey */
+  padding-bottom: 30px;
+}
+
+  /* feature lining up the text */
+.content-wrapper {
+  /* This ensures the content and image are on the same line */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start; /* Aligns items to the start of the flex container */
+  
+}
+.content-wrapper p {
+  padding: 10px;
+  margin-left: auto; /* changed to auto for responsive centering */
+  margin-right: auto; /* changed to auto for responsive centering */
+  max-width: 1000px; /* you can set a max-width for larger screens */
+  text-align: left;
+  
 }
 
 .text-box {
@@ -22,7 +71,7 @@ h2,p{
 .text-box h4 {
   font-size: 100px;
   margin: 0; 
-  margin-bottom: -10px; 
+  margin-bottom: -85px; 
   color: transparent;
   -webkit-text-stroke: 1px #fff;
   background: url(image/back.png);
@@ -31,7 +80,7 @@ h2,p{
   animation: back 20s linear infinite;
 }
 
-/* create the animation  */
+/* create the animation for landing page */
 @keyframes back{
   100%{
     background-position: 2000px 0;
@@ -40,8 +89,9 @@ h2,p{
 
 /* Set font family */
 body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: #2d8ae0; /* Light grey background for the whole page */
+  font-family: 'Alegreya Sans', sans-serif;
+  background-color: #ffffff; /* Light grey background for the whole page */
+
     
 }
 html {
@@ -56,19 +106,22 @@ nav {
   align-items: center;
   position: sticky;
   top: 0;
-  background-color: #ffffff; /* This sets the background color to a dark gray */
-  padding: 3px ;
-  border-bottom: 1px solid #ccc;
-  
+  z-index: 10;
+  background-color: #d4d4d4;
+  padding: 3px;
+  border-bottom: 1px solid #b6b6b6;
+  width: auto; /* Ensures nav bar spans the full width */
+}
+.company b{
+  text-decoration: none;
+  padding-right: 1000px;
+  color: hsl(51, 100%, 31%);
+  font-size: 45px; /* Choose a size that fits your design */
+  font-weight: bold;
+  margin: auto;
+
 }
 
-.company-name a {
-  text-decoration: none;
-  color: #000000; /* Company name text color */
-  font-weight: bold;
-  transition: color 0.1s ease;
-  font-size: 20px;
-}
 nav ul {
   display: flex;
   justify-content: center;
@@ -79,7 +132,7 @@ nav ul {
 }
 
 nav ul li {
-  margin: 0 20px; /* Adds margin to the left and right of each link for spacing */
+  margin: 0 30px; /* Adds margin to the left and right of each link for spacing */
 }
 
 nav ul li a {
@@ -87,8 +140,8 @@ nav ul li a {
   color: #000000; /* nav text color */
   font-weight: bold;
   transition: color 0.1s ease;
+  
 }
-
 
 nav ul li a:hover {
     color: #006eff;
@@ -96,13 +149,40 @@ nav ul li a:hover {
 
 /* Section styles */
 section {
-    padding: 15px; /* Increased padding for more space */
+    padding-top: 20px;
     background-color: #fff; /* White background for content */
-    border-top: 1px solid #ccc;
+    border-top: 1px solid #b6b6b6;
 }
 
-section:nth-of-type(even) {
-    background-color: #ffffff;
+.product-benefits {
+  text-align: center;
+  
+}
+
+.benefits-title {
+  font-size: 50px;
+  text-align: center;
+}
+
+.benefits-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  text-align: center;
+  margin: auto; 
+  padding-bottom: 50px;
+  border-bottom: 1px solid #b6b6b6;
+  
+}
+
+
+.benefit-item {
+  width: 100%; /* Adjust so that items have a little space between them */
+  padding: 40px;
+}
+
+.benefit-item h3 {
+  margin-bottom: 15px; /* Space between the title and the paragraph */
 }
 
 /* Footer styles */
@@ -110,9 +190,21 @@ footer {
     background-color: #333;
     color: #ffffff;
     text-align: center;
-    padding: 20px;
+    padding: 10px;
     bottom: 0;
     width: 100%;
+    font-size: 20px;
+    border-top: 1px solid #b6b6b6;
+}
+
+
+footer a {
+  color: #0096D6; 
+  text-decoration: none; /* Optional: removes the underline from links */
+}
+
+footer a:hover {
+  text-decoration: underline; 
 }
 
 /* clean up edge around image */
@@ -125,7 +217,8 @@ img {
 main {
   display: grid;
   place-items: center;
-  min-height: 80vh;
+  padding: 40px;
+  padding-bottom: 40px;
 }
 
 /* ensure the image lineup */
@@ -134,12 +227,14 @@ main {
   place-content: left;
   position: relative;
   --position: 50%; /* the slider is center always.*/
+  
 }
 
 /* size of image */
 .image-container {
   max-width: 1000px;
   max-height: 1000vh;
+  
 }
 
 /* this ensure the image is aline with the after image*/
@@ -187,7 +282,8 @@ main {
 }
 
 video {
-  width: 100%; /* makes the video responsive */
+  padding: 20px;
+  width: 90%; /* makes the video responsive */
   height: auto; /* maintains the aspect ratio */
 }
 
@@ -199,13 +295,13 @@ body.dark-mode {
 
 /* You can add more specific styles for dark mode as needed */
 /* any new section added to the webite, update them for dark mode here */
-.dark-mode header, .dark-mode footer, .dark-mode section, .dark-mode nav{
+.dark-mode header, .dark-mode footer, .dark-mode section, .dark-mode nav, .dark-mode #features{
   background-color: #1e1e1e;
 }
 
 /* nav-bar color when dark mode*/
 .dark-mode a {
-  color: #2e065f;
+  color: #ffffff;
 }
 
 /* dark mode for  mode slider*/
@@ -213,7 +309,8 @@ body.dark-mode {
   background-color: #424242;
 }
 .dark-mode .mode-slider-label:before {
-  background-color: rgb(0, 99, 112);
+  background-color: rgb(204, 201, 0);
+  
 }
 
 /* Container for the mode-slider */
@@ -250,7 +347,7 @@ body.dark-mode {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: rgb(0, 99, 112);
+  background-color: rgb(204, 201, 0);
   transition: transform 0.4s;
   border-radius: 50%;
 }
@@ -294,15 +391,18 @@ body.dark-mode {
 .backgroundImage{
   width:100%;
   height: 100vh;
-  background-image: url(image/raytracing.png);
+  background-image: url(image/san_miguel_path_blur.png);
   background-size: cover;
   background-position: center;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #b6b6b6;
+  border-bottom: 1px solid #b6b6b6;
 }
 
 .row {
-    width: 100%;
+    width: auto;
     display: flex;
+    padding-top: 30px;
+    padding-bottom: 30px;
 }
 
 .column {
@@ -312,10 +412,40 @@ body.dark-mode {
 
 .image-column img {
     width: 100%; /* Make the image responsive */
-    height: 90%; /* Maintain aspect ratio */
+    height: 100%; /* Maintain aspect ratio */   
 }
 
 .text-column {
-    padding-left: 20px; /* Add some spacing between the image and text */
-    
+    padding-left: 20px; /* Add some spacing between the image and text */    
 }
+
+/*animation*/
+
+/* Base state for sections; they take up space but are invisible */
+.fade-in-section {
+  opacity: 0;
+  filter: blur(20px);
+  visibility: hidden;
+  transform: translateX(-500px); /* Start slightly off-screen */
+  transition: opacity 1s ease, transform 1s ease, visibility 1s; /* Transition for effect */
+}
+/* Slide-in from left for odd sections */
+.fade-in-section:nth-child(odd) {
+  transform: translateX(-500px);
+}
+
+/* Slide-in from right for even sections */
+.fade-in-section:nth-child(even) {
+  transform: translateX(500px);
+}
+
+/* When the section is in the viewport, slide and fade it in */
+.fade-in-section.show {
+  opacity: 1;
+  filter: blur(0px);
+  visibility: visible;
+  transform: translateX(0);
+  transition-delay: 0s; /* Apply effect immediately */
+}
+
+
